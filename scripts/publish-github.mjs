@@ -99,7 +99,8 @@ try {
 }
 
 if (remoteTree === rootTree && remoteHead) {
-  log("\nnothing to publish: the remote tree already matches local HEAD byte for byte.");
+  log("\nmain      nothing to publish: the remote tree already matches local HEAD byte for byte.");
+  await publishPages();
   process.exit(0);
 }
 
@@ -179,56 +180,75 @@ if (pushed.tree.sha !== rootTree) process.exit(1);
 /**
  * Pages can only serve from "/" or "/docs" of a branch, and the demo lives in dist/, so the demo is
  * published to an orphan `gh-pages` branch whose ROOT tree is the dist subtree of the commit just
- * pushed. Every blob in it, and that tree, were uploaded and verified in steps 1-2, so this is one
- * commit and one ref. The entry-by-entry comparison against `git ls-tree HEAD:dist` below is what
+ * pushed. Every blob in it, and that tree, were uploaded and verified in steps 1-2, so this is at
+ * most one commit and one ref. The entry-by-entry comparison against `git ls-tree HEAD:dist` is what
  * proves Pages serves exactly the artefact that `npm run check:browser` passed on.
+ *
+ * Declared as a hoisted function so the "main is already up to date" exit above can still reconcile
+ * the demo: without that, a no-op publish would leave gh-pages pointing at an older build.
  */
-if (has("no-pages")) {
-  log("\npages     skipped (--no-pages)");
-} else {
+async function publishPages() {
+  if (has("no-pages")) { log("\npages     skipped (--no-pages)"); return; }
   const PAGES = flag("pages-branch") || "gh-pages";
   const distTree = git(["rev-parse", head + ":dist"]);
-  log("\npages     dist tree " + distTree + " -> refs/heads/" + PAGES);
+  log("\npages     local dist tree " + distTree + " -> refs/heads/" + PAGES);
 
-  let pagesHead = null;
+  let pagesHead = null, pagesTree = null;
   try {
-    pagesHead = (await api("GET", "/repos/" + REPO + "/commits/" + PAGES, null, AUTH)).sha;
+    const c = await api("GET", "/repos/" + REPO + "/commits/" + PAGES, null, AUTH);
+    pagesHead = c.sha;
+    pagesTree = c.commit.tree.sha;
   } catch (e) {
     if (!/404/.test(e.message)) throw e;
     log("pages     branch " + PAGES + " does not exist yet - it will be created");
   }
 
-  const pagesMessage = "Deploy the demo from " + head.slice(0, 7) + "\n\n"
-    + "The root tree of this commit is the dist/ subtree of that commit, so GitHub Pages serves exactly\n"
-    + "the artefact that npm run check:html, check:bundle and check:browser passed on.";
-  const pagesCommit = await api("POST", "/repos/" + REPO + "/git/commits", {
-    message: pagesMessage, tree: distTree, parents: pagesHead ? [pagesHead] : [],
-    author: { name: an, email: ae, date: ad }, committer: { name: cn, email: ce, date: cd }
-  }, AUTH);
-  log("pages     commit " + pagesCommit.sha + " (parent " + (pagesHead ?? "none") + ")");
-
-  const pagesRef = pagesHead
-    ? await api("PATCH", "/repos/" + REPO + "/git/refs/heads/" + PAGES, { sha: pagesCommit.sha, force: false }, AUTH)
-    : await api("POST", "/repos/" + REPO + "/git/refs", { ref: "refs/heads/" + PAGES, sha: pagesCommit.sha }, AUTH);
-  log("pages     ref refs/heads/" + PAGES + " -> " + pagesRef.object.sha);
-
-  const want = git(["ls-tree", "-r", head + ":dist"]).split("\n").filter(Boolean).map((line) => {
+  const localEntries = git(["ls-tree", "-r", head + ":dist"]).split("\n").filter(Boolean).map((line) => {
     const tab = line.indexOf("\t");
     const parts = line.slice(0, tab).split(" ");
     return { mode: parts[0], type: parts[1], sha: parts[2], path: line.slice(tab + 1) };
   });
-  const got = (await api("GET", "/repos/" + REPO + "/git/trees/" + pagesRef.object.sha + "?recursive=1", null, AUTH)).tree;
-  const bad = want.filter((e) => {
-    const r = got.find((x) => x.path === e.path);
-    return !r || r.sha !== e.sha || r.type !== e.type;
-  });
-  log("pages     verify " + got.length + " remote entries vs " + want.length + " local dist entries, " + bad.length + " mismatched");
-  if (bad.length) { for (const b of bad.slice(0, 10)) log("  MISMATCH " + b.path); process.exit(1); }
-  if (got.length !== want.length) { log("  entry count differs: remote " + got.length + " vs local " + want.length); process.exit(1); }
-  if (pagesCommit.tree !== distTree) { log("  tree differs: remote " + pagesCommit.tree + " vs local dist " + distTree); process.exit(1); }
-  log("pages     tree remote " + pagesCommit.tree + " vs local dist " + distTree + " -> IDENTICAL");
+
+  /** Compare the branch's current tree against git's own view of HEAD:dist, entry by entry. */
+  async function verifyPages(commitSha, treeSha) {
+    const got = (await api("GET", "/repos/" + REPO + "/git/trees/" + treeSha + "?recursive=1", null, AUTH)).tree;
+    const bad = localEntries.filter((e) => {
+      const r = got.find((x) => x.path === e.path);
+      return !r || r.sha !== e.sha || r.type !== e.type;
+    });
+    log("pages     verify " + got.length + " remote entries vs " + localEntries.length + " local dist entries, " + bad.length + " mismatched");
+    for (const b of bad.slice(0, 10)) log("  MISMATCH " + b.path);
+    if (bad.length || got.length !== localEntries.length) return false;
+    log("pages     tree remote " + treeSha + " vs local dist " + distTree + " -> " + (treeSha === distTree ? "IDENTICAL" : "DIFFERS"));
+    log("pages     commit " + commitSha);
+    return treeSha === distTree;
+  }
+
+  if (pagesHead && pagesTree === distTree) {
+    log("pages     already serves this exact dist tree - no new commit needed");
+    if (!DRY && !(await verifyPages(pagesHead, pagesTree))) process.exit(1);
+  } else {
+    if (DRY) { log("pages     dry run: would deploy " + distTree); }
+    else {
+      const pagesMessage = "Deploy the demo from " + head.slice(0, 7) + "\n\n"
+        + "The root tree of this commit is the dist/ subtree of that commit, so GitHub Pages serves exactly\n"
+        + "the artefact that npm run check:html, check:bundle and check:browser passed on.";
+      const commit = await api("POST", "/repos/" + REPO + "/git/commits", {
+        message: pagesMessage, tree: distTree, parents: pagesHead ? [pagesHead] : [],
+        author: { name: an, email: ae, date: ad }, committer: { name: cn, email: ce, date: cd }
+      }, AUTH);
+      const ref = pagesHead
+        ? await api("PATCH", "/repos/" + REPO + "/git/refs/heads/" + PAGES, { sha: commit.sha, force: false }, AUTH)
+        : await api("POST", "/repos/" + REPO + "/git/refs", { ref: "refs/heads/" + PAGES, sha: commit.sha }, AUTH);
+      log("pages     commit " + commit.sha + " (parent " + (pagesHead ?? "none") + "); ref -> " + ref.object.sha);
+      if (!(await verifyPages(commit.sha, commit.tree.sha))) process.exit(1);
+    }
+  }
 
   const pages = await api("GET", "/repos/" + REPO + "/pages", null, AUTH).catch(() => null);
-  if (pages) log("pages     " + pages.html_url + " source=" + (pages.source && pages.source.branch) + "/" + (pages.source && pages.source.path) + " status=" + pages.status);
-  else log("pages     no Pages configuration found on this repo");
+  if (pages) {
+    log("pages     " + pages.html_url + " source=" + (pages.source && pages.source.branch) + "/" + (pages.source && pages.source.path) + " status=" + pages.status);
+  } else log("pages     no Pages configuration found on this repo");
 }
+
+await publishPages();
