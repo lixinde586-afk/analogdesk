@@ -132,10 +132,11 @@ prices are US daily sessions).
 task-completion evidence is automated rather than behavioural. Targets, labelled as targets: **[TARGET]** 30
 self-directed traders onboarded within the first month via a public static demo requiring no key and no
 sign-up; **[TARGET]** 60% of them completing at least one full research card (input -> card -> stress panel);
-**[TARGET]** 10 undergraduate users reproducing `npm run verify` from the committed dataset. Validation plan:
-the static `dist/` build is instrumented to log anonymous, opt-in card completions client-side; the same
-13-scenario run record is re-generated weekly from a refreshed dataset so quality drift is measurable without
-requiring users to report anything.
+**[TARGET]** 10 undergraduate users reproducing `npm run verify` from the committed dataset. Validation plan (**not yet built**,
+stated as a plan): instrument the static `dist/` build to count anonymous, opt-in card completions client-side
+- it currently makes **zero** network calls, so this would be its first and only one; and re-generate the same
+13-scenario run record weekly from a refreshed dataset, so quality drift is measurable without asking any user
+to report anything.
 ### 4 · Progress
 
 **Built and working.**
@@ -312,9 +313,10 @@ AnalogDesk 不运行策略、不建仓、不汇报夏普比率，也不声称有
 （15.0%）** 由专为 6 只不发 8-K 的中概 ADR 编写的 6-K 回退检索得到。
 
 **已观测（产品质量）**：叙述层设有数字校验闸门，把生成文本中的每个数字回溯到引擎载荷——闸门冒烟测试
-**144/144** 通过，交付 demo 运行 **142/142** 个数字全部可溯源；静态包的自动化渲染测试：**15/15** 个面板、
-**19** 张图表、**0** 处 undefined/NaN 泄漏、浏览器内引擎初始化 **463-533 毫秒**、分析 **约 140 毫秒**、
-**0** 次网络请求。
+**144/144** 通过，交付 demo 运行 **142/142** 个数字全部可溯源；静态包的自动化渲染测试
+（`npm run check:bundle`）：**15/15** 个面板、**0** 处 undefined/NaN 泄漏、**0** 次网络请求，
+4 个测试查询（NVDA/BABA/SPY/KWEB，H = 5/20/1/10）下浏览器内引擎初始化 **0.5-1.0 秒**、
+单次分析 **0.15-0.45 秒**（随机器负载波动）。
 
 **已观测（降级）**：Bitget 官方 MCP **3 个端点 0 个可达**，每次尝试都在 TCP 层被重置（`connection-reset`）。
 产品在每张卡片上带时间戳与证据来源披露，因此**产品中不含任何来自 Bitget 的数字**。
@@ -325,8 +327,9 @@ AnalogDesk 不运行策略、不建仓、不汇报夏普比率，也不声称有
 **目标值（明确标注为目标）**：目前尚无外部用户，测试用户数为 **1**（作者本人），因此任务完成度证据是
 自动化的而非行为性的。目标：**[目标]** 首月通过无需密钥、无需注册的公开静态 demo 引入 30 名自主交易者；
 **[目标]** 其中 60% 至少完成一次完整研究卡（输入 -> 卡片 -> 压力面板）；**[目标]** 10 名本科生用户
-用已提交的数据复现 `npm run verify`。验证计划：静态 `dist/` 构建内置客户端匿名、可选启用的卡片完成度埋点；
-同一套 13 情景运行记录每周基于刷新后的数据集重新生成，从而在不要求用户上报任何信息的前提下度量质量漂移。
+用已提交的数据复现 `npm run verify`。验证计划（**尚未实现**，此处只作为计划陈述）：给静态 `dist/` 构建加上客户端匿名、
+可选启用的卡片完成度计数——它目前是 **0 次网络请求**，这将是唯一的一次；并且每周基于刷新后的数据集
+重新生成同一套 13 情景运行记录，从而在不要求用户上报任何信息的前提下度量质量漂移。
 
 ### 4 · 进度
 

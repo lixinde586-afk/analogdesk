@@ -98,8 +98,20 @@ DASHSCOPE_API_KEY=sk-你复制的那串
 
 ## 第三件事 · 填表单
 
-表单地址：https://forms.gle/GyWZCMCPocgJdJon6 · 逐字段对照下表，内容全部从
-`submission/SUBMISSION.md` 复制。**「项目描述」必须在表单里写完整，GitHub README 或 X 长推都不能替代。**
+表单地址：https://forms.gle/GyWZCMCPocgJdJon6 · 逐字段对照下表。**「项目描述」必须在表单里写完整，
+GitHub README 或 X 长推都不能替代。**
+
+「项目描述」已经为你准备好两个**纯文本文件**（已去掉 Markdown 符号、合并断行、中文用全角引号，粘进表单不会出现
+`**` 或 `#` 这类符号），二选一：
+
+| 文件 | 字符数 | 什么时候用 |
+|---|---|---|
+| `submission\PROJECT-DESCRIPTION-EN.txt` | 17,345 | **推荐**：评审是国际团队，英文版信息最全 |
+| `submission\PROJECT-DESCRIPTION-CN.txt` | 7,028 | 若表单提示内容过长、或你更想用中文 |
+
+两个文件都由 `npm run form:text` 从 `submission/SUBMISSION.md` 自动生成（不是手抄），所以改了 SUBMISSION.md
+之后重跑一次这个命令，txt 就会同步更新。其余字段（Role of the LLM、材料链接、X 帖）仍从 SUBMISSION.md 复制，
+那些字段较短、带 Markdown 也不影响阅读。
 
 | 表单字段 | 填什么 | 从哪复制 |
 |---|---|---|
@@ -107,7 +119,7 @@ DASHSCOPE_API_KEY=sk-你复制的那串
 | Are you an S1 participant/team | `No` | — |
 | Track | `AI Trading Desk` | — |
 | Sub-theme | `Decision Stress Testing` | — |
-| **Project Description** ✅必交 | 六个部分的长文。**英文版粘贴 B 节；中文版粘贴 C 节**（二选一，或中英都贴：先英文后中文，中间加一行 `--- 中文版 ---`） | `SUBMISSION.md` → **B** 或 **C** |
+| **Project Description** ✅必交 | 用记事本打开 `submission\PROJECT-DESCRIPTION-EN.txt`（英文，17,345 字符）**或** `submission\PROJECT-DESCRIPTION-CN.txt`（中文，7,028 字符）→ Ctrl+A 全选 → Ctrl+C → 粘进表单。**二选一，不要两份都贴** | 那两个 txt 文件 |
 | **Role of the LLM in Your Project** ✅必交 | 整段粘贴 D1；有 Qwen 额度再加上 D2 | `SUBMISSION.md` → **D** |
 | **Submission Materials Link** ✅必交 | 整段粘贴（已含 Demo/代码/运行记录/验证报告/研究文档/视频六项，替换好占位符后直接贴） | `SUBMISSION.md` → **E** |
 | **X Promotional Post Link** ✅必交 | 第二件事里复制的那条帖子链接 | — |
