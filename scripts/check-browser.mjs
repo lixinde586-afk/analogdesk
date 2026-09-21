@@ -14,6 +14,9 @@
  * first person to see it was a reviewer. So the last gate before publishing is a real browser, and
  * it exercises the controls rather than only the deep link.
  *
+ *   npm run check:browser                       # local dist/ over 127.0.0.1
+ *   node scripts/check-browser.mjs --live URL   # the same checks against a deployed site
+ *
  * Needs Chrome or Edge. Set the CHROME environment variable to an executable path to override the
  * default install locations. Chrome needs DPAPI and registry access, so this check cannot run
  * inside a locked-down sandbox.
@@ -303,9 +306,24 @@ for (const f of ["index.html", "app.bundle.js", "styles.css"]) {
 mkdirSync(join(ROOT, ".tmp"), { recursive: true });
 console.log("browser: " + CHROME);
 
-const { srv, port } = await serve();
-const base = "http://127.0.0.1:" + port;
-console.log("serving dist/ at " + base);
+// --live <base-url> checks an already-deployed site with the same assertions instead of a local
+// server. The interaction probe is skipped there: it works by injecting a script into a page this
+// script serves, and rewriting someone else's deployment is not ours to do.
+const argv = process.argv.slice(2);
+const liveIdx = argv.indexOf("--live");
+const liveAt = liveIdx >= 0 ? argv[liveIdx + 1] : null;
+if (liveAt && !/^https?:\/\//.test(liveAt)) { console.error("--live needs an http(s) base URL"); process.exit(1); }
+
+let srv = null, base;
+if (liveAt) {
+  base = liveAt.replace(/\/+$/, "");
+  console.log("checking the LIVE deployment at " + base);
+} else {
+  const served = await serve();
+  srv = served.srv;
+  base = "http://127.0.0.1:" + served.port;
+  console.log("serving dist/ at " + base);
+}
 
 try {
   await checkPage("auto-run deep link: NVDA, H=5",
@@ -315,9 +333,10 @@ try {
     encodeURIComponent("KWEB 未来 10 个交易日，历史相似状态的分布和最大回撤"), { symbol: "KWEB", ran: true });
   await checkPage("cold load, no parameters (controls populate, nothing analysed yet)",
     base + "/index.html", { symbol: "NVDA", ran: false });
-  await checkInteraction(base + "/__interaction.html");
+  if (liveAt) console.log("\n(interaction probe skipped in --live mode)");
+  else await checkInteraction(base + "/__interaction.html");
 } finally {
-  srv.close();
+  if (srv) srv.close();
 }
 
 console.log(failures ? "\ncheck:browser FAILED (" + failures + ")" : "\ncheck:browser passed");

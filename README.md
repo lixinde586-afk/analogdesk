@@ -83,6 +83,7 @@ npm run build:data     # rebuild data-cache/dataset.json from the keyless source
 npm run verify         # re-run the whole out-of-sample validation -> research/VALIDATION.md
 npm run demo           # re-run the research task -> demo/RUN-RECORD.md
 npm run check          # four gates: numeric gate, markup, bundle-in-a-DOM-stub, real headless browser
+npm run check:live     # run the same browser checks against the deployed GitHub Pages site
 npm run probe          # re-measure network reachability of every source -> data-cache/network-probe.json
 npm run form:text      # regenerate the paste-ready form text from submission/SUBMISSION.md
 npm start              # serve the desk on http://127.0.0.1:3000
@@ -104,7 +105,8 @@ npm run publish:github # publish HEAD through api.github.com (see the note below
 - **`check:browser`** - serves `dist/` on 127.0.0.1 and loads it in **real headless Chrome**: two auto-run
   deep links, a cold load, and an injected probe that types a question, presses Enter, clicks a tab,
   switches the symbol and clicks Analyze, then reports a machine-readable verdict. Needs Chrome or Edge;
-  set `CHROME` to an executable path to override the default locations.
+  set `CHROME` to an executable path to override the default locations. `npm run check:live` runs the
+  same page checks against the deployed site after a publish.
 
 The last two gates exist because the first published version of this demo shipped broken. One mis-quoted
 attribute in `web/index.html` - a `placeholder` opened with `'` and closed with `"` - never terminated, so
