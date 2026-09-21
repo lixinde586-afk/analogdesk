@@ -13,6 +13,7 @@
     "check:bundle": "node scripts/check-bundle.mjs",
     "check": "npm run check:gate && npm run compile && npm run check:bundle",
     "probe": "node scripts/probe-network.mjs",
+    "publish:github": "node scripts/publish-github.mjs",
     "start": "node server.mjs"
   },
   "engines": { "node": ">=20" },

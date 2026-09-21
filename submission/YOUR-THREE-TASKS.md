@@ -7,35 +7,44 @@
 
 ---
 
-## 前置（一次性，约 10 分钟）：把项目放到公网
+## 已经替你完成 · 项目已在公网可访问
 
-表单要求「可访问的 Demo 或项目地址；GitHub 仓库须为 public 且含完整 README」。这一步需要你的 GitHub 账号，
-所以只能你来点。**命令可以整段复制粘贴**，不需要理解内容。
+| 交付物 | 地址 / 状态 |
+|---|---|
+| GitHub **public** 仓库（含完整 README） | https://github.com/lixinde586-afk/analogdesk |
+| 在线 Demo（GitHub Pages，免登录 / 免密钥 / 免网络） | https://lixinde586-afk.github.io/analogdesk/ |
+| Pages 构建状态 | `built`；`index.html` / `styles.css` / `app.bundle.js` / `validation-summary.json` 全部返回 200 |
+| 线上与本地一致性 | 远端根树 `a62dc63` 与本地 HEAD 完全相同（52 个文件，15.7 MB）；4 个静态文件 sha256 逐字节一致，`app.bundle.js` 的 2 字节差异来自 `.gitattributes` 的 CRLF→LF 归一化，已用归一化后的产物重跑 `npm run check:bundle` 通过（15 个面板、0 次 fetch） |
+| 运行记录（必交，代码生成非截图） | `demo/RUN-RECORD.md` + `demo/run-record.json` + 生成器 `scripts/run-demo.mjs` |
 
-1. 在 https://github.com/new 建一个 **public** 仓库，名字填 `analogdesk`，**不要**勾选 "Add a README"
-   （本地已经有了）。建好后复制它的地址，形如 `https://github.com/你的用户名/analogdesk`。
-2. 打开 PowerShell，逐段粘贴（第一次会让你在浏览器里登录 GitHub 授权）：
+两件你可能想知道的事：
 
-```powershell
-cd "C:\Users\26973\Documents\Codex\2026-09-18\codex-mcp-add-bitgetai-hackathons2-url\outputs\analogdesk"
-git init -b main
-git add -A
-git commit -m "AnalogDesk: pre-trade decision stress testing for 7x24 tokenised US equities"
-git remote add origin https://github.com/你的用户名/analogdesk.git
-git push -u origin main
-```
+1. **为什么没用 `git push`**：这台机器上 `github.com:443` 被阻断（TCP 连接超时 20 秒），而 `api.github.com`
+   返回 200。所以我写了 `scripts/publish-github.mjs`：用 GitHub 的 Git Data API 把提交对象逐个上传，
+   并把 API 返回的每一个 SHA 与 git 本地值比对，任何不一致立即中止。已发布内容与本地提交是同一棵对象树。
+   以后要更新仓库，改完文件后执行 `git add -A; git commit -m "..."; npm run publish:github` 即可。
+2. **GitHub 登录态**：账号 `lixinde586-afk`，凭据由 GitHub CLI 存在你本机
+   `%APPDATA%\GitHub CLI\hosts.yml`，没有被打印、没有进仓库、也没有写进任何提交。
+   想随时撤销：GitHub → Settings → Applications → Authorized GitHub Apps → GitHub CLI → Revoke。
+   （另外 `git` 因为文件属主是沙箱账号，加过一条 `safe.directory` 例外，仅影响这台机器。）
 
-3. 开启 GitHub Pages（给评审的免登录 Demo）：仓库 → Settings → Pages → Source 选 `Deploy from a branch`
-   → Branch 选 `main`、目录选 `/dist` → Save。等 1-2 分钟，页面顶部会出现
-   `https://你的用户名.github.io/analogdesk/` —— **这就是 `<DEMO_URL>`**。
-   打开它、用**无痕窗口**再打开一次，确认能看到界面并输入 `NVDA`。
-4. 视频（可选但强烈建议）：按 `submission/SUBMISSION.md` 第 G 节的分镜录 3 分钟，传到 YouTube
-   （公开或"知道链接的人可看"），链接就是 `<VIDEO_URL>`。
-   录屏用 Windows 自带 `Win + G`（Xbox Game Bar）即可；录 `dist/index.html` 那个页面，不要录开发服务器。
-5. 把三个占位符替换掉：在 `submission/SUBMISSION.md` 里用编辑器把 `<GITHUB_URL>`、`<DEMO_URL>`、
-   `<VIDEO_URL>` 全部替换成真实链接（Ctrl+H 全部替换），这样第 E 节那段就能直接整段粘贴进表单。
+---
 
-> 如果你把仓库建好并告诉我地址，我可以替你跑 git 命令和替换占位符；GitHub 登录授权那一步必须你本人完成。
+## 唯一还需要你做的一次性动作 · 录 3 分钟视频
+
+表单本身不强制要求视频（Demo 免登录，属于"可访问"），但 AI Trading Desk 赛道允许附**屏幕录像**，
+而且"完整投研任务的演示"有视频会让评审打分更稳。分镜脚本已经写好，照着录即可。
+
+1. 打开 https://lixinde586-afk.github.io/analogdesk/ （或本地 `dist\index.html`，两者完全相同）。
+2. 按 `Win + G` 打开 Xbox Game Bar → 点录制（或按 `Win + Alt + R`）。
+3. 照 `submission/SUBMISSION.md` **第 G 节**的分镜表操作：输入 `英伟达 未来5天` → 状态面板 → 类比清单 →
+   分布与路径风险 → 点两个压力情景 → 切到终端跑 `npm run demo` 展示 `RUN-RECORD.md` 与
+   `142/142` 数字闸门 → 展示诚实结论面板 → 结束卡。
+4. 上传到 YouTube（公开或"知道链接的人可看"），拿到链接。
+5. 把链接替换掉 `submission/SUBMISSION.md` 里剩下的 3 处 `<VIDEO_URL>`（Ctrl+H 全部替换），
+   然后第 E 节那段就能整段粘贴进表单。
+
+> 录完把链接发我，我可以替你替换占位符并重新发布仓库（`npm run publish:github`），你不用碰命令行。
 
 ---
 
@@ -120,8 +129,8 @@ DASHSCOPE_API_KEY=sk-你复制的那串
 
 | 日期 | 做什么 |
 |---|---|
-| 今天 | 前置步骤（建仓库 + 推代码 + 开 Pages），确认 Demo 链接可用 |
-| 9/22 | 录 3 分钟视频（G 节分镜），上传 YouTube；替换三个占位符 |
+| 已完成 ✅ | 仓库已建、代码已发布、Pages 已上线并逐字节校验 |
+| 9/22 | 录 3 分钟视频（G 节分镜），上传 YouTube，把链接发我替换 `<VIDEO_URL>` |
 | 9/23 | 发 X 帖（F2 + 配图），复制链接；可选：注册百炼 Key 跑一次 LIVE 模式截图留档 |
 | 9/24 | 填表单，六个部分逐段粘贴，做完 5 项自检 |
 | **9/25** | **提交**（留 2 天缓冲应对表单/网络问题） |

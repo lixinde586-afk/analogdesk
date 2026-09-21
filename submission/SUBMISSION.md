@@ -214,14 +214,14 @@ JSON-RPC 2.0 `tools/list`) but unreachable from this network.
 
 ### 5 · Deliverables (mirrors the "Submission Materials Link" field)
 
-1. **Accessible demo, no login, no key, no network** — static build: `<DEMO_URL>`
-2. **Public source repository with full README** — `<GITHUB_URL>`
+1. **Accessible demo, no login, no key, no network** — static build: `https://lixinde586-afk.github.io/analogdesk/`
+2. **Public source repository with full README** — `https://github.com/lixinde586-afk/analogdesk`
 3. **Complete research task, code-generated run record** (question -> protocol -> distribution -> 13 stress
    scenarios -> 50 retrieved analogs -> narrative -> engine validation -> provenance -> reproduction command):
-   `<GITHUB_URL>/blob/main/demo/RUN-RECORD.md`, machine-readable `<GITHUB_URL>/blob/main/demo/run-record.json`,
-   generator `<GITHUB_URL>/blob/main/scripts/run-demo.mjs`
+   `https://github.com/lixinde586-afk/analogdesk/blob/main/demo/RUN-RECORD.md`, machine-readable `https://github.com/lixinde586-afk/analogdesk/blob/main/demo/run-record.json`,
+   generator `https://github.com/lixinde586-afk/analogdesk/blob/main/scripts/run-demo.mjs`
 4. **Out-of-sample validation report + the code that produces it**:
-   `<GITHUB_URL>/blob/main/research/VALIDATION.md` (`npm run verify`)
+   `https://github.com/lixinde586-afk/analogdesk/blob/main/research/VALIDATION.md` (`npm run verify`)
 5. **Research documents**: `research/THESIS.md`, `research/DATA-PROVENANCE.md`, `research/LIMITATIONS.md`
 6. **3-minute demo video**: `<VIDEO_URL>`
 
@@ -376,11 +376,11 @@ JD（78）存在过度识别（干净季度节奏约 40 次），因此这 6 个
 
 ### 5 · 交付物（与"提交材料链接"字段一一对应）
 
-1. **可访问 Demo（免登录、免密钥、免网络）**：`<DEMO_URL>`
-2. **公开源码仓库（含完整 README）**：`<GITHUB_URL>`
-3. **完整投研任务的运行记录（代码生成，非截图）**：`<GITHUB_URL>/blob/main/demo/RUN-RECORD.md`、
-   机器可读版 `<GITHUB_URL>/blob/main/demo/run-record.json`、生成脚本 `<GITHUB_URL>/blob/main/scripts/run-demo.mjs`
-4. **样本外验证报告 + 生成它的代码**：`<GITHUB_URL>/blob/main/research/VALIDATION.md`（`npm run verify`）
+1. **可访问 Demo（免登录、免密钥、免网络）**：`https://lixinde586-afk.github.io/analogdesk/`
+2. **公开源码仓库（含完整 README）**：`https://github.com/lixinde586-afk/analogdesk`
+3. **完整投研任务的运行记录（代码生成，非截图）**：`https://github.com/lixinde586-afk/analogdesk/blob/main/demo/RUN-RECORD.md`、
+   机器可读版 `https://github.com/lixinde586-afk/analogdesk/blob/main/demo/run-record.json`、生成脚本 `https://github.com/lixinde586-afk/analogdesk/blob/main/scripts/run-demo.mjs`
+4. **样本外验证报告 + 生成它的代码**：`https://github.com/lixinde586-afk/analogdesk/blob/main/research/VALIDATION.md`（`npm run verify`）
 5. **研究文档**：`research/THESIS.md`、`research/DATA-PROVENANCE.md`、`research/LIMITATIONS.md`
 6. **3 分钟演示视频**：`<VIDEO_URL>`
 
@@ -466,25 +466,25 @@ AnalogDesk - pre-trade decision stress testing for 7x24 tokenised US equities
 Track: AI Trading Desk / Sub-theme: Decision Stress Testing
 
 1. ACCESSIBLE DEMO (no login, no API key, no network needed - full engine runs in the browser)
-   <DEMO_URL>
+   https://lixinde586-afk.github.io/analogdesk/
    Local equivalent: open dist/index.html
 
 2. SOURCE CODE (public repo, full README, zero runtime dependencies)
-   <GITHUB_URL>
+   https://github.com/lixinde586-afk/analogdesk
 
 3. COMPLETE RESEARCH TASK - RUN RECORD (code-generated, not screenshots)
-   <GITHUB_URL>/blob/main/demo/RUN-RECORD.md          (human-readable record)
-   <GITHUB_URL>/blob/main/demo/run-record.json        (machine-readable, full card + 50 analogs + gate report)
-   <GITHUB_URL>/blob/main/scripts/run-demo.mjs        (the code that generates it: `npm run demo`)
+   https://github.com/lixinde586-afk/analogdesk/blob/main/demo/RUN-RECORD.md          (human-readable record)
+   https://github.com/lixinde586-afk/analogdesk/blob/main/demo/run-record.json        (machine-readable, full card + 50 analogs + gate report)
+   https://github.com/lixinde586-afk/analogdesk/blob/main/scripts/run-demo.mjs        (the code that generates it: `npm run demo`)
 
 4. OUT-OF-SAMPLE VALIDATION + THE CODE THAT PRODUCES IT (`npm run verify`)
-   <GITHUB_URL>/blob/main/research/VALIDATION.md
-   <GITHUB_URL>/blob/main/scripts/verify.mjs
+   https://github.com/lixinde586-afk/analogdesk/blob/main/research/VALIDATION.md
+   https://github.com/lixinde586-afk/analogdesk/blob/main/scripts/verify.mjs
 
 5. RESEARCH DOCUMENTS
-   <GITHUB_URL>/blob/main/research/THESIS.md
-   <GITHUB_URL>/blob/main/research/DATA-PROVENANCE.md
-   <GITHUB_URL>/blob/main/research/LIMITATIONS.md      (negative results, stated plainly)
+   https://github.com/lixinde586-afk/analogdesk/blob/main/research/THESIS.md
+   https://github.com/lixinde586-afk/analogdesk/blob/main/research/DATA-PROVENANCE.md
+   https://github.com/lixinde586-afk/analogdesk/blob/main/research/LIMITATIONS.md      (negative results, stated plainly)
 
 6. DEMO VIDEO (3 min)
    <VIDEO_URL>
@@ -496,10 +496,10 @@ Reproduce locally, no install step:
    npm start       -> http://127.0.0.1:3000
 ```
 
-**Deployment notes.** `<DEMO_URL>`: `dist/` is a plain static site — GitHub Pages (enable Pages on `/dist` of a
+**Deployment notes.** `https://lixinde586-afk.github.io/analogdesk/`: `dist/` is a plain static site — GitHub Pages (enable Pages on `/dist` of a
 `gh-pages` branch, or move `dist/*` to `docs/` and point Pages at `/docs`), Netlify drop, Vercel or any object
 bucket. It is one HTML + one CSS + one JS file with **zero** `fetch` calls, so it cannot break from CORS,
-mixed content or a dead backend. `<GITHUB_URL>`: the repo must be **public** and the README complete, or the
+mixed content or a dead backend. `https://github.com/lixinde586-afk/analogdesk`: the repo must be **public** and the README complete, or the
 submission counts as inaccessible. Keep `data-cache/dataset.json` (7 MB) committed — it is what makes the demo
 and the validation reproducible offline. `.gitignore` already excludes `data-cache/raw/` (20.8 MB cache) and
 `research/validation-results.json` (20 MB, regenerable via `npm run verify`).

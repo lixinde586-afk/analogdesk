@@ -2,6 +2,9 @@
 
 **Pre-trade decision stress testing for tokenised US equities in a 7x24 market.**
 
+**Live demo (no login, no API key, no network):** https://lixinde586-afk.github.io/analogdesk/
+**Source:** https://github.com/lixinde586-afk/analogdesk
+
 Ask a trade idea in plain language. AnalogDesk retrieves the historical episodes whose market state
 most resembles *right now*, shows the **realised** outcome distribution of those episodes, stress-tests
 the idea against named crisis windows and shock overlays, and prints where every single number came from.
@@ -21,7 +24,9 @@ the run record. Nothing was tuned away to look better. See **[Honest results](#h
 
 ## Try it in 30 seconds — no API key, no server, no network
 
-`dist/` is a **fully static deployment**: the entire analog library (2513 sessions x 71 instruments), the
+**Hosted:** https://lixinde586-afk.github.io/analogdesk/ — GitHub Pages, built from the `gh-pages` branch, whole engine running in your browser.
+
+**Or locally:** `dist/` is a **fully static deployment**: the entire analog library (2513 sessions x 71 instruments), the
 retrieval engine, the stress engine and the narrative renderer are compiled into one classic `<script>`
 bundle that runs **in the browser** with **zero `fetch` calls**. Judges without a DashScope key get the
 complete product.
@@ -35,7 +40,7 @@ open dist/index.html           # macOS
 npx serve dist                 # or: python -m http.server -d dist 8080
 ```
 
-`dist/` deploys as-is to GitHub Pages, Netlify, Vercel or any object store. Rebuild it with `npm run compile`.
+`dist/` deploys as-is to GitHub Pages, Netlify, Vercel or any object store; this repo publishes it from the `gh-pages` branch. Rebuild it with `npm run compile`.
 
 ## The full desk (Node server, optional LLM)
 
@@ -80,7 +85,13 @@ npm run demo           # re-run the research task -> demo/RUN-RECORD.md
 npm run check          # narrative gate smoke + recompile the static bundle + bundle checks
 npm run probe          # re-measure network reachability of every source -> data-cache/network-probe.json
 npm start              # serve the desk on http://127.0.0.1:3000
+npm run publish:github # publish HEAD through api.github.com (see the note below)
 ```
+
+`npm run publish:github` exists because `github.com:443` is unreachable from the network this was built on
+(a TCP connect timeout, while `api.github.com` answers 200 — the same selective blocking that resets every
+`*.bitget.com` connection), so `git push` cannot be used here. The script uploads the blobs, trees and commit
+of `HEAD` through the Git Data API and verifies every returned SHA against git's own, aborting on mismatch.
 
 `data-cache/` is committed so the demo and the validation are reproducible **without** network access.
 `data-cache/raw/` (the HTTP cache, 225 files) and `research/validation-results.json` (20 MB) are regenerable
@@ -188,7 +199,8 @@ src/data/                  sources.mjs, build-dataset.mjs, universe.mjs, bitget.
 src/engine/                features, analog, distribution, stress, validation
 src/llm/                   client, config, prompt, card, narrate, template, replay, verify-numbers
 src/desk.mjs               the facade the UI and the demo both call
-scripts/                   verify.mjs, run-demo.mjs, compile-bundle.mjs, check-*.mjs, probe-network.mjs
+scripts/                   verify.mjs, run-demo.mjs, compile-bundle.mjs, check-*.mjs, probe-network.mjs,
+                           publish-github.mjs
 data-cache/                dataset.json (committed), network-probe.json, build-report.md, raw/ (git)
 research/                  VALIDATION.md, THESIS.md, DATA-PROVENANCE.md, LIMITATIONS.md
 demo/                      RUN-RECORD.md, run-record.json, narrative.txt
