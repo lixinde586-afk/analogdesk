@@ -14,7 +14,9 @@ data-cache/_srv.err
 research/validation-results.json
 
 # local exploration scratch (their results are reported in research/VALIDATION.md)
-scripts/_*.mjs
+scripts/_*
+
+.tmp/
 
 # os / editor
 .DS_Store

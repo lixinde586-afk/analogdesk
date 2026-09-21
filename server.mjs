@@ -150,7 +150,9 @@ function serveStatic(res, urlPath) {
   // enough that a legitimate request never needs a "..".
   if (/(^|[/\\])\.\.($|[/\\])/.test(raw)) return notFound(res, "outside web root");
   const isSrc = /^\/src\//.test(raw);
-  const rel = normalize(raw).replace(/^[/\\]+/, "");
+  // "/" has to resolve to the desk itself: serveStatic would otherwise stat the web/ directory and
+  // 404, while the startup banner advertises GET / as the UI.
+  const rel = normalize(raw).replace(/^[/\\]+/, "") || "index.html";
   const full = resolve(isSrc ? join(HERE, rel) : join(WEB, rel));
   const inside = isSrc ? full.startsWith(SRC_ROOT) : full.startsWith(WEB_ROOT);
   // Only ES modules and JSON are reachable from src/, so config.mjs's neighbours stay private and

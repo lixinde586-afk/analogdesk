@@ -82,12 +82,39 @@ Node >= 20. **No `npm install` is required — the project has zero runtime depe
 npm run build:data     # rebuild data-cache/dataset.json from the keyless sources (network)
 npm run verify         # re-run the whole out-of-sample validation -> research/VALIDATION.md
 npm run demo           # re-run the research task -> demo/RUN-RECORD.md
-npm run check          # narrative gate smoke + recompile the static bundle + bundle checks
+npm run check          # four gates: numeric gate, markup, bundle-in-a-DOM-stub, real headless browser
 npm run probe          # re-measure network reachability of every source -> data-cache/network-probe.json
 npm run form:text      # regenerate the paste-ready form text from submission/SUBMISSION.md
 npm start              # serve the desk on http://127.0.0.1:3000
 npm run publish:github # publish HEAD through api.github.com (see the note below)
 ```
+
+`npm run check` is four gates, and all four have to pass before anything is published:
+
+- **`check:gate`** - the numeric gate smoke test: 144 template renders, and every numeral in every one of
+  them has to be traceable to the engine payload.
+- **`check:html`** - parses `web/index.html` and `dist/index.html` with an attribute-aware scanner, then
+  cross-checks the element ids it finds against the ids `web/app.js` looks up and the `REQUIRED_IDS` list
+  app.js asserts at boot. A regex cannot do this job: an id sitting inside another element's attribute
+  value is still text in the file, but it is not an element.
+- **`check:bundle`** - evaluates `dist/app.bundle.js` in Node against a DOM stub **seeded from the real
+  `dist/index.html`**, so `getElementById` returns `null` for anything the markup does not actually
+  contain. Then it asserts that boot completed, that the click and key handlers were attached, that all
+  fifteen panels rendered, and that `fetch` was never called.
+- **`check:browser`** - serves `dist/` on 127.0.0.1 and loads it in **real headless Chrome**: two auto-run
+  deep links, a cold load, and an injected probe that types a question, presses Enter, clicks a tab,
+  switches the symbol and clicks Analyze, then reports a machine-readable verdict. Needs Chrome or Edge;
+  set `CHROME` to an executable path to override the default locations.
+
+The last two gates exist because the first published version of this demo shipped broken. One mis-quoted
+attribute in `web/index.html` - a `placeholder` opened with `'` and closed with `"` - never terminated, so
+the HTML tokenizer absorbed the next 25 elements (the Analyze button, every `<select>`, the tab bar, all
+five result panels) into that single attribute value. The page still looked like a page and did nothing at
+all. The Node-side checks passed because their DOM stub invented an element for every id it was asked for,
+and a regex over the source still found `id="tabs"` as text. A reviewer found it. `check:html` and
+`check:browser` are the reason the same class of failure now stops the build instead of reaching a judge,
+and `web/app.js` now renders an on-page banner naming the missing elements rather than failing quietly in a
+console nobody is watching.
 
 `npm run publish:github` exists because `github.com:443` is unreachable from the network this was built on
 (a TCP connect timeout, while `api.github.com` answers 200 — the same selective blocking that resets every
@@ -207,8 +234,8 @@ src/data/                  sources.mjs, build-dataset.mjs, universe.mjs, bitget.
 src/engine/                features, analog, distribution, stress, validation
 src/llm/                   client, config, prompt, card, narrate, template, replay, verify-numbers
 src/desk.mjs               the facade the UI and the demo both call
-scripts/                   verify.mjs, run-demo.mjs, compile-bundle.mjs, check-*.mjs, probe-network.mjs,
-                           publish-github.mjs
+scripts/                   verify.mjs, run-demo.mjs, compile-bundle.mjs, probe-network.mjs,
+                           check-{gate,html,bundle,browser}.mjs, publish-github.mjs
 data-cache/                dataset.json (committed), network-probe.json, build-report.md, raw/ (git)
 research/                  VALIDATION.md, THESIS.md, DATA-PROVENANCE.md, LIMITATIONS.md
 demo/                      RUN-RECORD.md, run-record.json, narrative.txt

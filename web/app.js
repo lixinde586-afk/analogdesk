@@ -382,7 +382,7 @@ function browserRuntime(mods) {
 
 /* --------------------------------- state --------------------------------- */
 
-const S = { rt: null, boot: null, lib: null, last: null, busy: false, tab: "brief" };
+const S = { rt: null, boot: null, lib: null, last: null, busy: false, tab: "brief", started: false };
 
 /* ------------------------------- chrome ---------------------------------- */
 
@@ -858,16 +858,67 @@ async function run() {
 
 /* --------------------------------- boot ---------------------------------- */
 
-async function boot() {
-  tabs(); fillChips();
-  $("go").addEventListener("click", run);
-  $("q").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
-  for (const id of ["symbol", "horizon", "date", "k", "lang", "stress"]) {
-    $(id).addEventListener("change", () => { if (S.lib) showParsed(readParams()); });
-  }
+/**
+ * Every element id this file reads, in one place.
+ *
+ * Why this list exists: one unterminated attribute in index.html is enough to swallow every element
+ * after it into that attribute's value. The page still renders - header, input box - while every
+ * handler silently fails to attach, so a reviewer gets a desk that does nothing and no explanation.
+ * A DOM stub that auto-creates elements cannot catch that either; only a check against the real
+ * parsed markup can. So the markup is asserted before anything is wired, and the failure is written
+ * onto the page rather than into a console nobody is watching.
+ */
+const REQUIRED_IDS = [
+  "q", "go", "symbol", "date", "horizon", "k", "lang", "stress", "chips", "parsed",
+  "status", "badge-mode", "badge-runtime", "badge-lib", "badge-bitget",
+  "main", "empty", "results", "cardbar", "tabs",
+  "panel-brief", "panel-dist", "panel-stress", "panel-analogs", "panel-prov",
+  "narrative", "state", "conformal", "dist-sub", "hist", "diststats", "fan", "excursion",
+  "stresstable", "stressdetail", "analog-note", "analogtable",
+  "validation", "sources", "network", "bitget", "llmpanel"
+];
 
-  const mods = window.AnalogDesk;
+/** On-page fatal banner. The desk must never die quietly. */
+function fatal(e) {
+  const msg = String((e && (e.message || e)) || "unknown error");
+  try { console.error("[AnalogDesk] did not start:", msg); } catch { /* no console */ }
   try {
+    let box = document.getElementById("fatal");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "fatal";
+      if (box.setAttribute) box.setAttribute("role", "alert");
+      box.style.cssText = "position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:200;"
+        + "max-width:min(860px,94vw);padding:12px 16px;border-radius:8px;white-space:pre-wrap;"
+        + "font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#ffdcd9;"
+        + "background:#3b1418;border:1px solid #a1303a;box-shadow:0 10px 34px rgba(0,0,0,.55)";
+      (document.body || document.documentElement).appendChild(box);
+    }
+    box.textContent = `AnalogDesk did not start.\n${msg}`;
+  } catch { /* nowhere to put it */ }
+}
+
+/** Name the missing elements, so the cause is legible without a debugger. */
+function assertDom() {
+  const missing = REQUIRED_IDS.filter((id) => !document.getElementById(id));
+  if (!missing.length) return;
+  throw new Error(`index.html is missing ${missing.length} of ${REQUIRED_IDS.length} elements this desk needs: `
+    + missing.map((id) => `#${id}`).join(", ")
+    + ". One unterminated attribute can absorb every element after it."
+    + " Rebuild with `npm run compile`, then re-check with `npm run check:html` and `npm run check:browser`.");
+}
+
+async function boot() {
+  try {
+    const mods = window.AnalogDesk;
+    assertDom();
+    tabs(); fillChips();
+    $("go").addEventListener("click", run);
+    $("q").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
+    for (const id of ["symbol", "horizon", "date", "k", "lang", "stress"]) {
+      $(id).addEventListener("change", () => { if (S.lib) showParsed(readParams()); });
+    }
+
     S.rt = mods?.dataset ? browserRuntime(mods) : apiRuntime();
     const br = $("badge-runtime");
     br.className = "badge warn";
@@ -892,15 +943,26 @@ async function boot() {
     } else {
       showParsed(readParams());
     }
+    S.started = true;
   } catch (e) {
     console.error(e);
+    fatal(e);
     const br = $("badge-runtime");
-    br.textContent = "runtime: failed"; br.className = "badge bad";
-    $("empty").hidden = false;
-    $("empty").innerHTML = `<h2>The desk did not start</h2><p class="small" style="color:var(--neg)">${esc(e.message || String(e))}</p>
-      <p class="small">Server deployment: run <code>npm start</code> from the project root and open <code>http://127.0.0.1:3000</code>.<br>
-      Static deployment: open <code>dist/index.html</code> (built by <code>npm run compile</code>), which bundles the engine and the analog library and needs no key and no network.</p>`;
+    if (br) { br.textContent = "runtime: failed"; br.className = "badge bad"; }
+    const em = $("empty");
+    if (em) {
+      em.hidden = false;
+      em.innerHTML = `<h2>The desk did not start</h2><p class="small" style="color:var(--neg)">${esc(e.message || String(e))}</p>
+        <p class="small">Server deployment: run <code>npm start</code> from the project root and open <code>http://127.0.0.1:3000</code>.<br>
+        Static deployment: open <code>dist/index.html</code> (built by <code>npm run compile</code>), which bundles the engine and the analog library and needs no key and no network.</p>`;
+    }
   }
 }
 
-boot();
+// Last resort: anything thrown outside boot() still has to be visible on the page.
+if (typeof window !== "undefined" && window.addEventListener) {
+  window.addEventListener("error", (ev) => { if (!S.started) fatal(ev.error || ev.message); });
+  window.addEventListener("unhandledrejection", (ev) => { if (!S.started) fatal(ev.reason); });
+}
+
+boot().catch(fatal);

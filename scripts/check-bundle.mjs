@@ -1,81 +1,169 @@
 /**
  * AnalogDesk - static deployment check.
  *
- *   npm run compile && node scripts/check-bundle.mjs
+ *   npm run compile && npm run check:bundle
  *
  * Evaluates dist/app.bundle.js the way a browser would - DOM stub, no server, and a fetch() that
- * throws - so the package is proven to be genuinely self-contained rather than assumed to be. Then
- * it drives the in-browser engine directly and prints, per query, the analyze latency, the analog
- * count, the conformal interval, the scenario count and the numeric-gate result, followed by the
- * rendered size of every UI panel. A regression in the module transform (an export, a live binding,
- * an import) fails here instead of producing a blank page in front of a reviewer.
+ * throws - so the package is proven self-contained rather than assumed to be, then drives the
+ * in-browser engine and asserts on what the UI actually rendered.
+ *
+ * THE STUB IS SEEDED FROM THE REAL dist/index.html, AND getElementById RETURNS null FOR ANYTHING
+ * THAT IS NOT A REAL ELEMENT THERE. It used to auto-create every id it was asked for, which is how
+ * a mis-quoted attribute that swallowed 25 elements from the markup reached production unnoticed:
+ * the bundle booted happily against a DOM that no browser would ever build. A stub that cannot
+ * represent a broken page cannot detect one. `npm run check:html` verifies the same markup without
+ * executing anything, and `npm run check:browser` repeats this end to end in real headless Chrome.
  */
 import { readFileSync } from "node:fs";
+import { scanHtml } from "./check-html.mjs";
+
+const HTML = readFileSync("dist/index.html", "utf8");
+const PARSED = scanHtml(HTML).elements;
+const byId = new Map();
+for (const el of PARSED) { const id = el.attrs.get("id"); if (id && !byId.has(id)) byId.set(id, el); }
+const withClass = (name) => PARSED.filter((e) => (e.attrs.get("class") || "").split(/\s+/).includes(name));
+const TABS = withClass("tab");
+const PANELS = withClass("panel");
 
 const NODES = new Map();
-function mkEl(id) {
+let fetchCalls = 0;
+
+function mkEl(tag, id = "", attrs = new Map()) {
   const e = {
-    id, textContent: "", className: "", title: "", value: "", hidden: false, checked: true,
-    style: { cssText: "" }, dataset: {}, listeners: {}, _html: "",
-    _options: [],
-    get options() { return this._options; },
-    set innerHTML(v) {
-      this._html = String(v);
-      if (/<option\b/i.test(this._html)) {
-        this._options = [...this._html.matchAll(/<option value="([^"]*)"/g)].map((m) => ({ value: m[1] }));
-      }
+    tagName: String(tag).toUpperCase(), id, textContent: "", title: attrs.get("title") || "",
+    value: attrs.get("value") || "", hidden: attrs.has("hidden"), checked: attrs.has("checked"),
+    style: { cssText: "" }, listeners: {}, _html: "", _classes: new Set((attrs.get("class") || "").split(/\s+/).filter(Boolean)),
+    dataset: Object.fromEntries([...attrs].filter(([k]) => k.startsWith("data-")).map(([k, v]) => [k.slice(5), v])),
+    get className() { return [...this._classes].join(" "); },
+    set className(v) { this._classes = new Set(String(v).split(/\s+/).filter(Boolean)); },
+    classList: {
+      toggle: (c, on) => { const has = e._classes.has(c); const want = on === undefined ? !has : !!on; if (want) e._classes.add(c); else e._classes.delete(c); return want; },
+      add: (c) => e._classes.add(c), remove: (c) => e._classes.delete(c), contains: (c) => e._classes.has(c)
     },
+    get options() { return [...this._html.matchAll(/<option value="([^"]*)"/g)].map((m) => ({ value: m[1] })); },
+    set innerHTML(v) { this._html = String(v); },
     get innerHTML() { return this._html; },
     addEventListener(t, fn) { (this.listeners[t] ||= []).push(fn); },
     appendChild(c) { return c; },
-    querySelectorAll() { return []; }, querySelector() { return null; }, scrollIntoView() {}
+    setAttribute(k, v) { if (k === "id") this.id = v; },
+    scrollIntoView() {},
+    /** Only the three selectors app.js actually uses. Anything else is a stub gap, not a pass. */
+    querySelectorAll(sel) {
+      if (sel === ".tab") return TABS.map((t) => node(t.attrs.get("id") || "", "button", t.attrs));
+      if (sel === ".chip") return [...this._html.matchAll(/<button class="chip" data-i="(\d+)"/g)].map((m) => { const a = new Map([["data-i", m[1]]]); return node("", "button", a); });
+      if (sel === "tbody tr[data-id]") return [...this._html.matchAll(/data-id="([^"]+)"/g)].map((m) => { const a = new Map([["data-id", m[1]]]); return node("", "tr", a); });
+      throw new Error(`check-bundle stub: unsupported selector ${JSON.stringify(sel)} - teach the stub, do not return []`);
+    },
+    querySelector() { return null; }
   };
   return e;
 }
+
+function node(id, tag = "div", attrs = new Map()) {
+  if (id && NODES.has(id)) return NODES.get(id);
+  const e = mkEl(tag, id, attrs);
+  if (id) NODES.set(id, e);
+  return e;
+}
+for (const [id, el] of byId) NODES.set(id, mkEl(el.tag, id, el.attrs));
+
 globalThis.document = {
-  getElementById: (id) => { if (!NODES.has(id)) NODES.set(id, mkEl(id)); return NODES.get(id); },
-  createElement: (t) => mkEl(t), querySelectorAll: () => [], body: mkEl("body")
+  getElementById: (id) => NODES.get(id) || null,
+  createElement: (t) => mkEl(t),
+  querySelectorAll(sel) {
+    if (sel === ".panel") return PANELS.map((p) => node(p.attrs.get("id") || "", p.tag, p.attrs));
+    throw new Error(`check-bundle stub: unsupported document selector ${JSON.stringify(sel)}`);
+  },
+  documentElement: mkEl("html"),
+  body: node("body", "body")
 };
 Object.defineProperty(globalThis, "navigator", { value: { clipboard: { writeText: async () => {} } }, configurable: true });
 globalThis.location = { href: "file:///dist/index.html?symbol=NVDA&horizon=5&k=50&q=NVDA%20%E7%8E%B0%E5%9C%A8%E8%BF%9B%E5%9C%BA%EF%BC%8C%E6%9C%AA%E6%9D%A5%E4%B8%80%E5%91%A8%E5%8E%86%E5%8F%B2%E4%B8%8A%E7%9B%B8%E4%BC%BC%E7%9A%84%E8%B5%B0%E5%8A%BF%EF%BC%9F&run=1" };
 globalThis.performance ||= { now: () => Date.now() };
 globalThis.window = globalThis;
-// No server, no network: any fetch means the static build is not self-contained.
-let fetchCalls = 0;
 globalThis.fetch = async (u) => { fetchCalls++; throw new Error("static build must not fetch: " + u); };
+
+let unhandled = null;
+process.on("unhandledRejection", (r) => { unhandled = r; });
+
+/* ------------------------------- assertions ------------------------------ */
+
+let failures = 0;
+const fail = (m) => { failures++; console.error("  FAIL " + m); };
+const ok = (m) => console.log("  ok   " + m);
+const assert = (cond, goodMsg, badMsg) => (cond ? ok(goodMsg) : fail(badMsg));
+
+const PANELS_TO_RENDER = ["cardbar", "narrative", "state", "conformal", "hist", "diststats", "fan",
+  "excursion", "stresstable", "stressdetail", "analogtable", "validation", "sources", "network", "llmpanel"];
 
 const bundle = readFileSync("dist/app.bundle.js", "utf8");
 const t0 = Date.now();
 (0, eval)(bundle);
-await new Promise((r) => setTimeout(r, 12000));
-console.log(`bundle evaluated in ${Date.now() - t0} ms; fetch calls = ${fetchCalls}`);
 
-const AD = globalThis.AnalogDesk;
-if (!AD) { console.log("FAIL: window.AnalogDesk not set"); process.exit(1); }
-console.log("AnalogDesk keys:", Object.keys(AD).join(", "));
-console.log("dataset symbols:", (AD.dataset?.meta?.universe || []).length, "sessions:", AD.dataset?.dates?.length);
-console.log("validation horizons:", Object.keys(AD.validationResults?.runs || {}).join(", "));
-console.log("desk.createDesk is fn:", typeof AD.desk?.createDesk === "function");
-console.log("template.renderTemplate is fn:", typeof AD.template?.renderTemplate === "function");
-console.log("verify.buildAllowlist/defaultAllowance:", typeof AD.verify?.buildAllowlist, typeof AD.verify?.defaultAllowance);
-console.log("replay.MemoryStore:", typeof AD.replay?.MemoryStore);
-console.log("ALIASES size:", AD.ALIASES?.size);
-
-// Drive the in-browser engine directly through the same desk the UI uses.
-const t1 = Date.now();
-const desk = AD.desk.createDesk({ dataset: AD.dataset, validationResults: AD.validationResults, provenance: AD.provenance, config: {} });
-console.log(`\nengine init in-browser: ${Date.now() - t1} ms; ${desk.engine.mx.nSym} instruments x ${desk.engine.mx.nDates} sessions`);
-for (const [sym, H] of [["NVDA", 5], ["BABA", 20], ["SPY", 1], ["KWEB", 10]]) {
-  const t2 = Date.now();
-  const { card, detail } = desk.analyze({ symbol: sym, date: "latest", horizon: H, k: 50 });
-  const allow = AD.verify.buildAllowlist(card, AD.verify.defaultAllowance(card));
-  const tmpl = AD.template.renderTemplate(card, { language: "en" });
-  const gate = AD.verify.verifyNumbers(tmpl.text, allow);
-  console.log(`  ${sym.padEnd(5)} H=${String(H).padEnd(3)} analyze=${String(Date.now() - t2).padStart(4)}ms n=${card.distribution.n} median=${card.distribution.medianPct}% conf=${card.conformal.lowerPct}..${card.conformal.upperPct} scen=${card.stress.length} gate=${gate.ok}(${gate.unsupportedCount}/${gate.total})`);
+// Poll instead of sleeping a fixed 12s: boot is done once the results container is unhidden.
+const deadline = Date.now() + 90000;
+// Stop as soon as boot either succeeded (results unhidden) or gave up (fatal banner rendered).
+while (Date.now() < deadline && NODES.get("results")?.hidden !== false && !NODES.get("fatal")) {
+  await new Promise((r) => setTimeout(r, 250));
 }
-console.log(`\nUI panels rendered by the bundle's own app.js:`);
-for (const id of ["cardbar", "narrative", "state", "conformal", "hist", "fan", "excursion", "stresstable", "stressdetail", "analogtable", "validation", "sources", "network", "bitget", "llmpanel"]) {
+const bootMs = Date.now() - t0;
+console.log(`\nbundle evaluated and booted in ${bootMs} ms; fetch calls = ${fetchCalls}`);
+
+console.log("\nboot");
+assert(!unhandled, "no unhandled rejection", `unhandled rejection: ${unhandled && (unhandled.stack || unhandled.message || unhandled)}`);
+const fatalEl = NODES.get("fatal");
+assert(!fatalEl, "no on-page fatal banner", `fatal banner rendered: ${fatalEl?.textContent}`);
+const emptyHtml = NODES.get("empty")?.innerHTML || "";
+assert(!emptyHtml.includes("did not start"), "empty state not replaced by the failure panel", `failure panel shown: ${emptyHtml.slice(0, 200)}`);
+assert(NODES.get("results")?.hidden === false, "results container visible", "results container still hidden - boot never completed");
+const clicked = NODES.get("go")?.listeners?.click?.length || 0;
+assert(clicked >= 1, `#go has ${clicked} click handler(s)`, "#go has no click handler - the Analyze button would do nothing");
+const keyed = NODES.get("q")?.listeners?.keydown?.length || 0;
+assert(keyed >= 1, `#q has ${keyed} keydown handler(s)`, "#q has no keydown handler - Enter would do nothing");
+
+console.log("\nbadges");
+for (const id of ["badge-mode", "badge-runtime", "badge-lib", "badge-bitget"]) {
+  const t = NODES.get(id)?.textContent || "";
+  assert(t && !/loading|probing/i.test(t), `#${id}: ${t}`, `#${id} stuck at ${JSON.stringify(t)}`);
+}
+
+console.log("\ncontrols");
+const syms = NODES.get("symbol")?.options || [];
+assert(syms.length >= 50, `#symbol has ${syms.length} options`, `#symbol has only ${syms.length} options - the library did not load`);
+const hzs = NODES.get("horizon")?.options || [];
+assert(hzs.length >= 1, `#horizon has ${hzs.length} options`, "#horizon has no options");
+assert((NODES.get("chips")?.innerHTML.match(/class="chip"/g) || []).length >= 4, "example chips rendered", "example chips missing");
+
+console.log("\nrendered panels");
+for (const id of PANELS_TO_RENDER) {
   const n = NODES.get(id);
-  console.log(`  ${String(n ? n.innerHTML.length : -1).padStart(7)}  #${id}`);
+  const len = n ? n.innerHTML.length : -1;
+  assert(len > 0, `${String(len).padStart(7)} bytes  #${id}`, `#${id} rendered nothing (${len})`);
 }
-console.log(`\nfetch calls total: ${fetchCalls}`);
+
+console.log("\nrendered text hygiene");
+const all = PANELS_TO_RENDER.map((id) => NODES.get(id)?.innerHTML || "").join("\n");
+assert(!/\bundefined\b/.test(all), "no literal 'undefined' in any panel", `literal 'undefined' found: ${all.match(/.{0,60}\bundefined\b.{0,60}/)?.[0]}`);
+assert(!/\bNaN\b/.test(all), "no literal 'NaN' in any panel", `literal 'NaN' found: ${all.match(/.{0,60}\bNaN\b.{0,60}/)?.[0]}`);
+assert(fetchCalls === 0, "zero fetch calls - the static build is self-contained", `${fetchCalls} fetch call(s) - the static build tried to reach a server`);
+
+console.log("\nin-browser engine, driven directly");
+const AD = globalThis.AnalogDesk;
+assert(!!AD, "window.AnalogDesk exposed", "window.AnalogDesk not set");
+if (AD) {
+  const t1 = Date.now();
+  const desk = AD.desk.createDesk({ dataset: AD.dataset, validationResults: AD.validationResults, provenance: AD.provenance, config: {} });
+  ok(`engine init in ${Date.now() - t1} ms; ${desk.engine.mx.nSym} instruments x ${desk.engine.mx.nDates} sessions`);
+  for (const [sym, H] of [["NVDA", 5], ["BABA", 20], ["SPY", 1], ["KWEB", 10]]) {
+    const t2 = Date.now();
+    const { card } = desk.analyze({ symbol: sym, date: "latest", horizon: H, k: 50 });
+    const allow = AD.verify.buildAllowlist(card, AD.verify.defaultAllowance(card));
+    const tmpl = AD.template.renderTemplate(card, { language: "en" });
+    const gate = AD.verify.verifyNumbers(tmpl.text, allow);
+    const line = `${sym.padEnd(5)} H=${String(H).padEnd(3)} analyze=${String(Date.now() - t2).padStart(4)}ms n=${card.distribution.n} median=${card.distribution.medianPct}% conf=${card.conformal.lowerPct}..${card.conformal.upperPct} scen=${card.stress.length} gate=${gate.ok}(${gate.unsupportedCount}/${gate.total})`;
+    assert(gate.ok && card.distribution.n > 0, "  " + line, "  " + line);
+  }
+}
+
+console.log(failures ? `\ncheck:bundle FAILED (${failures})` : "\ncheck:bundle passed");
+process.exit(failures ? 1 : 0);
