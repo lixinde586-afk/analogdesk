@@ -160,12 +160,14 @@ const ref = remoteHead
 log(`ref       refs/heads/${BRANCH} -> ${ref.object.sha}`);
 
 /* -------------------------------- 5. verify ---------------------------------- */
-const check = await api("GET", `/repos/${REPO}/git/trees/${ref.object.sha}?recursive=1`, null, AUTH);
+const pushed = await api("GET", `/repos/${REPO}/git/commits/${ref.object.sha}`, null, AUTH);
+const check = await api("GET", `/repos/${REPO}/git/trees/${pushed.tree.sha}?recursive=1`, null, AUTH);
 const remoteBlobs = check.tree.filter((e) => e.type === "blob");
 const localBlobs = entries.filter((e) => e.type === "blob");
 const mismatch = localBlobs.filter((e) => { const r = remoteBlobs.find((x) => x.path === e.path); return !r || r.sha !== e.sha; });
 log(`verify    ${remoteBlobs.length} remote blobs vs ${localBlobs.length} local, ${mismatch.length} mismatched`);
 if (mismatch.length) { for (const m of mismatch.slice(0, 10)) log(`  MISMATCH ${m.path}`); process.exit(1); }
 const info = await api("GET", `/repos/${REPO}`, null, AUTH);
-log(`\npublished ${info.html_url} (public: ${!info.private}, tree ${check.sha} ${check.sha === rootTree ? "identical to local" : "DIFFERS"})`);
-if (check.sha !== rootTree) process.exit(1);
+log(`\npublished ${info.html_url} (public: ${!info.private})`);
+log(`tree      remote ${pushed.tree.sha} vs local ${rootTree} -> ${pushed.tree.sha === rootTree ? "IDENTICAL" : "DIFFERS"}`);
+if (pushed.tree.sha !== rootTree) process.exit(1);
