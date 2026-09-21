@@ -1,0 +1,20 @@
+{
+  "name": "analogdesk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AnalogDesk - pre-trade historical analog retrieval & stress-testing desk for tokenized US stocks in a 7x24 market. Bitget AI Base Camp Hackathon S2 / Track 3 AI Trading Desk / sub-theme: Decision Stress Testing.",
+  "scripts": {
+    "build:data": "node src/data/build-dataset.mjs",
+    "compile": "node scripts/compile-bundle.mjs",
+    "verify": "node scripts/verify.mjs",
+    "demo": "node scripts/run-demo.mjs",
+    "check:gate": "node scripts/check-gate.mjs",
+    "check:bundle": "node scripts/check-bundle.mjs",
+    "check": "npm run check:gate && npm run compile && npm run check:bundle",
+    "probe": "node scripts/probe-network.mjs",
+    "start": "node server.mjs"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {}
+}

@@ -1,0 +1,28 @@
+== AnalogDesk dataset build ==
+[1/5] FOMC calendar (federalreserve.gov)
+      fomc dates: 92 (2012-01-25 .. 2026-09-16)
+[2/5] FRED macro series
+      VIXCLS: 2875 obs 2015-06-01..2026-09-17
+      T10YIE: 2827 obs 2015-06-01..2026-09-18
+      T10Y2Y: 2827 obs 2015-06-01..2026-09-18
+      DGS10: 2826 obs 2015-06-01..2026-09-17
+  [ok] fred DGS3MO
+      DGS3MO: 2826 obs 2015-06-01..2026-09-17
+      DFEDTARU: 4128 obs 2015-06-01..2026-09-18
+      DTWEXBGS: 2815 obs 2015-06-01..2026-09-11
+      DCOILWTICO: 2827 obs 2015-06-01..2026-09-15
+      BAMLH0A0HYM2: 787 obs 2023-09-19..2026-09-17
+      CPIAUCSL: 134 obs 2015-06-01..2026-08-01
+      NASDAQCOM: 2844 obs 2015-06-01..2026-09-18
+[3/5] crypto cross-asset (coins.llama.fi) + Fear&Greed
+      BTC: 3890 daily points 2016-01-01..2026-09-19
+      ETH: 3883 daily points 2016-01-01..2026-09-19
+      FNG: 3149 obs 2018-02-01..2026-09-19
+[4/5] prices for 71 symbols (api.stockanalysis.com, 10Y)
+      ok=71 fail=0
+[5/5] earnings 8-K dates for 55 companies (SEC EDGAR FTS)
+      ok=55 fail=0 | per co: min=24 med=46 max=92
+      6-K fallback fired for 6/55: BABA, PDD, JD, BIDU, NIO, LI
+
+wrote data-cache/dataset.json (7.26 MB)
+wrote data-cache/build-report.md

@@ -1,0 +1,22 @@
+# secrets - never commit
+.env
+.env.local
+
+# dependencies (the project has none at runtime; keep this for tooling installs)
+node_modules/
+
+# regenerable caches and large artefacts
+#   data-cache/raw/                     225 cached HTTP responses, 20.8 MB - rebuilt by `npm run build:data`
+#   research/validation-results.json    20 MB machine-readable validation dump - rebuilt by `npm run verify`
+data-cache/raw/
+data-cache/_srv.out
+data-cache/_srv.err
+research/validation-results.json
+
+# local exploration scratch (their results are reported in research/VALIDATION.md)
+scripts/_*.mjs
+
+# os / editor
+.DS_Store
+Thumbs.db
+*.swp

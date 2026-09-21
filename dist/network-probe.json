@@ -1,0 +1,265 @@
+{
+  "generatedAt": "2026-09-21T05:59:50.191Z",
+  "host": "win32",
+  "node": "v24.21.0",
+  "targets": [
+    {
+      "name": "api.stockanalysis.com",
+      "role": "USED - daily OHLCV + adjusted close, 71 instruments, 10y",
+      "url": "https://api.stockanalysis.com/api/symbol/s/SPY/history?range=1Y&period=Daily",
+      "ok": true,
+      "status": 200,
+      "kind": "ok",
+      "detail": null,
+      "latencyMs": 971
+    },
+    {
+      "name": "fred.stlouisfed.org",
+      "role": "USED - 11 macro series, keyless CSV",
+      "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS&cosd=2024-01-01",
+      "ok": true,
+      "status": 200,
+      "kind": "ok",
+      "detail": null,
+      "latencyMs": 1234
+    },
+    {
+      "name": "efts.sec.gov",
+      "role": "USED - EDGAR full-text search for 8-K Item 2.02 and 6-K results filings (this probe query can 500; the pipeline retries with backoff)",
+      "url": "https://efts.sec.gov/LATEST/search-index?q=%22Item+2.02%22&forms=8-K&ciks=0000320193&startdt=2024-01-01&enddt=2026-09-21&dateRange=custom",
+      "ok": true,
+      "status": 200,
+      "kind": "ok",
+      "detail": null,
+      "latencyMs": 3640
+    },
+    {
+      "name": "www.federalreserve.gov",
+      "role": "USED - FOMC decision calendar, parsed from document URLs",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "ok": true,
+      "status": 200,
+      "kind": "ok",
+      "detail": null,
+      "latencyMs": 1544
+    },
+    {
+      "name": "coins.llama.fi",
+      "role": "USED - BTC and ETH daily history (CoinGecko/Kraken are not reachable here)",
+      "url": "https://coins.llama.fi/chart/coingecko:bitcoin?start=1757000000&span=5&period=1d",
+      "ok": true,
+      "status": 200,
+      "kind": "ok",
+      "detail": null,
+      "latencyMs": 853
+    },
+    {
+      "name": "api.alternative.me",
+      "role": "USED - crypto fear & greed index, keyless",
+      "url": "https://api.alternative.me/fng/?limit=2",
+      "ok": true,
+      "status": 200,
+      "kind": "ok",
+      "detail": null,
+      "latencyMs": 1285
+    },
+    {
+      "name": "api.github.com",
+      "role": "AVAILABLE - not used by the data pipeline",
+      "url": "https://api.github.com/rate_limit",
+      "ok": true,
+      "status": 200,
+      "kind": "ok",
+      "detail": null,
+      "latencyMs": 568
+    },
+    {
+      "name": "registry.npmjs.org",
+      "role": "AVAILABLE - the project has zero runtime dependencies, so this is only for tooling",
+      "url": "https://registry.npmjs.org/-/ping",
+      "ok": true,
+      "status": 200,
+      "kind": "ok",
+      "detail": null,
+      "latencyMs": 1806
+    },
+    {
+      "name": "dashscope.aliyuncs.com",
+      "role": "OPTIONAL - Qwen (qwen-plus) OpenAI-compatible endpoint for the narrative layer; the app runs without it",
+      "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/models",
+      "ok": true,
+      "status": 401,
+      "kind": "http-401",
+      "detail": "reachable, responded 401",
+      "latencyMs": 363
+    },
+    {
+      "name": "query1.finance.yahoo.com",
+      "role": "NOT USED - responds but rejects keyless programmatic access (HTTP 403 / crumb+cookie required), so it is not a dependency",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/SPY?range=1mo&interval=1d",
+      "ok": true,
+      "status": 403,
+      "kind": "http-403",
+      "detail": "reachable, responded 403",
+      "latencyMs": 1512
+    },
+    {
+      "name": "stooq.com",
+      "role": "NOT USED - reachable but kept out of the pipeline so every source is a single keyless endpoint with a stable contract",
+      "url": "https://stooq.com/q/d/l/?s=spy.us&i=d",
+      "ok": true,
+      "status": 200,
+      "kind": "ok",
+      "detail": null,
+      "latencyMs": 1165
+    },
+    {
+      "name": "api.coingecko.com",
+      "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
+      "url": "https://api.coingecko.com/api/v3/ping",
+      "ok": false,
+      "status": null,
+      "kind": "connect-timeout",
+      "detail": "undici connect timeout",
+      "latencyMs": 10488
+    },
+    {
+      "name": "api.kraken.com",
+      "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
+      "url": "https://api.kraken.com/0/public/Time",
+      "ok": false,
+      "status": null,
+      "kind": "connect-timeout",
+      "detail": "undici connect timeout",
+      "latencyMs": 10490
+    },
+    {
+      "name": "en.wikipedia.org",
+      "role": "NOT USED - unreachable from this network (connect timeout); no narrative depends on it",
+      "url": "https://en.wikipedia.org/api/rest_v1/page/summary/Apple_Inc.",
+      "ok": false,
+      "status": null,
+      "kind": "connect-timeout",
+      "detail": "undici connect timeout",
+      "latencyMs": 10493
+    }
+  ],
+  "bitget": {
+    "probedAt": "2026-09-21T06:00:38.530Z",
+    "reachable": false,
+    "reachableCount": 0,
+    "total": 3,
+    "endpoints": [
+      {
+        "url": "https://agent.bitget.com/mcp",
+        "name": "Bitget official MCP (US stocks / ETF, read-only)",
+        "probedAt": "2026-09-21T06:00:36.606Z",
+        "latencyMs": 1038,
+        "ok": false,
+        "status": null,
+        "kind": "connection-reset",
+        "detail": "TCP connection reset by peer before any HTTP response",
+        "transport": "jsonrpc-2.0 / tools/list"
+      },
+      {
+        "url": "https://www.bitget.com",
+        "name": "Bitget web (www)",
+        "probedAt": "2026-09-21T06:00:37.644Z",
+        "latencyMs": 230,
+        "ok": false,
+        "status": null,
+        "kind": "connection-reset",
+        "detail": "TCP connection reset by peer before any HTTP response"
+      },
+      {
+        "url": "https://api.bitget.com",
+        "name": "Bitget public REST (api)",
+        "probedAt": "2026-09-21T06:00:37.874Z",
+        "latencyMs": 656,
+        "ok": false,
+        "status": null,
+        "kind": "connection-reset",
+        "detail": "TCP connection reset by peer before any HTTP response"
+      }
+    ],
+    "summary": "0/3 Bitget endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response",
+    "disclosure": "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+  },
+  "usedSources": [
+    "api.stockanalysis.com",
+    "fred.stlouisfed.org",
+    "efts.sec.gov",
+    "www.federalreserve.gov",
+    "coins.llama.fi",
+    "api.alternative.me"
+  ],
+  "unusedSources": [
+    {
+      "name": "query1.finance.yahoo.com",
+      "role": "NOT USED - responds but rejects keyless programmatic access (HTTP 403 / crumb+cookie required), so it is not a dependency",
+      "reachable": true,
+      "status": 403,
+      "kind": "http-403",
+      "detail": "reachable, responded 403"
+    },
+    {
+      "name": "stooq.com",
+      "role": "NOT USED - reachable but kept out of the pipeline so every source is a single keyless endpoint with a stable contract",
+      "reachable": true,
+      "status": 200,
+      "kind": "ok",
+      "detail": null
+    },
+    {
+      "name": "api.coingecko.com",
+      "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
+      "reachable": false,
+      "status": null,
+      "kind": "connect-timeout",
+      "detail": "undici connect timeout"
+    },
+    {
+      "name": "api.kraken.com",
+      "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
+      "reachable": false,
+      "status": null,
+      "kind": "connect-timeout",
+      "detail": "undici connect timeout"
+    },
+    {
+      "name": "en.wikipedia.org",
+      "role": "NOT USED - unreachable from this network (connect timeout); no narrative depends on it",
+      "reachable": false,
+      "status": null,
+      "kind": "connect-timeout",
+      "detail": "undici connect timeout"
+    }
+  ],
+  "rejectedSources": [
+    {
+      "name": "api.coingecko.com",
+      "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
+      "reachable": false,
+      "status": null,
+      "kind": "connect-timeout",
+      "detail": "undici connect timeout"
+    },
+    {
+      "name": "api.kraken.com",
+      "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
+      "reachable": false,
+      "status": null,
+      "kind": "connect-timeout",
+      "detail": "undici connect timeout"
+    },
+    {
+      "name": "en.wikipedia.org",
+      "role": "NOT USED - unreachable from this network (connect timeout); no narrative depends on it",
+      "reachable": false,
+      "status": null,
+      "kind": "connect-timeout",
+      "detail": "undici connect timeout"
+    }
+  ],
+  "summary": "6 used sources reachable; 5 candidate sources not used (3 of them unreachable from this machine); Bitget unreachable."
+}

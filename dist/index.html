@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AnalogDesk - pre-trade historical analog &amp; stress-testing desk (static build)</title>
+<meta name="description" content="Ask a trade idea in plain language. AnalogDesk retrieves the historical episodes whose market state most resembles now, shows the realised outcome distribution, and stress-tests the idea against named crisis windows and shock overlays. Every number is engine-computed and traceable.">
+<link rel="stylesheet" href="./styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1117'/><path d='M6 22 L12 12 L17 18 L22 8 L26 14' stroke='%2358a6ff' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect width="32" height="32" rx="6" fill="#161b22"/><path d="M6 22 L12 12 L17 18 L22 8 L26 14" stroke="#58a6ff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div>
+      <h1>AnalogDesk</h1>
+      <p class="tagline">pre-trade historical analog retrieval &amp; decision stress testing</p>
+    </div>
+  </div>
+  <div class="status" id="status">
+    <span class="badge" id="badge-mode" title="How the narrative was produced">mode: loading</span>
+    <span class="badge" id="badge-runtime" title="Where the engine runs">runtime: loading</span>
+    <span class="badge" id="badge-lib" title="Analog library size">library: loading</span>
+    <span class="badge" id="badge-bitget" title="Bitget official MCP reachability">bitget: probing</span>
+  </div>
+</header>
+
+<section class="querybar">
+  <div class="qrow">
+    <label class="sr" for="q">Ask about a trade idea</label>
+    <input id="q" type="text" autocomplete="off" spellcheck="false"
+      placeholder='Try: "NVDA 现在这个位置进场，未来一周历史上相似的走势是什么样的？" or "Should I buy BABA into earnings this week?">
+    <button id="go" class="primary">Analyze</button>
+  </div>
+  <div class="qrow controls">
+    <label>Symbol <select id="symbol"></select></label>
+    <label>As of <input id="date" type="date" min="2016-12-14"></label>
+    <label>Horizon <select id="horizon"></select></label>
+    <label>Neighbours <input id="k" type="number" min="10" max="200" step="10" value="50"></label>
+    <label>Language <select id="lang"><option value="auto">auto</option><option value="en">English</option><option value="zh">中文</option></select></label>
+    <label class="chk"><input id="stress" type="checkbox" checked> run stress suite</label>
+    <span class="hint" id="parsed"></span>
+  </div>
+  <div class="chips" id="chips"></div>
+</section>
+
+<main id="main">
+  <div class="empty" id="empty">
+    <h2>Nothing analysed yet</h2>
+    <p>Type a trade idea above, or pick one of the example chips. AnalogDesk will retrieve the historical episodes whose market state most closely resembles this one, show what actually happened next, and stress-test the idea against named crisis windows and shock overlays.</p>
+    <p class="small">Nothing here is investment advice. Every figure is computed from the analog library at request time and is traceable to its source in the Provenance tab.</p>
+  </div>
+
+  <div id="results" hidden>
+    <div class="cardbar" id="cardbar"></div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-tab="brief">Research brief</button>
+      <button class="tab" data-tab="dist">Distribution</button>
+      <button class="tab" data-tab="stress">Stress scenarios</button>
+      <button class="tab" data-tab="analogs">Analog library hits</button>
+      <button class="tab" data-tab="prov">Provenance &amp; validation</button>
+    </nav>
+
+    <section class="panel active" id="panel-brief">
+      <div class="grid2">
+        <div>
+          <h3>Narrative</h3>
+          <div id="narrative" class="narrative"></div>
+        </div>
+        <div>
+          <h3>Why these analogs</h3>
+          <div id="state" class="state"></div>
+          <h3>Conformal interval</h3>
+          <div id="conformal" class="conformal"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-dist">
+      <h3>Realised outcome distribution <span class="sub" id="dist-sub"></span></h3>
+      <div id="hist"></div>
+      <div class="stats" id="diststats"></div>
+      <h3>Path fan - percentiles of the analog path at each session</h3>
+      <div id="fan"></div>
+      <h3>Path risk, not just the endpoint</h3>
+      <div id="excursion"></div>
+    </section>
+
+    <section class="panel" id="panel-stress">
+      <p class="small">Every scenario runs the same engine with the same settings, so each row is directly comparable to the baseline. Window scenarios pin the analog library to a named historical episode; shock scenarios move the query state in z-space and re-retrieve across the whole library. Caveats are the engine's own and are not optional.</p>
+      <div id="stresstable"></div>
+      <div id="stressdetail"></div>
+    </section>
+
+    <section class="panel" id="panel-analogs">
+      <p class="small" id="analog-note"></p>
+      <div id="analogtable"></div>
+    </section>
+
+    <section class="panel" id="panel-prov">
+      <div class="grid2">
+        <div>
+          <h3>Out-of-sample validation</h3>
+          <div id="validation"></div>
+          <h3>Data sources</h3>
+          <div id="sources"></div>
+        </div>
+        <div>
+          <h3>Network reachability, as measured</h3>
+          <div id="network"></div>
+          <h3>Bitget official MCP</h3>
+          <div id="bitget"></div>
+          <h3>Narrative layer</h3>
+          <div id="llmpanel"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <p>AnalogDesk - Bitget AI Base Camp Hackathon S2, Track 3 AI Trading Desk, sub-theme Decision Stress Testing. Research tooling, not investment advice, and not a prediction: it describes what happened next in historical episodes that resemble the present one. See <code>research/THESIS.md</code>, <code>research/VALIDATION.md</code>, <code>research/DATA-PROVENANCE.md</code>, <code>research/LIMITATIONS.md</code>.</p>
+</footer>
+
+<script src="./app.bundle.js"></script>
+</body>
+</html>
