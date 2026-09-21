@@ -116,9 +116,14 @@ instruments, coverage target 80%, standard errors clustered by query date (38 cl
 
 **Observed — product QA.** The narrative layer passes a numeric gate that traces every numeral back to the
 engine payload: **144/144** renders in the gate smoke suite, **142/142** numerals in the shipped demo run.
-Automated render harness on the static bundle (`npm run check:bundle`): **15/15** panels, **0**
-undefined/NaN leaks, **zero** network calls, in-browser engine init **0.5-1.0 s** and **0.15-0.45 s** per
-analysis across 4 test queries (NVDA/BABA/SPY/KWEB, H = 5/20/1/10), varying with machine load.
+`npm run check` is **four** gates: the numeric gate; an attribute-aware scan of the markup cross-checked
+against every element id the UI reads; the bundle evaluated against a DOM stub seeded from the real
+`dist/index.html` (**15/15** panels, **0** undefined/NaN leaks, **zero** network calls); and **real headless
+Chrome** on the built package - two auto-run deep links, a cold load, and an injected probe that types a
+question, presses Enter, switches tab, changes symbol and clicks Analyze (**PASS**: narrative **3914** chars,
+**13** stress rows, **50** analog rows). In-browser engine init **0.5-1.0 s** and **0.15-0.45 s** per analysis
+across 4 test queries (NVDA/BABA/SPY/KWEB, H = 5/20/1/10), varying with machine load. The same page assertions
+re-run against the deployed site (`npm run check:live`) after every publish.
 
 **Observed — degradation.** Bitget official MCP: **0 of 3** endpoints reachable from the build network, every
 attempt a TCP-layer `connection-reset`. Disclosed in-product on every card, with timestamp and evidence
@@ -204,6 +209,15 @@ every tail statistic optimistic, and this is stated in `research/LIMITATIONS.md`
    `ECONNRESET` / `ETIMEDOUT` / `ENOTFOUND` / `ECONNREFUSED` / `UND_ERR_CONNECT_TIMEOUT` are named precisely,
    and a run without direct network egress falls back to the persisted classified probe and **labels which
    probe run the evidence came from** instead of printing a vaguer error.
+9. The published demo once rendered correctly and did nothing at all. One `placeholder` attribute in
+   `web/index.html` was opened with `'` and closed with `"`, so it never terminated and the HTML tokenizer
+   absorbed the next **25** elements - the Analyze button, every `<select>`, the tab bar and all five result
+   panels - into that single attribute value; `boot()` then threw outside its `try` and the rejection went
+   unhandled. The Node-side harness passed because its DOM stub invented an element for every id it was asked
+   for, and a regex over the source still finds `id="tabs"` as text. **A reviewer found it.** Now the markup
+   is scanned attribute-aware and cross-checked against the ids the UI reads, the stub is seeded from the real
+   `dist/index.html`, real headless Chrome drives the controls, and the UI renders an on-page banner naming
+   any missing element instead of failing quietly in a console nobody reads.
 
 **Frameworks, models and APIs used.** Node.js >= 20 with **zero runtime dependencies** (`node:http`, `node:fs`,
 Web `fetch`). No ML framework — split conformal prediction and weighted k-NN are implemented directly
@@ -227,7 +241,8 @@ JSON-RPC 2.0 `tools/list`) but unreachable from this network.
 6. **3-minute demo video**: `<VIDEO_URL>`
 
 Local reproduction, no install step: `npm run demo` (run record) · `npm run verify` (validation) ·
-`npm run check` (narrative gate + static bundle) · `npm start` (full desk on http://127.0.0.1:3000) ·
+`npm run check` (numeric gate · markup · bundle-in-a-DOM-stub · real headless browser) · `npm run check:live`
+(same assertions against the deployed site) · `npm start` (full desk on http://127.0.0.1:3000) ·
 open `dist/index.html` (static demo).
 
 ### 6 · My take on AI Trading (optional field)
@@ -313,10 +328,13 @@ AnalogDesk 不运行策略、不建仓、不汇报夏普比率，也不声称有
 （15.0%）** 由专为 6 只不发 8-K 的中概 ADR 编写的 6-K 回退检索得到。
 
 **已观测（产品质量）**：叙述层设有数字校验闸门，把生成文本中的每个数字回溯到引擎载荷——闸门冒烟测试
-**144/144** 通过，交付 demo 运行 **142/142** 个数字全部可溯源；静态包的自动化渲染测试
-（`npm run check:bundle`）：**15/15** 个面板、**0** 处 undefined/NaN 泄漏、**0** 次网络请求，
-4 个测试查询（NVDA/BABA/SPY/KWEB，H = 5/20/1/10）下浏览器内引擎初始化 **0.5-1.0 秒**、
-单次分析 **0.15-0.45 秒**（随机器负载波动）。
+**144/144** 通过，交付 demo 运行 **142/142** 个数字全部可溯源。`npm run check` 现为**四道**闸门：数字闸门；
+按属性感知方式解析标记、并与界面读取的每个元素 id 交叉核对；把整包放在**由真实 `dist/index.html` 播种的
+DOM stub** 中求值（**15/15** 个面板、**0** 处 undefined/NaN 泄漏、**0** 次网络请求）；以及在**真实 headless
+Chrome** 中加载构建产物——两个自动运行的深链、一次冷加载，外加一段注入探针：输入问题、按回车、切换标签页、
+改标的、点 Analyze（**PASS**：叙述 **3914** 字、**13** 行压力情景、**50** 条类比）。4 个测试查询
+（NVDA/BABA/SPY/KWEB，H = 5/20/1/10）下浏览器内引擎初始化 **0.5-1.0 秒**、单次分析 **0.15-0.45 秒**
+（随机器负载波动）。每次发布后，同一组页面断言会对已部署站点再跑一遍（`npm run check:live`）。
 
 **已观测（降级）**：Bitget 官方 MCP **3 个端点 0 个可达**，每次尝试都在 TCP 层被重置（`connection-reset`）。
 产品在每张卡片上带时间戳与证据来源披露，因此**产品中不含任何来自 Bitget 的数字**。
@@ -368,7 +386,13 @@ JD（78）存在过度识别（干净季度节奏约 40 次），因此这 6 个
 （裸函数属性描述符、shim `require` 顺序——应用必须在载荷之后最后加载），修复后由 `npm run check:bundle`
 断言整包**零 fetch**；⑧ Bitget 错误一度只能显示笼统的 "fetch failed"，`classifyError` 现在会遍历 `cause`
 链，精确命名 `ECONNRESET` / `ETIMEDOUT` / `ENOTFOUND` / `ECONNREFUSED` / `UND_ERR_CONNECT_TIMEOUT`；
-无直接网络出口的运行会回落到已持久化的、已分类的探测结果，并**标明证据来自哪一次探测**，而不是打印更含糊的错误。
+无直接网络出口的运行会回落到已持久化的、已分类的探测结果，并**标明证据来自哪一次探测**，而不是打印更含糊的错误；
+⑨ 已上线的 demo 一度"能打开但完全没反应"——`web/index.html` 里 `#q` 的 `placeholder` 用 `'` 开、用 `"` 闭，
+属性值从未终止，HTML 分词器把随后的 **25** 个元素（Analyze 按钮、所有 `<select>`、标签栏、全部五个结果面板）
+吞进了这一个属性值，`boot()` 随即在 `try` 之外抛出且无人接管。Node 侧测试之所以放行，是因为它的 DOM stub
+会为任何被问到的 id 凭空造一个元素，而对源码做正则匹配也照样能"找到"`id="tabs"` 这段文本——**是评审发现的**。
+现在：标记按属性感知解析并与界面所需 id 交叉核对，stub 由真实 `dist/index.html` 播种，真实 headless Chrome
+驱动控件，界面在缺元素时直接在页面上列出缺失项，不再只在无人查看的控制台里静默失败。
 
 **使用的框架、模型与 API**：Node.js >= 20，**零运行时依赖**（`node:http`、`node:fs`、Web `fetch`）；
 不使用机器学习框架——分裂共形预测与加权 k 近邻直接实现（`src/engine/` 约 900 行）；大模型为
@@ -495,7 +519,7 @@ Track: AI Trading Desk / Sub-theme: Decision Stress Testing
 Reproduce locally, no install step:
    npm run demo    -> demo/RUN-RECORD.md
    npm run verify  -> research/VALIDATION.md
-   npm run check   -> narrative numeric gate + static bundle build
+   npm run check   -> 4 gates: numeric, markup, bundle-in-a-DOM-stub, real headless browser
    npm start       -> http://127.0.0.1:3000
 ```
 

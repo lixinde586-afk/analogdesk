@@ -13,11 +13,12 @@
 |---|---|
 | GitHub **public** 仓库（含完整 README） | https://github.com/lixinde586-afk/analogdesk |
 | 在线 Demo（GitHub Pages，免登录 / 免密钥 / 免网络） | https://lixinde586-afk.github.io/analogdesk/ |
-| Pages 构建状态 | `built`；`index.html` / `styles.css` / `app.bundle.js` / `validation-summary.json` 全部返回 200 |
-| 线上与本地一致性 | 远端根树 `a62dc63` 与本地 HEAD 完全相同（52 个文件，15.7 MB）；4 个静态文件 sha256 逐字节一致，`app.bundle.js` 的 2 字节差异来自 `.gitattributes` 的 CRLF→LF 归一化，已用归一化后的产物重跑 `npm run check:bundle` 通过（15 个面板、0 次 fetch） |
+| Pages 构建状态 | `built`；四个静态文件全部返回 200，且线上 `index.html` / `styles.css` / `app.bundle.js` 的 sha256 与本地构建产物**逐字节相同** |
+| 线上与本地一致性 | `main` 远端根树 `273b4b5` 与本地 HEAD 完全相同（58 个 blob，0 处不一致）；`gh-pages` 的根树就是 HEAD 的 `dist` 子树 `b94ae62`，5/5 条目逐一核对一致。工作副本已全部归一化为 LF，此前 `.gitattributes` 造成的 2 字节 CRLF 差异已消除——**本地验证的产物 = git 里的产物 = Pages 上的产物** |
+| 真实浏览器复验 | `npm run check:live` 直接打线上地址，3 个场景全绿：NVDA H=5 深链、KWEB H=10 中文提问深链、无参数冷加载；控制台无未捕获异常，浏览器内引擎 71 标的 x 2513 交易日，13 个压力情景，15 个面板全部渲染，0 次网络请求 |
 | 运行记录（必交，代码生成非截图） | `demo/RUN-RECORD.md` + `demo/run-record.json` + 生成器 `scripts/run-demo.mjs` |
 
-两件你可能想知道的事：
+三件你可能想知道的事：
 
 1. **为什么没用 `git push`**：这台机器上 `github.com:443` 被阻断（TCP 连接超时 20 秒），而 `api.github.com`
    返回 200。所以我写了 `scripts/publish-github.mjs`：用 GitHub 的 Git Data API 把提交对象逐个上传，
@@ -27,6 +28,15 @@
    `%APPDATA%\GitHub CLI\hosts.yml`，没有被打印、没有进仓库、也没有写进任何提交。
    想随时撤销：GitHub → Settings → Applications → Authorized GitHub Apps → GitHub CLI → Revoke。
    （另外 `git` 因为文件属主是沙箱账号，加过一条 `safe.directory` 例外，仅影响这台机器。）
+3. **你报的那个 bug（页面能打开、输入没反应）已经修好并复验**：原因是 `web/index.html` 里输入框的
+   `placeholder` 属性用单引号开、用双引号闭，属性值永远没有结束，浏览器于是把后面的 **25 个元素**
+   （Analyze 按钮、所有下拉框、标签栏、五个结果面板）全部吞进了这一个属性里——页面上其实只剩一个畸形
+   输入框，事件也从未绑定，所以怎么点都没反应。我此前只在 Node 的 DOM 假环境里测过、没在真实浏览器里
+   点一遍，**是你发现的，谢谢**。现在多了两道闸门：`npm run check:html`（按属性感知解析标记，能识别
+   "id 只是文本、不是真元素"）和 `npm run check:browser`（起真实 headless Chrome，注入探针模拟输入
+   问题、按回车、切标签页、改标的、点 Analyze）。两道闸门都拿旧的坏版本反向验证过，确实会失败——
+   不会失败的测试没有价值。另外 `web/app.js` 现在启动前会核对所需元素，缺哪个就直接在页面上写出来，
+   不再只在没人看的控制台里静默失败。
 
 ---
 
@@ -157,7 +167,8 @@ GitHub README 或 X 长推都不能替代。**
 ```powershell
 cd "C:\Users\26973\Documents\Codex\2026-09-18\codex-mcp-add-bitgetai-hackathons2-url\outputs\analogdesk"
 npm run demo      # 重新生成运行记录（离线可跑，约 2 秒）
-npm run check     # 校验叙述数字闸门 + 重建静态包
+npm run check     # 四道闸门：数字闸门 + 标记扫描 + DOM stub 整包 + 真实 headless Chrome（需本机 Chrome/Edge）
+npm run check:live # 把同一组页面断言打在已部署的线上地址上
 npm start         # 本地全功能服务：http://127.0.0.1:3000
 ```
 
