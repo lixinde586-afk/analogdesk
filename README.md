@@ -93,6 +93,13 @@ npm run publish:github # publish HEAD through api.github.com (see the note below
 `*.bitget.com` connection), so `git push` cannot be used here. The script uploads the blobs, trees and commit
 of `HEAD` through the Git Data API and verifies every returned SHA against git's own, aborting on mismatch.
 
+Because the first public commit was bootstrapped through the Contents API (an empty repository rejects
+`git/blobs` with HTTP 409), GitHub stamped it with its own committer timestamp. The public history therefore
+carries **different commit SHAs from this working copy while every tree is byte-identical** - the publisher
+verifies that on every run (`tree remote ... vs local ... -> IDENTICAL`). If `github.com` ever becomes
+reachable from here, `git push --force origin main` reconciles the two; until then `npm run publish:github`
+is the release path and always parents on the remote HEAD.
+
 `data-cache/` is committed so the demo and the validation are reproducible **without** network access.
 `data-cache/raw/` (the HTTP cache, 225 files) and `research/validation-results.json` (20 MB) are regenerable
 and excluded from git.
