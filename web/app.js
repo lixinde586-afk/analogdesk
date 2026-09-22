@@ -171,9 +171,11 @@ function fanSvg(fan, { height = 250, conformal = null, unit = "frac", label = "s
 function barsSvg(rows, { unit = "%", vMax = null, diverging = false } = {}) {
   const items = rows.filter((r) => isNum(r.value));
   if (!items.length) return `<div class="chart"><p class="small">Nothing to plot.</p></div>`;
-  const rowH = 22, padL = 182, padR = 62, padT = 8;
+  const rowH = 22, padL = 208, padR = 62, padT = 8;
   const W = 860, H = padT * 2 + items.length * rowH;
   const iw = W - padL - padR;
+  const CHAR_W = 6.3;
+  const maxChars = Math.floor((padL - 14) / CHAR_W);
   const mx = vMax != null ? vMax : (Math.max(...items.map((r) => Math.abs(Number(r.value)))) * 1.08 || 1);
   const zeroX = diverging ? padL + iw / 2 : padL;
   const halfW = diverging ? iw / 2 : iw;
@@ -183,10 +185,20 @@ function barsSvg(rows, { unit = "%", vMax = null, diverging = false } = {}) {
     const w = Math.max(1, (Math.abs(v) / (mx || 1)) * halfW);
     const x = diverging ? (v < 0 ? zeroX - w : zeroX) : zeroX;
     const col = r.color || (v < 0 ? "#f85149" : "#3fb950");
-    const tx = diverging && v < 0 ? x - 5 : x + w + 5;
-    g += `<text class="tick" x="${padL - 8}" y="${y + 13}" text-anchor="end" fill="#9fb0c0" style="font-size:10.5px">${esc(r.label)}</text>`;
+    const label = r.label.length > maxChars ? r.label.slice(0, maxChars - 1) + "\u2026" : r.label;
+    const vtext = `${num(v)}${unit}`;
+    const vw = vtext.length * CHAR_W;
+    let tx, anchor;
+    if (diverging && v < 0) {
+      tx = x - 5; anchor = "end";
+      if (tx - vw < padL - 4) { tx = x + 6; anchor = "start"; }
+    } else {
+      tx = x + w + 5; anchor = "start";
+      if (tx + vw > W - 4) { tx = x + w - 6; anchor = "end"; }
+    }
+    g += `<text class="tick" x="${padL - 8}" y="${y + 13}" text-anchor="end" fill="#9fb0c0" style="font-size:10.5px">${esc(label)}<title>${esc(r.label)}</title></text>`;
     g += `<rect x="${x.toFixed(1)}" y="${y + 3}" width="${w.toFixed(1)}" height="${rowH - 8}" rx="2" fill="${col}" opacity="0.72"><title>${esc(r.label)}: ${num(v)}${esc(unit)}</title></rect>`;
-    g += `<text class="tick" x="${tx.toFixed(1)}" y="${y + 13}" text-anchor="${diverging && v < 0 ? "end" : "start"}" fill="#e6edf3" style="font-size:10.5px">${num(v)}${esc(unit)}</text>`;
+    g += `<text class="tick" x="${tx.toFixed(1)}" y="${y + 13}" text-anchor="${anchor}" fill="#e6edf3" style="font-size:10.5px">${esc(vtext)}</text>`;
   });
   return `<div class="chart">${svgEl(W, H, g)}</div>`;
 }
@@ -646,7 +658,7 @@ function renderStress(card) {
       <td class="num">${pctPlain(r.probabilityBelowMinus10Pct)}</td>
       <td class="num">${pcHtml(r.maxAdverseMedianPct)}</td>
       <td class="num">${pctPlain(r.probabilityOfBreaching10PctDrawdown)}</td>
-      <td class="num">${pctPlain(r.heldWithin10PctDrawdown)}</td></tr>`;
+      <td class="num">${pctPlain(r.heldWithin10PctDrawdownPct)}</td></tr>`;
   }).join("");
   $("stresstable").innerHTML = `<div class="scroll" style="max-height:none"><table>${head}<tbody>${body}</tbody></table></div>`;
 
@@ -664,10 +676,10 @@ function renderStress(card) {
         ${r.skipped ? "" : kv([
           ["analogs used", num(r.analogsUsed, 0)],
           ["median / p10 / p90 forward", `${pcHtml(r.medianForwardPct)} / ${pcHtml(r.p10ForwardPct)} / ${pcHtml(r.p90ForwardPct)}`],
-          ["&Delta; median vs baseline", `${pcHtml(r.deltaMedianVsBaselinePct)} <span class="muted">percentage points</span>`],
+          ["\u0394 median vs baseline", `${pcHtml(r.deltaMedianVsBaselinePct)} <span class="muted">percentage points</span>`],
           ["median max adverse excursion", pcHtml(r.maxAdverseMedianPct)],
           ["P(breaching a 10% drawdown)", pctPlain(r.probabilityOfBreaching10PctDrawdown)],
-          ["share holdable within 10% drawdown", pctPlain(r.heldWithin10PctDrawdown)]
+          ["share holdable within 10% drawdown", pctPlain(r.heldWithin10PctDrawdownPct)]
         ])}
         ${r.fan && r.fan.length ? `<div style="margin-top:8px">${fanSvg(r.fan, { unit: "pct", height: 190, label: "sessions ahead" })}</div>` : ""}
         <div class="caveat"><b>Engine caveat, carried verbatim:</b> ${esc(r.caveat || "")}</div>

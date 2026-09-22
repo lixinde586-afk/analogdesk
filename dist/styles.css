@@ -203,8 +203,8 @@ td.sym { font-family: var(--mono); font-weight: 600; color: var(--accent); }
 
 /* ------------------------------- charts -------------------------------- */
 
-.chart { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 10px; }
-.chart svg { display: block; width: 100%; height: auto; }
+.chart { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 10px; overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: auto; min-width: 620px; }
 .chart .cap { font-size: 11px; color: var(--fg-faint); font-family: var(--mono); margin-top: 6px; text-align: center; }
 .bar-pos { fill: rgba(63, 185, 80, 0.55); stroke: #3fb950; stroke-width: 0.6; }
 .bar-neg { fill: rgba(248, 81, 73, 0.5); stroke: #f85149; stroke-width: 0.6; }
