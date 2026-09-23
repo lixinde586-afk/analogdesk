@@ -377,9 +377,20 @@ function setBadges() {
   if (bg && bg.summary) {
     const md = bg.marketData?.reachable ?? bg.reachable;
     const gw = narr?.reachable ?? false;
-    bb.textContent = `bitget: data ${md ? "reachable" : "unreachable"} \u00b7 gateway ${gw ? "reachable" : "unreachable"}`;
+    // The route is part of the claim, not a detail. A bare "reachable" would let a reviewer on a
+    // plain network expect an answer this machine only obtains through a local proxy, and a bare
+    // "unreachable" would understate an integration that does answer. So the badge names the route
+    // whenever the direct connection was not what produced it, and the tooltip carries both counts.
+    const direct = bg.marketData?.reachableDirectCount ?? bg.reachableDirectCount ?? null;
+    const total = bg.marketData?.total ?? bg.total ?? null;
+    const via = bg.proxy ? `${bg.proxy.host}:${bg.proxy.port}` : null;
+    const routed = md && direct != null && total != null && direct < total;
+    const routeNote = routed ? ` via ${via || "proxy"}` : "";
+    bb.textContent = `bitget: data ${md ? "reachable" + routeNote : "unreachable"} \u00b7 gateway ${gw ? "reachable" : "unreachable"}`;
     bb.className = `badge ${md ? "ok" : gw ? "warn" : "bad"}`;
-    bb.title = bg.summary;
+    bb.title = routed
+      ? `${direct}/${total} Bitget market-data hosts answer on a direct connection; ${bg.marketData?.reachableCount ?? bg.reachableCount}/${total} answer through the local proxy at ${via}. \u2014 \u2014 ${bg.summary}`
+      : bg.summary;
   } else {
     bb.textContent = "bitget: not probed";
     bb.className = "badge warn";
@@ -725,6 +736,39 @@ function renderWrapper(card) {
     <p class="small" style="margin-top:6px">${esc(s24.note || "")}</p>
     ${s24.conventionNote ? `<div class="note info" style="margin-top:6px"><b>Convention, stated so the figure can be checked:</b> ${esc(s24.conventionNote)}</div>` : ""}
 
+    ${(() => {
+      const cr = w.closedSessionReturns;
+      if (!cr) return `<h3 style="margin-top:14px">The return layer <span class="sub">what the wrapper actually did while the cash market was shut</span></h3>
+        <div class="note warn">No closed-session return measurement on this card. The block above is a share of absolute movement, which cannot be sized; run <code>node scripts/measure-wrapper.mjs</code> to produce the distribution.</div>`;
+      const wd = cr.weekendReturnDistribution, mae = cr.weekendMaeDistribution, pw = cr.pooledWeekendReturnDistribution, pm = cr.pooledWeekendMaeDistribution;
+      const rows = [];
+      if (wd) {
+        rows.push(["weekend blocks observed", num(cr.weekendBlocks, 0)]);
+        rows.push(["median weekend return", pctPlain(wd.medianPct)]);
+        rows.push(["p10 / p90", `${pctPlain(wd.p10Pct)} / ${pctPlain(wd.p90Pct)}`]);
+        rows.push(["sd / n", `${pctPlain(wd.stdPct)} <span class="muted">over</span> ${num(wd.n, 0)}`]);
+        rows.push(["share negative", pctPlain(wd.shareNegativePct)]);
+      }
+      if (mae) rows.push(["median intra-weekend MAE", pctPlain(mae.medianPct)]);
+      if (cr.weekendShareBreached5PctDrawdownPct != null) rows.push(["weekends breaching -5% intra-block", pctPlain(cr.weekendShareBreached5PctDrawdownPct)]);
+      if (cr.hourlyStdRatioOutsideOverInside != null) rows.push(["closed-hour vs open-hour volatility", `${num(cr.hourlyStdRatioOutsideOverInside, 2)}<span class="muted">x</span>`]);
+      if (cr.hourlyOutsideSession) rows.push(["hourly return sd, outside vs inside session", `${pctPlain(cr.hourlyOutsideSession.stdPct)} <span class="muted">vs</span> ${pctPlain(cr.hourlyInsideSession?.stdPct)}`]);
+      const pooled = pw ? [["pooled across wrappers", `${num(pw.n, 0)} weekend blocks \u00b7 ${num(cr.pooledPairs, 0)} wrappers \u00b7 ${num(cr.pooledDistinctWeekendStarts, 0)} distinct weekends`],
+        ["pooled median / p10 / sd", `${pctPlain(pw.medianPct)} / ${pctPlain(pw.p10Pct)} / ${pctPlain(pw.stdPct)}`],
+        ["pooled median MAE", pctPlain(pm?.medianPct)],
+        ["pooled weekends breaching -5% / -10%", `${pctPlain(cr.pooledWeekendShareBreached5PctDrawdownPct)} / ${pctPlain(cr.pooledWeekendShareBreached10PctDrawdownPct)}`]] : [];
+      return `
+    <h3 style="margin-top:14px">The return layer <span class="sub">what the wrapper actually did while the cash market was shut</span></h3>
+    ${kpi("median weekend return", pctPlain(wd?.medianPct ?? pw?.medianPct), `${num(cr.weekendBlocks ?? pw?.n, 0)} closed-market block(s)`, Math.abs(wd?.medianPct ?? 0) < 0.5 ? "" : "neg")}
+    ${kpi("p10 weekend return", pctPlain(wd?.p10Pct ?? pw?.p10Pct), "the bad tail of those weekends", "neg")}
+    ${kpi("median intra-weekend MAE", pctPlain(mae?.medianPct ?? pm?.medianPct), "worst point inside the block", "neg")}
+    ${kv(rows)}
+    <p class="small" style="margin-top:6px">${esc(cr.note || "")}</p>
+    ${pooled.length ? `<h4 style="margin:12px 0 4px">Pooled across every verified wrapper</h4>${kv(pooled)}` : ""}
+    ${cr.conventionNote ? `<div class="note info" style="margin-top:6px"><b>How a block is defined:</b> ${esc(cr.conventionNote)}</div>` : ""}
+    ${cr.caveatNote ? `<div class="note warn" style="margin-top:6px"><b>What this is not:</b> ${esc(cr.caveatNote)}</div>` : ""}`;
+    })()}
+
     <h3 style="margin-top:14px">Tracking quality <span class="sub">wrapper daily returns against the underlying's raw session closes</span></h3>
     ${kv([
       ["return correlation", num(t.returnCorrelation, 4)],
@@ -910,7 +954,7 @@ function renderProv(card) {
   const md = bg?.marketData || null, narr = bg?.narrative || null;
   const epRow = (e) => `<div class="mono small" style="margin-bottom:3px">${e.ok ? "\u2713" : "\u2717"} ${esc(e.name)} <span class="muted">${esc(e.url)} &middot; ${esc(e.kind || "")}${e.detail ? " &middot; " + esc(e.detail) : ""}${e.latencyMs != null ? " &middot; " + num(e.latencyMs, 0) + "ms" : ""}</span></div>`;
   $("bitget").innerHTML = bg ? `
-    <p class="small" style="margin-bottom:8px">Two separate Bitget integrations, probed separately, because they have opposite results on this network and a single badge for both would misstate whichever way it pointed.</p>
+    <p class="small" style="margin-bottom:8px">Three things are reported separately, because they have different results and a single badge for all of them would misstate whichever way it pointed: the official market-data toolkit, the Bitget-operated LLM gateway the narrative layer calls, and what the toolkit actually returned when it was reached.</p>
     <h4 style="margin:6px 0 4px">1. Market data \u2014 the official MCP toolkit</h4>
     ${badge((md?.reachable ?? bg.reachable) ? "ok" : "bad", (md?.reachable ?? bg.reachable) ? "connected" : "degraded")}
     <p class="small" style="margin-top:6px">${esc(md?.summary || bg.summary || "")}</p>
@@ -919,7 +963,33 @@ function renderProv(card) {
     ${narr ? badge(narr.reachable ? "ok" : "bad", narr.reachable ? "reachable" : "unreachable") : badge("warn", "not probed")}
     ${narr?.endpoint ? epRow(narr.endpoint) : ""}
     ${narr?.summary ? `<p class="small" style="margin-top:6px">${esc(narr.summary)}</p>` : ""}
-    ${bg.disclosure ? `<div class="note bad" style="margin-top:10px">${esc(bg.disclosure)}</div>` : ""}`
+    ${(() => {
+      const m = bg.measurement || null;
+      if (!m) return bg.disclosure ? `<div class="note ${(bg.marketData?.reachable ?? bg.reachable) ? "info" : "bad"}" style="margin-top:10px">${esc(bg.disclosure)}</div>` : "";
+      const fg = m.fearGreedCrossCheck || null, ec = m.earningsCrossCheck || null, q = m.quotes || null, pr = m.profiles || null, wm = m.wholeMarketSentiment || null;
+      const rows = [];
+      if (m.server) rows.push(["server", `<span class="mono small">${esc(m.server.name || "")}@${esc(m.server.version || "")}</span>`]);
+      if (m.summary) {
+        if (m.summary.catalogEntries != null) rows.push(["catalog", `${num(m.summary.catalogEntries, 0)} entries in ${num(m.summary.catalogCategories, 0)} categories`]);
+        if (m.summary.quotesAnswered) rows.push(["live equity quotes answered", esc(String(m.summary.quotesAnswered))]);
+        if (m.summary.profilesAnswered) rows.push(["company profiles answered", esc(String(m.summary.profilesAnswered))]);
+      }
+      if (m.route) rows.push(["fetched on", `<span class="mono small">${esc(String(m.route))}</span>`]);
+      if (fg) rows.push(["fear &amp; greed cross-check", `${num(fg.exactMatches, 0)}/${num(fg.overlappingDates, 0)} daily readings <b>identical</b> to this project's own api.alternative.me series (mean absolute difference ${num(fg.meanAbsDifference, 4)})`]);
+      if (ec) rows.push(["earnings-date cross-check", `${num(ec.matchedDates, 0)} disclosure dates vs the EDGAR-derived calendar: ${pctPlain(ec.exactSameDayPct)} same day, ${pctPlain(ec.within3DaysPct)} within 3 days, ${pctPlain(ec.within7DaysPct)} within 7`]);
+      if (q?.stalenessVsSnapshot) rows.push(["snapshot staleness", `median ${pctPlain(q.stalenessVsSnapshot.medianAbsDriftPct)} drift between the frozen ${esc(q.stalenessVsSnapshot.snapshotDate || "")} close and Bitget's live quote, over ${num(q.stalenessVsSnapshot.comparedSymbols, 0)} symbols`]);
+      if (wm?.reading) rows.push(["Bitget whole-market sentiment", `score ${num(wm.reading.score, 1)} (${esc(wm.reading.rating || "")}) at ${esc(wm.reading.timestamp || "")} \u2014 recorded, <b>not</b> consumed by the engine`]);
+      return `
+    <h4 style="margin:12px 0 4px">3. What the official MCP actually returned \u2014 measured, cross-checked, and kept out of the engine</h4>
+    ${badge("ok", "measured")}
+    ${kv(rows)}
+    ${fg?.verdict ? `<p class="small" style="margin-top:6px"><b>Fear &amp; greed:</b> ${esc(fg.verdict)}. ${esc(fg.note || "")}</p>` : ""}
+    ${ec?.note ? `<p class="small"><b>Earnings dates:</b> ${esc(ec.note)}</p>` : ""}
+    ${q?.stalenessVsSnapshot?.note ? `<p class="small"><b>Quotes:</b> ${esc(q.stalenessVsSnapshot.note)}</p>` : ""}
+    ${wm?.note ? `<p class="small"><b>Sentiment:</b> ${esc(wm.note)}</p>` : ""}
+    ${(m.measuredEmpty?.entries || []).length ? `<div class="note warn" style="margin-top:8px"><b>Entries that answered with an empty body:</b> ${esc(m.measuredEmpty.entries.map((e) => e.entryId).join(", "))}. ${esc(m.measuredEmpty.note || "")}</div>` : ""}
+    ${bg.disclosure ? `<div class="note info" style="margin-top:10px">${esc(bg.disclosure)}</div>` : ""}`;
+    })()}`
     : `<p class="small">Not probed in this build.</p>`;
 
   const wp = p.wrapper || p.wrapperMeasurement;
@@ -931,6 +1001,9 @@ function renderProv(card) {
       ["measured at", esc(wp.measuredAt || wp.generatedAt || "")],
       ["verified wrappers", num(wp.verified ?? wp.verifiedWrappers, 0)],
       ["reference market closed", pctPlain(wp.referenceMarket?.closedSharePct)],
+      ["weekend return blocks", num(wp.closedSessionReturns?.pooled?.weekendReturnDistribution?.n, 0)],
+      ["pooled median weekend return", pctPlain(wp.closedSessionReturns?.pooled?.weekendReturnDistribution?.medianPct)],
+      ["pooled median intra-weekend MAE", pctPlain(wp.closedSessionReturns?.pooled?.weekendMaeDistribution?.medianPct)],
       ["role", `<span class="small">${esc(wp.role || "measurement of the tokenised-equity wrapper layer; NOT a price source for the analog library")}</span>`]
     ])}
     <p class="small" style="margin-bottom:0">Written by <code>scripts/measure-wrapper.mjs</code> into <code>data-cache/wrapper-probe.json</code>, committed, and read as data by both runtimes. Rejections and the reason for each are in that file and at <code>/api/wrapper</code>.</p>`

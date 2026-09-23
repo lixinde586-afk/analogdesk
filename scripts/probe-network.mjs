@@ -11,7 +11,8 @@
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { probeEndpoint, probeAllBitget, classifyError, BITGET_ENDPOINTS } from "../src/data/bitget.mjs";
+import { probeEndpoint, classifyError, BITGET_ENDPOINTS } from "../src/data/bitget.mjs";
+import { probeAllBitgetRouted } from "../src/data/bitget-routes.mjs";
 import { UA_BROWSER, UA_SEC } from "../src/data/sources.mjs";
 import { VENUE as WRAPPER_VENUE } from "../src/data/xstocks.mjs";
 import { resolveConfig } from "../src/llm/config.mjs";
@@ -48,7 +49,7 @@ for (const t of TARGETS) {
 // The narrative gateway probe names the model this build is configured for, so the recorded
 // disclosure says which integration is actually in use instead of implying a market-data feed.
 const cfg = resolveConfig();
-out.bitget = await probeAllBitget({ timeoutMs: 8000, model: cfg.llm.model });
+out.bitget = await probeAllBitgetRouted({ timeoutMs: 8000, model: cfg.llm.model });
 out.llm = { mode: cfg.llm.enabled ? "LIVE" : "TEMPLATE", model: cfg.llm.model, baseUrl: cfg.llm.baseUrl, keyPresent: Boolean(cfg.llm.enabled), promptVersion: PROMPT_VERSION };
 console.log(`\nBitget, market data: ${out.bitget.marketData.summary}`);
 for (const e of out.bitget.marketData.endpoints) console.log(`   ${e.ok ? "REACHABLE " : "UNREACHABLE"} ${e.name.padEnd(48)} ${e.kind}${e.detail ? " - " + e.detail : ""}`);
@@ -61,7 +62,7 @@ out.unusedSources = out.targets.filter((t) => t.role.startsWith("NOT USED")).map
   name: t.name, role: t.role, reachable: t.ok, status: t.status, kind: t.kind, detail: t.detail
 }));
 out.rejectedSources = out.unusedSources.filter((t) => !t.reachable);
-out.summary = `${out.usedSources.length} used sources reachable; ${out.unusedSources.length} candidate sources not used (${out.rejectedSources.length} of them unreachable from this machine); Bitget market-data toolkit ${out.bitget.marketData.reachable ? "reachable" : "unreachable"} (${out.bitget.marketData.reachableCount}/${out.bitget.marketData.total}); Bitget narrative gateway ${out.bitget.narrative.reachable ? "reachable" : "unreachable"}.`;
+out.summary = `${out.usedSources.length} used sources reachable; ${out.unusedSources.length} candidate sources not used (${out.rejectedSources.length} of them unreachable from this machine); Bitget market-data toolkit ${out.bitget.marketData.reachable ? "reachable" : "unreachable"} (${out.bitget.marketData.reachableCount}/${out.bitget.marketData.total}, ${out.bitget.marketData.reachableDirectCount ?? 0}/${out.bitget.marketData.total} of them on a direct connection); Bitget narrative gateway ${out.bitget.narrative.reachable ? "reachable" : "unreachable"}.`;
 console.log(`\n${out.summary}`);
 
 mkdirSync(join(ROOT, "data-cache"), { recursive: true });

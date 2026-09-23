@@ -166,8 +166,19 @@ try {
   const prSc = sc(pr);
   assert(!pr.result.isError, "provenance call succeeded", "provenance error: " + fmt(prText));
   assert(/stockanalysis/.test(prText), "the price source is named", "price source missing");
-  assert(/BITGET OFFICIAL MCP: UNREACHABLE/.test(prText), "the Bitget degradation is disclosed, not hidden", "bitget line: " + fmt((prText.match(/BITGET[^\n]*/) || [""])[0]));
-  assert(prSc && prSc.bitget && prSc.bitget.reachable === false, "the structured payload agrees with the text", "structured bitget: " + fmt(prSc && prSc.bitget && prSc.bitget.reachable));
+  const bgLine = (prText.match(/BITGET OFFICIAL MCP:[^\n]*/) || [""])[0];
+  const bgReachable = /^BITGET OFFICIAL MCP: reachable/.test(bgLine);
+  assert(/BITGET OFFICIAL MCP: (reachable|UNREACHABLE on both routes)/.test(bgLine), "the Bitget status is stated, not hidden", "bitget line: " + fmt(bgLine));
+  // Both routes are measured, so a "reachable" line that does not say how many endpoints answered on a
+  // DIRECT connection is exactly the overstatement this disclosure exists to prevent.
+  assert(!bgReachable || /direct connection/.test(bgLine), "a reachable Bitget line names the direct-route count", "bitget line: " + fmt(bgLine));
+  assert(prSc && prSc.bitget && typeof prSc.bitget.reachable === "boolean", "the structured payload carries a Bitget verdict", "structured bitget: " + fmt(prSc && prSc.bitget && prSc.bitget.reachable));
+  assert(prSc.bitget.reachable === bgReachable, "the structured payload agrees with the text", "text reachable: " + fmt(bgReachable) + ", structured: " + fmt(prSc.bitget.reachable));
+  if (prSc.bitget.reachable) {
+    assert(Number.isInteger(prSc.bitget.reachableCount) && prSc.bitget.reachableCount > 0, "reachable endpoints are counted", "reachableCount: " + fmt(prSc.bitget.reachableCount));
+    assert(Number.isInteger(prSc.bitget.reachableDirectCount), "the direct-route count travels next to it", "reachableDirectCount: " + fmt(prSc.bitget.reachableDirectCount));
+    assert(Boolean(prSc.bitget.measurement && prSc.bitget.measurement.summary), "what the official MCP actually returned is folded in", "measurement: " + fmt(Boolean(prSc.bitget.measurement)));
+  }
   assert(/No Bitget-sourced figure/.test(prText), "it states that no Bitget figure is used", "no-figure statement missing");
 
   console.log("\n=== protocol hygiene ===");

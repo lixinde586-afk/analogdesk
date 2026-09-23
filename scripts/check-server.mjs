@@ -60,7 +60,11 @@ try {
   assert(h.status === 200 && h.json && h.json.ok === true, "GET /api/health -> 200 ok:true", "health: " + fmt(h.body));
   assert(h.json.library && h.json.library.symbols === 71 && h.json.library.sessions === 2513, "health reports 71 instruments x 2513 sessions", "library: " + fmt(h.json.library));
   assert(Array.isArray(h.json.validationHorizons) && h.json.validationHorizons.length === 6, "six validated horizons are loaded on a fresh clone (falls back to dist/validation-summary.json)", "validationHorizons: " + fmt(h.json.validationHorizons));
-  assert(h.json.bitget && h.json.bitget.status === "degraded", "Bitget is reported degraded, not silently absent", "bitget: " + fmt(h.json.bitget));
+  // The status vocabulary is deliberately not "connected": reaching the toolkit does not put a single
+  // Bitget figure into the engine, and a word that implied otherwise would be the overstatement the
+  // whole disclosure exists to avoid. Reachable-without-consuming and degraded are both honest here;
+  // silently absent is not.
+  assert(h.json.bitget && ["reachable-not-consumed", "degraded"].includes(h.json.bitget.status), "Bitget is reported with an honest status, not silently absent", "bitget: " + fmt(h.json.bitget));
 
   const lib = await get("/api/library");
   assert(lib.status === 200 && lib.json.library.symbols.length === 71, "GET /api/library lists 71 instruments", "library symbols: " + fmt(lib.json.library && lib.json.library.symbols.length));
@@ -88,9 +92,17 @@ try {
     "kinds: " + fmt([...new Set((sc.json.scenarios || []).map((s) => s.kind))]));
 
   const pv = await get("/api/provenance");
-  assert(pv.status === 200 && pv.json.provenance.bitget.status === "degraded",
-    "GET /api/provenance reports the Bitget official MCP as degraded rather than omitting it",
-    "bitget: " + fmt(pv.json.provenance && pv.json.provenance.bitget));
+  const pvBg = pv.json.provenance.bitget;
+  assert(pv.status === 200 && ["reachable-not-consumed", "degraded"].includes(pvBg.status),
+    "GET /api/provenance reports the Bitget official MCP with an honest status rather than omitting it",
+    "bitget: " + fmt(pvBg));
+  if (pvBg.status === "reachable-not-consumed") {
+    assert(Number.isInteger(pvBg.reachableDirectCount), "a reachable verdict carries the direct-route count next to it", "reachableDirectCount: " + fmt(pvBg.reachableDirectCount));
+    assert(Boolean(pvBg.marketData && pvBg.marketData.summary), "the market-data summary is reported separately from the narrative gateway", "marketData: " + fmt(Boolean(pvBg.marketData)));
+    assert(Boolean(pvBg.measurementSummary || pvBg.measurement), "what the toolkit actually returned travels with the reachable verdict", "measurement: " + fmt(Boolean(pvBg.measurement)));
+    const bgWords = String(pvBg.measurementSummary || "") + " " + String(pvBg.disclosure || "") + " " + String(pvBg.summary || "");
+    assert(/None of it feeds|No Bitget-sourced|no Bitget-sourced/.test(bgWords), "the reachable verdict still says no figure is consumed", "words: " + fmt(bgWords.slice(0, 120)));
+  }
   assert(pv.json.provenance.library.symbols.length === 71, "provenance restates the 71-instrument library",
     "symbols: " + fmt(pv.json.provenance.library && pv.json.provenance.library.symbols.length));
   assert(["LIVE", "REPLAY", "TEMPLATE"].includes(pv.json.provenance.llm.mode),

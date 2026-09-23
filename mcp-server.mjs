@@ -20,8 +20,10 @@
  *     the gate verdict and the mode (LIVE / REPLAY / TEMPLATE) alongside it, so a host model cannot
  *     launder an invented figure through this tool without the caller seeing how the text was made.
  *   - A request the engine cannot answer returns isError with a message naming the fix.
- *   - The Bitget MCP toolkit is unreachable from the network this was built on; that is reported by
- *     analogdesk_provenance rather than hidden, and no Bitget-sourced figure appears anywhere.
+ *   - The Bitget MCP toolkit answers on the local-proxy route from the network this was built on and on
+ *     no direct connection. BOTH routes are measured, analogdesk_provenance names the one that produced
+ *     each answer rather than printing the more flattering of the two, and no Bitget-sourced figure
+ *     appears anywhere.
  *
  * Only JSON-RPC goes to stdout. Every log line goes to stderr, because a stray byte on stdout breaks
  * the framing for the host.
@@ -33,7 +35,9 @@ import { fileURLToPath } from "node:url";
 import { resolveConfig } from "./src/llm/config.mjs";
 import { registerNodeFs, createNodeStore } from "./src/llm/replay.mjs";
 import { narrate, detectLang } from "./src/llm/narrate.mjs";
-import { probeAllBitget } from "./src/data/bitget.mjs";
+// The routed probe measures both a direct connection and a local proxy, and folds in the committed
+// cross-check measurement. Node-only by design: src/data/bitget.mjs stays in the browser module graph.
+import { probeAllBitgetRouted } from "./src/data/bitget-routes.mjs";
 import { createDesk, DEFAULT_HORIZON } from "./src/desk.mjs";
 import { parseIdea, explain as explainIdea } from "./src/llm/lui.mjs";
 
@@ -88,7 +92,7 @@ const luiLib = (() => {
 let bitget = networkProbe && networkProbe.bitget
   ? Object.assign({}, networkProbe.bitget, { fromCache: true, cachedAt: networkProbe.generatedAt })
   : { reachable: false, summary: "not probed in this process", endpoints: [], disclosure: null, probedAt: null };
-probeAllBitget({ timeoutMs: Number(cfg.bitget.probeTimeoutMs) })
+probeAllBitgetRouted({ timeoutMs: Number(cfg.bitget.probeTimeoutMs), model: cfg.llm.model })
   .then((r) => { bitget = r; log("Bitget toolkit probe: " + r.summary); })
   .catch((e) => { bitget = { reachable: false, summary: "probe failed: " + e.message, endpoints: [], disclosure: null, probedAt: new Date().toISOString() }; });
 
@@ -317,9 +321,12 @@ async function toolProvenance() {
     for (const t of networkProbe.targets || []) out.push("  - " + t.name + " [" + t.role + "]: " + (t.ok ? "reachable" : "unreachable") + " - " + (t.status || "") + (t.detail ? " (" + t.detail + ")" : "") + (t.latencyMs != null ? " " + t.latencyMs + "ms" : ""));
   }
   out.push("");
-  out.push("BITGET OFFICIAL MCP: " + (bitget.reachable ? "reachable" : "UNREACHABLE - " + (bitget.summary || "no summary")));
-  for (const e of bitget.endpoints || []) out.push("  - " + (e.url || e.name || "endpoint") + ": " + (e.ok ? "ok" : (e.kind || "error") + " - " + (e.detail || "")));
-  out.push("  No Bitget-sourced figure appears anywhere in this project. The connector is implemented (src/data/bitget.mjs), probes on start-up, classifies the transport error precisely, and the degradation is disclosed on every card rather than hidden.");
+  out.push("BITGET OFFICIAL MCP: " + (bitget.reachable
+    ? "reachable - " + bitget.reachableCount + "/" + bitget.total + " market-data endpoints answered, " + (bitget.reachableDirectCount ?? 0) + "/" + bitget.total + " of them on a direct connection" + (bitget.proxy ? ", the rest via " + bitget.proxy.host + ":" + bitget.proxy.port : "")
+    : "UNREACHABLE on both routes - " + (bitget.summary || "no summary")));
+  if (bitget.measurementSummary) out.push("  " + bitget.measurementSummary);
+  for (const e of bitget.endpoints || []) out.push("  - " + (e.url || e.name || "endpoint") + ": " + (e.ok ? "ok" + (e.answeredOn ? " via " + e.answeredOn : "") : (e.kind || "error") + " - " + (e.detail || "")));
+  out.push("  No Bitget-sourced figure enters the retrieval features, the frozen conformal scale or any validated number. The connector is implemented (src/data/bitget.mjs), both routes are probed on start-up (src/data/bitget-routes.mjs over the CONNECT tunnel in src/data/proxy.mjs), the transport error is classified precisely, and what the official MCP returned - with the route that produced it - is committed in data-cache/bitget-probe.json as a cross-check against this project's own keyless data.");
   out.push("");
   out.push("NARRATIVE LAYER: " + (cfg.llm.enabled ? "LIVE via " + cfg.llm.baseUrl + " model " + cfg.llm.model : "TEMPLATE (no LLM_API_KEY set; every figure is engine-computed either way)") + ". Every numeral in generated prose is re-checked against the research card by src/llm/verify-numbers.mjs, and the render falls back to the deterministic template if any numeral cannot be traced.");
   out.push("");
@@ -377,7 +384,7 @@ const TOOLS = [
   {
     name: "analogdesk_provenance",
     title: "Data sources, network reachability and integration status",
-    description: "Every data source and what it feeds, the measured network probe with transport-level error classification, the Bitget official MCP status (unreachable from the build network - disclosed, and no Bitget-sourced figure is used anywhere), and how the narrative was produced.",
+    description: "Every data source and what it feeds, the measured network probe with transport-level error classification, the Bitget official MCP status on both a direct and a local-proxy route with the route that produced each answer named, the committed cross-check of what the toolkit actually returned, the fact that no Bitget-sourced figure is used anywhere, and how the narrative was produced.",
     inputSchema: { type: "object", properties: {}, required: [] }
   }
 ];

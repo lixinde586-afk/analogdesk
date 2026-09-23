@@ -181,8 +181,47 @@ export function createWrapperView(probe) {
           ? `The measured core of the 7x24 claim. The reference cash market is shut for ${ref?.closedSharePct}% of the week, and ${ch.referenceClosedMoveSharePct}% of this wrapper's own realised hourly price movement over ${ch.hoursObserved} observed hours landed in those shut hours. It traded in ${ch.tradedOutsideSessionPct}% of them.`
           : "Hourly candles were unavailable for this pair on this run, so only the calendar-derived closed share is reported."
       },
+      /**
+       * The RETURN layer of the 7x24 claim. sevenByTwentyFour above is a share of absolute movement,
+       * and a share cannot be sized: nobody can ask "what did it do" of a percentage of |returns|.
+       * This block reports what the wrapper actually returned while the reference cash market was shut,
+       * as a distribution with a left tail and an intra-block path - the same two objects every other
+       * part of this card reports. Per-pair figures first, then the pooled figure across every verified
+       * wrapper, with the distinct weekend count next to the pooled n because blocks across wrappers in
+       * the same weekend are not independent draws.
+       */
+      closedSessionReturns: (() => {
+        const cr = a.closedReturns || null;
+        const pooled = probe?.closedSessionReturns || null;
+        if (!cr && !pooled) return null;
+        const wd = cr?.weekendReturnDistribution || null;
+        return {
+          weekendBlocks: cr?.blocks?.weekend ?? null,
+          overnightBlocks: cr?.blocks?.overnight ?? null,
+          weekendReturnDistribution: wd,
+          weekendMaeDistribution: cr?.weekendMaeDistribution || null,
+          weekendShareBreached5PctDrawdownPct: cr?.weekendShareBreached5PctDrawdownPct ?? null,
+          // Carried as a value, not only inside a field name, so a sentence can quote the threshold
+          // it is describing and the numeric gate can trace that numeral to the payload.
+          weekendDrawdownThresholdPct: cr?.weekendShareBreached5PctDrawdownPct != null ? -5 : null,
+          hourlyStdRatioOutsideOverInside: cr?.hourlyStdRatioOutsideOverInside ?? null,
+          hourlyInsideSession: cr?.hourlyInsideSession || null,
+          hourlyOutsideSession: cr?.hourlyOutsideSession || null,
+          pooledWeekendReturnDistribution: pooled?.pooled?.weekendReturnDistribution || null,
+          pooledWeekendMaeDistribution: pooled?.pooled?.weekendMaeDistribution || null,
+          pooledWeekendShareBreached5PctDrawdownPct: pooled?.pooled?.weekendShareBreached5PctDrawdownPct ?? null,
+          pooledWeekendShareBreached10PctDrawdownPct: pooled?.pooled?.weekendShareBreached10PctDrawdownPct ?? null,
+          pooledPairs: pooled?.pairsWithReturnLayer ?? null,
+          pooledDistinctWeekendStarts: pooled?.distinctWeekendStarts ?? null,
+          conventionNote: cr?.convention || null,
+          note: wd
+            ? `The return layer, measured rather than asserted. Across ${cr.weekendBlocks?.length ?? 0} weekend block(s) in the observed ${cr.hourlyInsideSession?.n != null ? (cr.hourlyInsideSession.n + cr.hourlyOutsideSession.n) : "720"}-hour window, ${a.pair} went from the pre-weekend close to the reopen with a median return of ${wd.medianPct}% (p10 ${wd.p10Pct}%, p90 ${wd.p90Pct}%, sd ${wd.stdPct}%), and its median intra-weekend adverse excursion was ${cr.weekendMaeDistribution?.medianPct ?? "n/a"}%. Hour for hour, closed-session price formation was ${cr.hourlyStdRatioOutsideOverInside ?? "n/a"}x as volatile as open-session formation.`
+            : "No closed-session block in the observed window was long enough to measure for this pair, so only the calendar share and the movement share are reported.",
+          caveatNote: pooled?.caveat || null
+        };
+      })(),
       interpretation: `${a.pair} is a ${a.tierLabel} for ${symbol}: daily returns correlate at ${a.returnCorrelation} with a tracking error of ${a.trackingErrorBpPerDay} bp/day, and it prices within ${a.priceDeviationPct}% of the underlying's last raw close. It is the instrument a trader would actually hold outside cash hours - and outside those hours is where ${ch?.referenceClosedMoveSharePct ?? "most"}% of its own movement happens.`,
-      caveat: `Measured on ${venueName}, not on a Bitget market-data feed: the Bitget official MCP is unreachable from this network and contributes nothing. A ${a.tier} tracker is not the underlying - at ${a.trackingErrorBpPerDay} bp/day of tracking error the wrapper carries its own idiosyncratic risk, and a premium band of ${a.premiumP10Pct}% to ${a.premiumP90Pct}% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure.`
+      caveat: `Measured on ${venueName}, which is where these tokenised-equity wrappers are listed and tradeable; the official Bitget MCP is probed and cross-checked separately in the provenance panel, on both a direct and a proxied route, and neither route is the source of the figures on this card. A ${a.tier} tracker is not the underlying - at ${a.trackingErrorBpPerDay} bp/day of tracking error the wrapper carries its own idiosyncratic risk, and a premium band of ${a.premiumP10Pct}% to ${a.premiumP90Pct}% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure.`
     };
   };
 
@@ -273,7 +312,7 @@ export function createDesk({ dataset, validationResults = null, provenance = {},
       };
     },
 
-    wrapper() { return { available: wrapperView.available, degraded: wrapperView.degraded, measuredAt: wrapperView.probe?.generatedAt || null, venueName: wrapperView.probe?.venue?.name || null, summary: wrapperView.summary, referenceMarket: wrapperView.referenceMarket, verified: Object.keys(wrapperView.probe?.bySymbol || {}).length }; },
+    wrapper() { return { available: wrapperView.available, degraded: wrapperView.degraded, measuredAt: wrapperView.probe?.generatedAt || null, venueName: wrapperView.probe?.venue?.name || null, summary: wrapperView.summary, referenceMarket: wrapperView.referenceMarket, verified: Object.keys(wrapperView.probe?.bySymbol || {}).length, closedSessionReturns: wrapperView.probe?.closedSessionReturns || null }; },
     validation(H = DEFAULT_HORIZON) { return validationByHorizon[H] || null; },
     allValidation() { return validationByHorizon; },
     conformal(H = DEFAULT_HORIZON) { return conformalByHorizon[H] || null; },

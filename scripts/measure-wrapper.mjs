@@ -67,6 +67,19 @@ const OPEN_DAYS_UTC = [1, 2, 3, 4, 5];
 const CASH_HOURS_PER_WEEK = 6.5 * 5;   // the real figure, used for the calendar share
 const WEEK_HOURS = 168;
 
+// The return layer. A closed run shorter than MIN_BLOCK_HOURS is a gap in the exchange feed, not a
+// session break, and measuring a "weekend" across a feed gap would report the gap as risk.
+const MIN_BLOCK_HOURS = 12;
+// Friday cash close to Monday cash open is ~64h of shut reference market. Anything at or above this
+// is a genuine weekend; below it and above MIN_BLOCK_HOURS is an overnight break.
+const WEEKEND_BLOCK_HOURS = 48;
+
+const stdev = (a) => {
+  if (!a || a.length < 2) return NaN;
+  const m = a.reduce((x, y) => x + y, 0) / a.length;
+  return Math.sqrt(a.reduce((s2, x) => s2 + (x - m) ** 2, 0) / (a.length - 1));
+};
+
 const r = (x, dp = 2) => (x == null || !Number.isFinite(x) ? null : Number(Number(x).toFixed(dp)));
 const r0 = (x) => r(x, 0);
 
@@ -88,7 +101,7 @@ async function live(url, { timeout = 25000, retries = 3, label = "" } = {}) {
 /** Gate.io candle row -> object. [t, quoteVol, close, high, low, open, baseVol, windowClosed] */
 function rows(candles) {
   return (candles || [])
-    .map((k) => ({ t: Number(k[0]), c: Number(k[2]), qv: Number(k[1]) }))
+    .map((k) => ({ t: Number(k[0]), c: Number(k[2]), qv: Number(k[1]), hi: Number(k[3]), lo: Number(k[4]) }))
     .filter((x) => Number.isFinite(x.t) && Number.isFinite(x.c))
     .sort((a, b) => a.t - b.t);
 }
@@ -122,6 +135,102 @@ function closedHours(h) {
     tradedOutsideSessionPct: closedN ? r(100 * tradedClosed / closedN) : null,
     tradedInsideSessionPct: openN ? r(100 * tradedOpen / openN) : null,
     convention: "Mon-Fri hourly buckets 13:00-20:59 UTC counted as reference-session OPEN (conservative: the real US cash session is 32.5h/week, this counts 40h)"
+  };
+}
+
+/**
+ * The 7x24 RETURN layer, as opposed to the movement share above.
+ *
+ * closedHours() answers "how much of the wrapper's movement happened while the cash market was shut".
+ * That is a share of absolute movement, and a share cannot be sized: a trader cannot ask "what did it
+ * do" of a percentage of |returns|. This function answers the question that was still open, which is
+ * what the wrapper actually RETURNED while the reference market was closed, as a distribution with a
+ * left tail and an intra-block path - the same two objects every other part of AnalogDesk reports.
+ *
+ * Two granularities, because they answer different questions:
+ *   - hourly returns bucketed by whether the reference market was open, which shows whether the
+ *     closed-hours price formation is noisier or quieter than the open-hours one;
+ *   - whole closed BLOCKS (a weekend, an overnight), measured entry-to-exit with the intra-block low,
+ *     which is the number a holder of the wrapper over a weekend actually experiences.
+ *
+ * Nothing here feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md. It is
+ * a measurement of the wrapper instrument, reported next to the 5x24 distribution and labelled as such.
+ */
+function closedReturns(h) {
+  const inside = [], outside = [];
+  for (let i = 1; i < h.length; i++) {
+    const prev = h[i - 1].c, cur = h[i].c;
+    if (!(prev > 0) || !(cur > 0)) continue;
+    const ret = (cur / prev - 1) * 100;
+    if (isReferenceOpen(h[i].t)) inside.push(ret); else outside.push(ret);
+  }
+
+  // Maximal runs of consecutive closed hourly candles. "Consecutive" is checked on the timestamp, not
+  // on array position: a feed gap would otherwise be silently read as one long closed block.
+  const runs = [];
+  let start = -1;
+  for (let i = 0; i < h.length; i++) {
+    const closed = !isReferenceOpen(h[i].t);
+    const contiguous = i > 0 && (h[i].t - h[i - 1].t) === 3600;
+    if (closed && contiguous) { if (start < 0) start = i; }
+    else if (start >= 0) { runs.push([start, i - 1]); start = -1; }
+  }
+  if (start >= 0) runs.push([start, h.length - 1]);
+
+  const blocks = [];
+  for (const [a, b] of runs) {
+    if (a < 1) continue;                     // no pre-block price to measure the entry from
+    const hours = b - a + 1;
+    if (hours < MIN_BLOCK_HOURS) continue;   // feed gap, not a session break
+    const entry = h[a - 1].c, exit = h[b].c;
+    if (!(entry > 0) || !(exit > 0)) continue;
+    let lo = Infinity, hi = -Infinity;
+    for (let i = a; i <= b; i++) {
+      if (Number.isFinite(h[i].lo) && h[i].lo > 0) lo = Math.min(lo, h[i].lo);
+      if (Number.isFinite(h[i].hi) && h[i].hi > 0) hi = Math.max(hi, h[i].hi);
+    }
+    blocks.push({
+      hours,
+      kind: hours >= WEEKEND_BLOCK_HOURS ? "weekend" : "overnight",
+      startIso: new Date(h[a].t * 1000).toISOString(),
+      endIso: new Date(h[b].t * 1000).toISOString(),
+      entry: r(entry, 4), exit: r(exit, 4),
+      returnPct: r((exit / entry - 1) * 100, 3),
+      maePct: Number.isFinite(lo) ? r((lo / entry - 1) * 100, 3) : null,
+      mfePct: Number.isFinite(hi) ? r((hi / entry - 1) * 100, 3) : null
+    });
+  }
+
+  const dist = (arr) => {
+    const a = arr.filter((x) => Number.isFinite(x));
+    if (!a.length) return null;
+    return {
+      n: a.length,
+      meanPct: r(a.reduce((x, y) => x + y, 0) / a.length, 4),
+      medianPct: r(quantile(a, 0.5), 4),
+      stdPct: r(stdev(a), 4),
+      p10Pct: r(quantile(a, 0.1), 4),
+      p90Pct: r(quantile(a, 0.9), 4),
+      minPct: r(Math.min(...a), 4),
+      maxPct: r(Math.max(...a), 4),
+      shareNegativePct: r(100 * a.filter((x) => x < 0).length / a.length, 1)
+    };
+  };
+
+  const weekend = blocks.filter((b) => b.kind === "weekend");
+  const overnight = blocks.filter((b) => b.kind === "overnight");
+  const sdIn = stdev(inside), sdOut = stdev(outside);
+  return {
+    hourlyInsideSession: dist(inside),
+    hourlyOutsideSession: dist(outside),
+    hourlyStdRatioOutsideOverInside: Number.isFinite(sdIn) && Number.isFinite(sdOut) && sdIn > 0 ? r(sdOut / sdIn, 3) : null,
+    blocks: { total: blocks.length, weekend: weekend.length, overnight: overnight.length },
+    weekendBlocks: weekend,
+    overnightBlocks: overnight,
+    weekendReturnDistribution: dist(weekend.map((b) => b.returnPct)),
+    weekendMaeDistribution: dist(weekend.map((b) => b.maePct)),
+    weekendShareBreached5PctDrawdownPct: weekend.length ? r(100 * weekend.filter((b) => b.maePct != null && b.maePct <= -5).length / weekend.length, 1) : null,
+    convention: "hourly buckets; reference session = Mon-Fri 13:00-20:59 UTC (40h/week, deliberately wider than the real 32.5h cash session so closed-hours figures are understated rather than flattered); a block is a maximal run of consecutive closed candles of at least " + MIN_BLOCK_HOURS + "h, weekend if at least " + WEEKEND_BLOCK_HOURS + "h; MAE uses the intra-block candle low against the pre-block close"
   };
 }
 
@@ -294,11 +403,68 @@ for (const a of canonical) {
   try {
     const h = rows(await live(candlesUrl(a.pair, "1h", { limit: 720 }), { label: `1h ${a.pair}` }));
     a.closedHours = closedHours(h);
+    // Same 720 hourly candles, second reading: the movement share above and the return distribution
+    // below are computed from one fetch, so they can never disagree about which hours they cover.
+    a.closedReturns = closedReturns(h);
   } catch (e) { a.closedHours = null; a.closedHoursError = e.message.slice(0, 120); }
   await sleep(90);
   if (a.microstructure?.spreadBps == null) delete a.microstructure;
   log(`  ${a.sym.padEnd(6)} ${a.pair.padEnd(10)} corr ${String(a.returnCorrelation).padEnd(7)} TE ${String(a.trackingErrorBpPerDay).padStart(4)}bp/d  spread ${a.microstructure ? String(a.microstructure.spreadBps).padStart(6) + "bp" : "   n/a"}  closed-move ${a.closedHours?.referenceClosedMoveSharePct ?? "n/a"}%`);
 }
+
+/* 6b. pool every wrapper's closed-session blocks into one return distribution.
+   Pooling across pairs is deliberate and is stated wherever it is quoted: a weekend block for one
+   wrapper is not an independent draw from the same distribution as another wrapper's, because the
+   whole crypto-quoted complex moves together. The pooled n is therefore reported next to the number
+   of distinct wrappers and the distinct weekends that produced it, so the effective sample size is
+   visible rather than implied by n alone. */
+const returnLayer = (() => {
+  const weekend = [], overnight = [];
+  const pairsWith = [];
+  const weekendWeeks = new Set();
+  for (const a of canonical) {
+    const cr = a.closedReturns;
+    if (!cr) continue;
+    if (cr.hourlyStdRatioOutsideOverInside != null) pairsWith.push(a.sym);
+    for (const b of cr.weekendBlocks || []) { weekend.push(Object.assign({ sym: a.sym, pair: a.pair, tier: a.tier }, b)); weekendWeeks.add(b.startIso.slice(0, 10)); }
+    for (const b of cr.overnightBlocks || []) overnight.push(Object.assign({ sym: a.sym, pair: a.pair }, b));
+  }
+  const dist = (arr) => {
+    const a = arr.filter((x) => Number.isFinite(x));
+    if (!a.length) return null;
+    return {
+      n: a.length,
+      meanPct: r(a.reduce((x, y) => x + y, 0) / a.length, 4),
+      medianPct: r(quantile(a, 0.5), 4),
+      stdPct: r(stdev(a), 4),
+      p10Pct: r(quantile(a, 0.1), 4),
+      p90Pct: r(quantile(a, 0.9), 4),
+      minPct: r(Math.min(...a), 4),
+      maxPct: r(Math.max(...a), 4),
+      shareNegativePct: r(100 * a.filter((x) => x < 0).length / a.length, 1)
+    };
+  };
+  const wk = weekend.map((b) => b.returnPct);
+  return {
+    convention: "pooled over the canonical wrapper of every verified underlying; one hourly fetch of 720 candles per pair, so the window is the same ~30 days for every pair and the distinct weekend starts bound the effective sample size",
+    pairsWithReturnLayer: pairsWith.length,
+    distinctWeekendStarts: weekendWeeks.size,
+    hourlyStdRatioOutsideOverInside: dist(canonical.map((a) => a.closedReturns?.hourlyStdRatioOutsideOverInside).filter((x) => x != null)),
+    hourlyOutsideSession: dist([].concat(...canonical.map((a) => (a.closedReturns?.hourlyOutsideSession ? [a.closedReturns.hourlyOutsideSession.medianPct] : [])))),
+    pooled: {
+      weekendReturnDistribution: dist(wk),
+      weekendMaeDistribution: dist(weekend.map((b) => b.maePct)),
+      weekendMfeDistribution: dist(weekend.map((b) => b.mfePct)),
+      weekendShareBreached5PctDrawdownPct: weekend.length ? r(100 * weekend.filter((b) => b.maePct != null && b.maePct <= -5).length / weekend.length, 1) : null,
+      weekendShareBreached10PctDrawdownPct: weekend.length ? r(100 * weekend.filter((b) => b.maePct != null && b.maePct <= -10).length / weekend.length, 1) : null,
+      overnightReturnDistribution: dist(overnight.map((b) => b.returnPct)),
+      overnightMaeDistribution: dist(overnight.map((b) => b.maePct))
+    },
+    weekendBlocks: weekend,
+    overnightBlocks: overnight.slice(0, 400),
+    caveat: "These are wrapper returns measured on a tokenised-equity venue while the reference cash market was shut. They are NOT the outcome distribution AnalogDesk retrieves, which is built on 5x24 daily sessions of the underlying and is validated as published in research/VALIDATION.md. A weekend block return is a single draw per wrapper per weekend, the blocks are highly cross-correlated across wrappers, and 720 hourly candles is roughly four weekends per pair - so the pooled n overstates the number of independent observations and the distinct weekend starts are the honest bound."
+  };
+})();
 
 /* 7. aggregate, and the block the research card quotes. */
 const pick = (k) => canonical.map((a) => a[k]).filter((x) => Number.isFinite(x));
@@ -330,10 +496,22 @@ const summary = {
   maxReferenceClosedMoveSharePct: r(Math.max(...sub("closedHours", "referenceClosedMoveSharePct")), 1),
   minReferenceClosedMoveSharePct: r(Math.min(...sub("closedHours", "referenceClosedMoveSharePct")), 1),
   pairsWithClosedHoursMeasurement: sub("closedHours", "referenceClosedMoveSharePct").length,
-  pairsWithMicrostructure: sub("microstructure", "spreadBps").length
+  pairsWithMicrostructure: sub("microstructure", "spreadBps").length,
+  pairsWithReturnLayer: sub("closedReturns", "hourlyStdRatioOutsideOverInside").length,
+  medianHourlyStdRatioOutsideOverInside: r(quantile(sub("closedReturns", "hourlyStdRatioOutsideOverInside"), 0.5), 3),
+  weekendBlocksObserved: canonical.reduce((n, a) => n + (a.closedReturns?.weekendBlocks?.length || 0), 0),
+  overnightBlocksObserved: canonical.reduce((n, a) => n + (a.closedReturns?.overnightBlocks?.length || 0), 0),
+  pooledWeekendMedianReturnPct: returnLayer.pooled.weekendReturnDistribution?.medianPct ?? null,
+  pooledWeekendP10ReturnPct: returnLayer.pooled.weekendReturnDistribution?.p10Pct ?? null,
+  pooledWeekendStdPct: returnLayer.pooled.weekendReturnDistribution?.stdPct ?? null,
+  pooledWeekendShareNegativePct: returnLayer.pooled.weekendReturnDistribution?.shareNegativePct ?? null,
+  pooledWeekendMedianMaePct: returnLayer.pooled.weekendMaeDistribution?.medianPct ?? null,
+  pooledWeekendP10MaePct: returnLayer.pooled.weekendMaeDistribution?.p10Pct ?? null,
+  pooledWeekendShareBreached5PctDrawdownPct: returnLayer.pooled.weekendShareBreached5PctDrawdownPct ?? null
 };
 
 base.issuerFamilies = families;
+base.closedSessionReturns = returnLayer;
 base.pairs = canonical;
 base.rejected = rejected;
 base.bySymbol = Object.fromEntries(canonical.map((a) => [a.sym, a]));
@@ -342,7 +520,8 @@ base.disclosure = [
   `Wrapper layer measured on ${VENUE.name} at ${base.generatedAt}: ${summary.wrappersVerified} tokenised-equity wrappers verified against ${summary.underlyingSymbolsCovered} of ${summary.universeSymbols} library instruments (${summary.coveragePct}% coverage), each after a price test against the underlying's raw session close and a daily-return correlation test.`,
   `Median return correlation ${summary.medianReturnCorrelation}, median tracking error ${summary.medianTrackingErrorBpPerDay} bp/day, median premium ${summary.medianPremiumPct}%, median spread ${summary.medianSpreadBps} bp.`,
   `The 7x24 part, measured: the reference cash market is closed for ${referenceMarket.closedSharePct}% of the week (${referenceMarket.closedHoursPerWeek}h of 168h), and across the verified wrappers a median ${summary.medianReferenceClosedMoveSharePct}% of the wrapper's own realised hourly price movement happened while it was closed.`,
-  `This is a measurement of the instrument layer, not a new price source: no retrieval, conformal or validation figure in AnalogDesk uses it. Snapshots change every second; what is reported is the state at generatedAt.`
+  `The return layer, measured: over ${returnLayer.pooled.weekendReturnDistribution?.n ?? 0} weekend closed-market blocks across ${returnLayer.pairsWithReturnLayer} wrappers the median wrapper return was ${returnLayer.pooled.weekendReturnDistribution?.medianPct ?? "n/a"}% (p10 ${returnLayer.pooled.weekendReturnDistribution?.p10Pct ?? "n/a"}%, sd ${returnLayer.pooled.weekendReturnDistribution?.stdPct ?? "n/a"}%), the median intra-weekend adverse excursion was ${returnLayer.pooled.weekendMaeDistribution?.medianPct ?? "n/a"}%, and ${returnLayer.pooled.weekendShareBreached5PctDrawdownPct ?? "n/a"}% of those weekends traded at least 5% below the pre-weekend close. Closed-hour price formation is ${summary.medianHourlyStdRatioOutsideOverInside ?? "n/a"}x as volatile hour-for-hour as open-hour formation.`,
+  `This is a measurement of the instrument layer, not a new price source: no retrieval, conformal or validation figure in AnalogDesk uses it, and the outcome distribution AnalogDesk retrieves remains built on 5x24 daily sessions. Snapshots change every second; what is reported is the state at generatedAt.`
 ].join(" ");
 
 mkdirSync(dirname(OUT), { recursive: true });

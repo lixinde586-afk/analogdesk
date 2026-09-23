@@ -171,7 +171,7 @@ export function createBitgetAdapter(probe) {
   return {
     available: ok,
     probe,
-    status: ok ? "connected" : "degraded",
+    status: ok ? "reachable-not-consumed" : "degraded",
     narrativeStatus: narrative?.reachable ? "connected" : "unavailable",
     async enrich(payload) {
       const narr = narrative
@@ -181,7 +181,7 @@ export function createBitgetAdapter(probe) {
         return { ...payload, bitget: { status: "degraded", disclosure: probe.marketData?.disclosure ?? probe.disclosure, endpoints: probe.endpoints, narrative: narr, probedAt: probe.probedAt } };
       }
       // Reachable path: a real tools/list result would be turned into instrument metadata here.
-      return { ...payload, bitget: { status: "connected", probedAt: probe.probedAt, endpoints: probe.endpoints, narrative: narr } };
+      return { ...payload, bitget: { status: "reachable-not-consumed", probedAt: probe.probedAt, endpoints: probe.endpoints, narrative: narr } };
     }
   };
 }

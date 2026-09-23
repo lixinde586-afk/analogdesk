@@ -89,8 +89,18 @@ function wrapperEn(w) {
     return [
       `The 7x24 premise, measured rather than asserted. The reference cash market is closed for ${pc(s24.referenceClosedSharePct)} of the week - ${s(s24.referenceClosedHoursPerWeek)} of ${s(w.referenceMarket?.weekHours)} hours - and ${pc(s24.closedMoveSharePct)} of ${w.instrument}'s own realised hourly price movement over ${n0(s24.hoursObserved)} observed hours landed inside those closed hours, during which it printed a trade in ${pc(s24.tradedOutsideSessionPct)} of them.`,
       `That wrapper is a ${t.tierLabel}: daily-return correlation ${s(t.returnCorrelation, 4)} against ${w.symbol}, tracking error ${n0(t.trackingErrorBpPerDay)} bp per day over ${n0(t.overlapSessions)} overlapping sessions, median premium ${pc(pr.medianPct)} with a ${pc(pr.p10Pct)} to ${pc(pr.p90Pct)} band, spread ${s(lq.spreadBps)} bp and ${n0(lq.depthWithin50BpsUsdt)} USDT resting within 50 bp of the touch at the snapshot.`,
+      (() => {
+        const cr = w.closedSessionReturns;
+        if (!cr) return null;
+        const wd = cr.weekendReturnDistribution, mae = cr.weekendMaeDistribution;
+        if (!wd) return `No closed-session block in the observed window was long enough to measure for ${w.instrument}, so the movement share above is reported without a return distribution behind it. That is a gap in the measurement, not a small number.`;
+        const ratio = cr.hourlyStdRatioOutsideOverInside;
+        const ratioClause = ratio == null ? "" : ` Hour for hour, closed-session price formation was ${s(ratio, 2)} times as volatile as open-session formation${ratio < 1 ? ", so the movement share above is large because there are far more closed hours than open ones, not because each closed hour moves more" : ""}.`;
+        const breach = cr.weekendShareBreached5PctDrawdownPct == null || cr.weekendDrawdownThresholdPct == null ? "" : `; ${pc(cr.weekendShareBreached5PctDrawdownPct)} of them traded at least ${pc(Math.abs(cr.weekendDrawdownThresholdPct))} below the pre-weekend close`;
+        return `The return layer behind that share, measured on the same hourly candles: across ${n0(cr.weekendBlocks)} weekend block(s) in the observed window, ${w.instrument} went from the pre-weekend close to the reopen with a median return of ${pc(wd.medianPct)} - tenth percentile ${pc(wd.p10Pct)}, standard deviation ${pc(wd.stdPct)}, negative in ${pc(wd.shareNegativePct)} of them - and its median intra-weekend adverse excursion was ${pc(mae?.medianPct)}${breach}.${ratioClause} These are wrapper returns while the reference market was shut, not the distribution above: the retrieved outcome distribution is built on 5x24 daily sessions and is unchanged.`;
+      })(),
       `${w.caveat}`
-    ].join(" ");
+    ].filter(Boolean).join(" ");
   }
   if (w.status === "no-verified-wrapper") {
     return `The 7x24 premise is only partly measured for this name. The reference cash market is closed for ${pc(w.referenceMarket?.closedSharePct)} of the week, but ${w.reason} ${num0(w.candidatesTested)} candidate listing(s) were tested and refused, and every refusal is recorded with its reason in data-cache/wrapper-probe.json rather than dropped. No wrapper spread, premium or closed-hours figure is reported for ${w.symbol}, and none is estimated.`;
@@ -112,8 +122,18 @@ function wrapperZh(w) {
     return [
       `"7x24"这个前提在这里是被测量出来的，而不是被断言的。参考现货市场每周有 ${pc(s24.referenceClosedSharePct)} 的时间休市——${s(s24.referenceClosedHoursPerWeek)} 小时，全周共 ${s(w.referenceMarket?.weekHours)} 小时；而在 ${n0(s24.hoursObserved)} 个观测小时中，${w.instrument} 自身已实现的小时级价格变动有 ${pc(s24.closedMoveSharePct)} 发生在这些休市时段里，其中 ${pc(s24.tradedOutsideSessionPct)} 的休市小时确实有成交。`,
       `该凭证属于${ZH_TIER[t.tier] || t.tierLabel}：与 ${w.symbol} 的日收益相关性 ${s(t.returnCorrelation, 4)}，在 ${n0(t.overlapSessions)} 个重叠交易日上的跟踪误差为 ${n0(t.trackingErrorBpPerDay)} 个基点/日，溢价中位数 ${pc(pr.medianPct)}，区间 ${pc(pr.p10Pct)} 至 ${pc(pr.p90Pct)}，快照时点差 ${s(lq.spreadBps)} 个基点，距最优价 50 个基点以内挂单深度 ${n0(lq.depthWithin50BpsUsdt)} USDT。`,
+      (() => {
+        const cr = w.closedSessionReturns;
+        if (!cr) return null;
+        const wd = cr.weekendReturnDistribution, mae = cr.weekendMaeDistribution;
+        if (!wd) return `在观测窗口内，${w.instrument} 没有足够长的休市区块可供测量，因此上面只报告了变动份额，其背后没有收益分布。这是测量的缺口，不是一个很小的数字。`;
+        const ratio = cr.hourlyStdRatioOutsideOverInside;
+        const ratioClause = ratio == null ? "" : `按小时计，休市时段的价格形成波动是开盘时段的 ${s(ratio, 2)} 倍${ratio < 1 ? "，所以上面的变动份额之所以大，是因为休市小时数远多于开盘小时数，而不是因为每个休市小时波动更大" : ""}。`;
+        const breach = cr.weekendShareBreached5PctDrawdownPct == null || cr.weekendDrawdownThresholdPct == null ? "" : `；其中有 ${pc(cr.weekendShareBreached5PctDrawdownPct)} 的周末在区块内跌破周末前收盘价 ${pc(Math.abs(cr.weekendDrawdownThresholdPct))} 以上`;
+        return `这一份额背后的收益层，用同一批小时 K 线测得：在观测窗口的 ${n0(cr.weekendBlocks)} 个周末区块中，${w.instrument} 从周末前收盘价到重新开盘的中位收益为 ${pc(wd.medianPct)}——第 10 百分位 ${pc(wd.p10Pct)}，标准差 ${pc(wd.stdPct)}，其中 ${pc(wd.shareNegativePct)} 为负——区块内中位最大不利偏移为 ${pc(mae?.medianPct)}${breach}。${ratioClause}这些是参考市场休市期间凭证自身的收益，不是上面的分布：检索得到的结果分布建立在 5x24 的日线上，没有改变。`;
+      })(),
       `${w.caveat}`
-    ].join("");
+    ].filter(Boolean).join("");
   }
   if (w.status === "no-verified-wrapper") {
     return `"7x24"这个前提对该标的只测量到一半：参考现货市场每周有 ${pc(w.referenceMarket?.closedSharePct)} 的时间休市，但${w.reason}共有 ${num0(w.candidatesTested)} 个候选挂牌被测试并拒绝，每一条拒绝及其原因都记录在 data-cache/wrapper-probe.json 中，而不是被静默丢弃。${w.symbol} 的凭差点差、溢价与休市时段数字均不予报告，也不做任何估算。`;

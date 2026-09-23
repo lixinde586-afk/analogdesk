@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T11:30:15.792Z",
+  "generatedAt": "2026-09-23T15:12:08.282Z",
   "host": "win32",
   "node": "v24.21.0",
   "targets": [
@@ -11,7 +11,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 1086
+      "latencyMs": 1363
     },
     {
       "name": "fred.stlouisfed.org",
@@ -21,7 +21,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 1122
+      "latencyMs": 4621
     },
     {
       "name": "efts.sec.gov",
@@ -31,7 +31,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 5162
+      "latencyMs": 1476
     },
     {
       "name": "www.federalreserve.gov",
@@ -41,7 +41,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 1379
+      "latencyMs": 1470
     },
     {
       "name": "coins.llama.fi",
@@ -51,7 +51,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 1928
+      "latencyMs": 1783
     },
     {
       "name": "api.alternative.me",
@@ -61,7 +61,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 1164
+      "latencyMs": 1290
     },
     {
       "name": "api.github.com",
@@ -71,7 +71,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 536
+      "latencyMs": 494
     },
     {
       "name": "registry.npmjs.org",
@@ -81,7 +81,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 1336
+      "latencyMs": 1063
     },
     {
       "name": "hackathon.bitgetops.com",
@@ -91,7 +91,7 @@
       "status": 404,
       "kind": "http-404",
       "detail": "reachable, responded 404",
-      "latencyMs": 5066
+      "latencyMs": 1284
     },
     {
       "name": "api.gateio.ws",
@@ -101,7 +101,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 1191
+      "latencyMs": 679
     },
     {
       "name": "query1.finance.yahoo.com",
@@ -111,7 +111,7 @@
       "status": 403,
       "kind": "http-403",
       "detail": "reachable, responded 403",
-      "latencyMs": 1410
+      "latencyMs": 1049
     },
     {
       "name": "stooq.com",
@@ -121,7 +121,7 @@
       "status": 403,
       "kind": "http-403",
       "detail": "reachable, responded 403",
-      "latencyMs": 1178
+      "latencyMs": 782
     },
     {
       "name": "api.coingecko.com",
@@ -131,7 +131,7 @@
       "status": null,
       "kind": "timeout",
       "detail": "no TCP or TLS response within the probe timeout",
-      "latencyMs": 10713
+      "latencyMs": 10428
     },
     {
       "name": "api.kraken.com",
@@ -141,7 +141,7 @@
       "status": null,
       "kind": "timeout",
       "detail": "no TCP or TLS response within the probe timeout",
-      "latencyMs": 10732
+      "latencyMs": 10710
     },
     {
       "name": "en.wikipedia.org",
@@ -151,100 +151,197 @@
       "status": null,
       "kind": "timeout",
       "detail": "no TCP or TLS response within the probe timeout",
-      "latencyMs": 10685
+      "latencyMs": 10697
     }
   ],
   "bitget": {
-    "probedAt": "2026-09-23T11:31:15.159Z",
-    "reachable": false,
-    "reachableCount": 0,
+    "probedAt": "2026-09-23T15:13:07.208Z",
+    "reachable": true,
+    "reachableCount": 3,
+    "reachableDirectCount": 0,
     "total": 3,
+    "proxy": {
+      "host": "127.0.0.1",
+      "port": 7890,
+      "source": "auto-detected listening local proxy 127.0.0.1:7890"
+    },
     "endpoints": [
       {
         "url": "https://agent.bitget.com/mcp",
         "name": "Bitget official MCP (US stocks / ETF, read-only)",
-        "probedAt": "2026-09-23T11:31:10.483Z",
-        "latencyMs": 384,
-        "ok": false,
-        "status": null,
-        "kind": "connection-reset",
-        "detail": "TCP connection reset by peer before any HTTP response",
+        "probedAt": "2026-09-23T15:12:57.475Z",
+        "latencyMs": 1298,
+        "ok": true,
+        "status": 400,
+        "kind": "http-400",
+        "detail": "connection-reset direct (TCP connection reset by peer before any HTTP response); reachable through the local proxy, responded 400",
         "transport": "jsonrpc-2.0 / tools/list",
-        "group": "market-data"
+        "group": "market-data",
+        "reachableDirect": false,
+        "reachableViaProxy": true,
+        "answeredOn": "proxy 127.0.0.1:7890",
+        "viaProxy": {
+          "url": "https://agent.bitget.com/mcp",
+          "name": "Bitget official MCP (US stocks / ETF, read-only)",
+          "group": "market-data",
+          "route": "proxy 127.0.0.1:7890",
+          "probedAt": "2026-09-23T15:13:00.437Z",
+          "ok": true,
+          "status": 400,
+          "latencyMs": 1664,
+          "kind": "http-400",
+          "detail": "reachable through the local proxy, responded 400"
+        }
       },
       {
         "url": "https://www.bitget.com",
         "name": "Bitget web (www)",
-        "probedAt": "2026-09-23T11:31:10.867Z",
-        "latencyMs": 348,
-        "ok": false,
-        "status": null,
-        "kind": "connection-reset",
-        "detail": "TCP connection reset by peer before any HTTP response",
-        "group": "market-data"
+        "probedAt": "2026-09-23T15:13:00.437Z",
+        "latencyMs": 660,
+        "ok": true,
+        "status": 200,
+        "kind": "ok",
+        "detail": "connection-reset direct (TCP connection reset by peer before any HTTP response); reachable through the local proxy, responded 200",
+        "group": "market-data",
+        "reachableDirect": false,
+        "reachableViaProxy": true,
+        "answeredOn": "proxy 127.0.0.1:7890",
+        "viaProxy": {
+          "url": "https://www.bitget.com",
+          "name": "Bitget web (www)",
+          "group": "market-data",
+          "route": "proxy 127.0.0.1:7890",
+          "probedAt": "2026-09-23T15:13:03.999Z",
+          "ok": true,
+          "status": 200,
+          "latencyMs": 2902,
+          "kind": "ok",
+          "detail": "reachable through the local proxy, responded 200"
+        }
       },
       {
         "url": "https://api.bitget.com",
         "name": "Bitget public REST (api)",
-        "probedAt": "2026-09-23T11:31:11.215Z",
-        "latencyMs": 425,
-        "ok": false,
-        "status": null,
-        "kind": "connection-reset",
-        "detail": "TCP connection reset by peer before any HTTP response",
-        "group": "market-data"
+        "probedAt": "2026-09-23T15:13:03.999Z",
+        "latencyMs": 619,
+        "ok": true,
+        "status": 404,
+        "kind": "http-404",
+        "detail": "connection-reset direct (TCP connection reset by peer before any HTTP response); reachable through the local proxy, responded 404",
+        "group": "market-data",
+        "reachableDirect": false,
+        "reachableViaProxy": true,
+        "answeredOn": "proxy 127.0.0.1:7890",
+        "viaProxy": {
+          "url": "https://api.bitget.com",
+          "name": "Bitget public REST (api)",
+          "group": "market-data",
+          "route": "proxy 127.0.0.1:7890",
+          "probedAt": "2026-09-23T15:13:05.755Z",
+          "ok": true,
+          "status": 404,
+          "latencyMs": 1137,
+          "kind": "http-404",
+          "detail": "reachable through the local proxy, responded 404"
+        }
       }
     ],
     "marketData": {
-      "reachable": false,
-      "reachableCount": 0,
+      "reachable": true,
+      "reachableCount": 3,
+      "reachableDirectCount": 0,
       "total": 3,
       "endpoints": [
         {
           "url": "https://agent.bitget.com/mcp",
           "name": "Bitget official MCP (US stocks / ETF, read-only)",
-          "probedAt": "2026-09-23T11:31:10.483Z",
-          "latencyMs": 384,
-          "ok": false,
-          "status": null,
-          "kind": "connection-reset",
-          "detail": "TCP connection reset by peer before any HTTP response",
+          "probedAt": "2026-09-23T15:12:57.475Z",
+          "latencyMs": 1298,
+          "ok": true,
+          "status": 400,
+          "kind": "http-400",
+          "detail": "connection-reset direct (TCP connection reset by peer before any HTTP response); reachable through the local proxy, responded 400",
           "transport": "jsonrpc-2.0 / tools/list",
-          "group": "market-data"
+          "group": "market-data",
+          "reachableDirect": false,
+          "reachableViaProxy": true,
+          "answeredOn": "proxy 127.0.0.1:7890",
+          "viaProxy": {
+            "url": "https://agent.bitget.com/mcp",
+            "name": "Bitget official MCP (US stocks / ETF, read-only)",
+            "group": "market-data",
+            "route": "proxy 127.0.0.1:7890",
+            "probedAt": "2026-09-23T15:13:00.437Z",
+            "ok": true,
+            "status": 400,
+            "latencyMs": 1664,
+            "kind": "http-400",
+            "detail": "reachable through the local proxy, responded 400"
+          }
         },
         {
           "url": "https://www.bitget.com",
           "name": "Bitget web (www)",
-          "probedAt": "2026-09-23T11:31:10.867Z",
-          "latencyMs": 348,
-          "ok": false,
-          "status": null,
-          "kind": "connection-reset",
-          "detail": "TCP connection reset by peer before any HTTP response",
-          "group": "market-data"
+          "probedAt": "2026-09-23T15:13:00.437Z",
+          "latencyMs": 660,
+          "ok": true,
+          "status": 200,
+          "kind": "ok",
+          "detail": "connection-reset direct (TCP connection reset by peer before any HTTP response); reachable through the local proxy, responded 200",
+          "group": "market-data",
+          "reachableDirect": false,
+          "reachableViaProxy": true,
+          "answeredOn": "proxy 127.0.0.1:7890",
+          "viaProxy": {
+            "url": "https://www.bitget.com",
+            "name": "Bitget web (www)",
+            "group": "market-data",
+            "route": "proxy 127.0.0.1:7890",
+            "probedAt": "2026-09-23T15:13:03.999Z",
+            "ok": true,
+            "status": 200,
+            "latencyMs": 2902,
+            "kind": "ok",
+            "detail": "reachable through the local proxy, responded 200"
+          }
         },
         {
           "url": "https://api.bitget.com",
           "name": "Bitget public REST (api)",
-          "probedAt": "2026-09-23T11:31:11.215Z",
-          "latencyMs": 425,
-          "ok": false,
-          "status": null,
-          "kind": "connection-reset",
-          "detail": "TCP connection reset by peer before any HTTP response",
-          "group": "market-data"
+          "probedAt": "2026-09-23T15:13:03.999Z",
+          "latencyMs": 619,
+          "ok": true,
+          "status": 404,
+          "kind": "http-404",
+          "detail": "connection-reset direct (TCP connection reset by peer before any HTTP response); reachable through the local proxy, responded 404",
+          "group": "market-data",
+          "reachableDirect": false,
+          "reachableViaProxy": true,
+          "answeredOn": "proxy 127.0.0.1:7890",
+          "viaProxy": {
+            "url": "https://api.bitget.com",
+            "name": "Bitget public REST (api)",
+            "group": "market-data",
+            "route": "proxy 127.0.0.1:7890",
+            "probedAt": "2026-09-23T15:13:05.755Z",
+            "ok": true,
+            "status": 404,
+            "latencyMs": 1137,
+            "kind": "http-404",
+            "detail": "reachable through the local proxy, responded 404"
+          }
         }
       ],
-      "summary": "0/3 Bitget market-data endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response",
-      "disclosure": "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced MARKET figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+      "summary": "3/3 Bitget market-data endpoints reachable (0/3 on a direct connection; the rest via 127.0.0.1:7890)",
+      "disclosure": null
     },
     "narrative": {
       "reachable": true,
       "endpoint": {
         "url": "https://hackathon.bitgetops.com/v1/chat/completions",
         "name": "Bitget hackathon LLM gateway (OpenAI-compatible /v1/chat/completions)",
-        "probedAt": "2026-09-23T11:31:11.640Z",
-        "latencyMs": 3519,
+        "probedAt": "2026-09-23T15:13:05.755Z",
+        "latencyMs": 1453,
         "ok": true,
         "status": 401,
         "kind": "http-401",
@@ -252,21 +349,284 @@
         "transport": "openai-compatible chat/completions",
         "group": "narrative",
         "model": "qwen3.8-max",
-        "role": "the narrative layer calls this endpoint; the generations baked into the replay cache were produced here with model qwen3.8-max"
+        "role": "the narrative layer calls this endpoint; the generations baked into the replay cache were produced here with model qwen3.8-max",
+        "reachableDirect": true,
+        "reachableViaProxy": false,
+        "answeredOn": "direct",
+        "viaProxy": null
       },
-      "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 3519ms) - this is the endpoint the narrative layer calls",
+      "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 1453ms, direct) - this is the endpoint the narrative layer calls",
       "model": "qwen3.8-max",
       "transport": "openai-compatible chat/completions"
     },
-    "summary": "0/3 Bitget market-data endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response; Bitget hackathon LLM gateway reachable (HTTP 401, 3519ms) - this is the endpoint the narrative layer calls",
-    "disclosure": "Two separate Bitget integrations, two separate results. MARKET DATA: the official Bitget MCP server for US stocks/ETFs and both Bitget web/API hosts are unreachable from this network (connection-reset: TCP connection reset by peer before any HTTP response), so AnalogDesk ships no Bitget-sourced market figure; every number comes from the keyless sources in research/DATA-PROVENANCE.md. NARRATIVE: the Bitget-operated hackathon LLM gateway at https://hackathon.bitgetops.com/v1 IS reachable (HTTP 401 on an unauthenticated probe), and it is the endpoint the narrative layer calls with model qwen3.8-max - the prose a reviewer reads was generated there. This distinction is reported rather than collapsed into a single badge, because either collapse would overstate or understate the integration."
+    "measurement": {
+      "generatedAt": "2026-09-23T14:06:26.954Z",
+      "route": {
+        "proxyUsed": "127.0.0.1:7890",
+        "proxySource": "auto-detected listening local proxy 127.0.0.1:7890",
+        "envProxy": null,
+        "marketDataReachableDirect": 0,
+        "marketDataReachableViaProxy": 3,
+        "marketDataTotal": 3,
+        "hosts": [
+          {
+            "key": "mcp",
+            "url": "https://agent.bitget.com/mcp",
+            "name": "Bitget official MCP (US stocks / ETF, read-only)",
+            "direct": {
+              "route": "direct",
+              "ok": false,
+              "status": null,
+              "latencyMs": 639,
+              "kind": "connection-reset",
+              "detail": "TCP connection reset by peer before any HTTP response"
+            },
+            "proxied": {
+              "route": "proxy 127.0.0.1:7890",
+              "ok": true,
+              "status": 400,
+              "latencyMs": 485,
+              "kind": "http-400",
+              "detail": "reachable, responded 400"
+            }
+          },
+          {
+            "key": "www",
+            "url": "https://www.bitget.com",
+            "name": "Bitget web (www)",
+            "direct": {
+              "route": "direct",
+              "ok": false,
+              "status": null,
+              "latencyMs": 457,
+              "kind": "connection-reset",
+              "detail": "TCP connection reset by peer before any HTTP response"
+            },
+            "proxied": {
+              "route": "proxy 127.0.0.1:7890",
+              "ok": true,
+              "status": 200,
+              "latencyMs": 1308,
+              "kind": "ok",
+              "detail": null
+            }
+          },
+          {
+            "key": "api",
+            "url": "https://api.bitget.com/api/v2/public/time",
+            "name": "Bitget public REST (api)",
+            "direct": {
+              "route": "direct",
+              "ok": false,
+              "status": null,
+              "latencyMs": 632,
+              "kind": "connection-reset",
+              "detail": "TCP connection reset by peer before any HTTP response"
+            },
+            "proxied": {
+              "route": "proxy 127.0.0.1:7890",
+              "ok": true,
+              "status": 200,
+              "latencyMs": 1880,
+              "kind": "ok",
+              "detail": null
+            }
+          }
+        ],
+        "narrativeGateway": {
+          "url": "https://hackathon.bitgetops.com/v1/chat/completions",
+          "name": "Bitget hackathon LLM gateway (OpenAI-compatible /v1/chat/completions)",
+          "group": "narrative",
+          "route": "direct",
+          "ok": true,
+          "status": 404,
+          "latencyMs": 1379,
+          "kind": "http-404",
+          "detail": "reachable, responded 404"
+        },
+        "disclosure": "0/3 Bitget market-data hosts answer on a DIRECT connection from this machine; 3/3 answer through a local HTTP proxy (127.0.0.1:7890). Every figure below was fetched on the proxied route and is labelled as such, because a reviewer on a plain network will get the direct result instead and must not be told otherwise."
+      },
+      "server": {
+        "sessionId": "c7552bca6189466db3095f71daf71caf",
+        "serverInfo": {
+          "name": "bitget-mcp-server",
+          "version": "4.0.5"
+        },
+        "protocolVersion": "2024-11-05",
+        "initMs": 2332,
+        "toolsAdvertised": [
+          {
+            "name": "guide",
+            "summary": "List available data categories, or entries within a category (optionally filtered)."
+          },
+          {
+            "name": "do_query",
+            "summary": "Execute a catalog entry by id, forwarding validated params to agent-data-platform."
+          }
+        ],
+        "catalog": {
+          "categories": [
+            {
+              "key": "crypto",
+              "name": "加密货币",
+              "description": "加密货币行情、链上数据、机构资金流、指标、hyperliquid 等",
+              "entry_count": 39
+            },
+            {
+              "key": "equity",
+              "name": "美股",
+              "description": "美股行情、基本面、机构持仓、分析师评级等",
+              "entry_count": 22
+            },
+            {
+              "key": "etf",
+              "name": "ETF",
+              "description": "ETF 基本信息、持仓、市场表现",
+              "entry_count": 3
+            },
+            {
+              "key": "news",
+              "name": "新闻",
+              "description": "财经新闻检索",
+              "entry_count": 1
+            },
+            {
+              "key": "sentiment",
+              "name": "市场情绪",
+              "description": "市场情绪指数",
+              "entry_count": 2
+            }
+          ]
+        }
+      },
+      "summary": {
+        "measured": true,
+        "measuredAt": "2026-09-23T14:07:46.571Z",
+        "route": "proxy 127.0.0.1:7890",
+        "server": "bitget-mcp-server@4.0.5",
+        "catalogCategories": 5,
+        "catalogEntries": 67,
+        "toolsAdvertised": 2,
+        "quotesAnswered": "68/71",
+        "profilesAnswered": "24/24",
+        "earningsDatesCompared": 1826,
+        "earningsExactSameDayPct": 0.11,
+        "earningsWithin3DaysPct": 69.44,
+        "fearGreedOverlappingDates": 396,
+        "fearGreedExactMatches": 396,
+        "medianSnapshotDriftPct": 1.49,
+        "entriesMeasuredEmpty": 2
+      },
+      "fearGreedCrossCheck": {
+        "entryId": "crypto_sentiment_crypto_fear_greed",
+        "provider": null,
+        "call": {
+          "ms": 2722,
+          "status": 200,
+          "ok": true,
+          "observationsReturned": 400
+        },
+        "localSource": "api.alternative.me/fng (keyless), already committed in data-cache/dataset.json",
+        "overlappingDates": 396,
+        "exactMatches": 396,
+        "exactMatchPct": 100,
+        "meanAbsDifference": 0,
+        "maxAbsDifference": 0,
+        "maxAbsDifferenceDate": null,
+        "verdict": "all 396 overlapping daily readings are identical to the independently-sourced series this project already ships",
+        "note": "Two independent transports, two independent operators, the same index. This is the one cross-check in this file where an exact numeric agreement is the expected result, so anything less is reported rather than rounded away."
+      },
+      "earningsCrossCheck": {
+        "entryId": "equity_calendar",
+        "symbolsQueried": 24,
+        "symbolsWithBothSides": 24,
+        "bitgetSource": "Bitget equity calendar (perf_briefing_fore_dsclsr_date / perf_report_dsclsr_date)",
+        "localSource": "EDGAR full-text search, 8-K Item 2.02 for domestic filers with a 6-K fallback for foreign private issuers, filing dates clustered at 6 calendar days",
+        "matchedDates": 1826,
+        "exactSameDay": 2,
+        "exactSameDayPct": 0.11,
+        "within3Days": 1268,
+        "within3DaysPct": 69.44,
+        "within7Days": 1280,
+        "within7DaysPct": 70.1,
+        "note": "Two independent derivations of the same corporate event. Bitget publishes a disclosure date; this project infers one from filing text. They are not the same quantity by construction - a filing can land a day either side of the announced briefing date - so the day difference is reported as a distribution rather than collapsed into a pass/fail."
+      },
+      "quotes": {
+        "entryId": "equity_price_quote",
+        "symbolsQueried": 71,
+        "symbolsAnswered": 68,
+        "provider": null,
+        "stalenessVsSnapshot": {
+          "snapshotDate": "2026-09-18",
+          "comparedSymbols": 68,
+          "medianAbsDriftPct": 1.49,
+          "maxAbsDriftPct": 12.77,
+          "note": "Bitget quotes are live; the library is frozen at 2026-09-18. The drift is therefore a measurement of how stale the snapshot is, not a disagreement about a price. It is reported so a reviewer can decide whether the frozen card is still readable."
+        }
+      },
+      "profiles": {
+        "entryId": "equity_profile",
+        "symbolsQueried": 24,
+        "symbolsAnswered": 24
+      },
+      "wholeMarketSentiment": {
+        "entryId": "sentiment_market_fear_greed",
+        "provider": null,
+        "ok": true,
+        "call": {
+          "ms": 1104,
+          "status": 200
+        },
+        "reading": {
+          "score": 37.2286,
+          "rating": "fear",
+          "timestamp": "2026-09-23T14:01:39Z",
+          "previousClose": 35.2286,
+          "previous1Week": 27.3143,
+          "previous1Month": 54.6571,
+          "previous1Year": 56.7714
+        },
+        "usedByEngine": false,
+        "note": "Recorded, not consumed. AnalogDesk's distance function is frozen and validated as published; adding a live sentiment series to it would invalidate every figure in research/VALIDATION.md. This reading is surfaced as provenance - a Bitget-sourced number a reviewer can see - and is deliberately excluded from the retrieval features, the conformal scale and the stress engine."
+      },
+      "measuredEmpty": {
+        "entries": [
+          {
+            "entryId": "equity_price_historical",
+            "params": {
+              "symbol": "NVDA"
+            },
+            "status": 204,
+            "empty": true,
+            "ok": false,
+            "ms": 1545,
+            "errorText": null
+          },
+          {
+            "entryId": "etf_price_performance",
+            "params": {
+              "symbol": "SPY"
+            },
+            "status": 204,
+            "empty": true,
+            "ok": false,
+            "ms": 1705,
+            "errorText": null
+          }
+        ],
+        "note": "These entries completed the transport and returned HTTP 204 with an empty body at measurement time. That is recorded instead of being retried until something came back: a working session with an empty upstream is a fact about the upstream, and a deep historical price cross-check would have been the strongest test in this file, so its absence is stated rather than papered over."
+      }
+    },
+    "measurementSummary": "Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md.",
+    "summary": "3/3 Bitget market-data endpoints reachable (0/3 on a direct connection; the rest via 127.0.0.1:7890); Bitget hackathon LLM gateway reachable (HTTP 401, 1453ms, direct) - this is the endpoint the narrative layer calls; Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md.",
+    "disclosure": "Bitget market data IS reachable, and the route matters: 0/3 endpoints answer on a direct connection from this machine and 3/3 answer through a local HTTP proxy (127.0.0.1:7890). Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md. A reviewer on a network without that proxy will get the direct result, so both are reported rather than the more flattering one."
   },
   "llm": {
     "mode": "LIVE",
     "model": "qwen3.8-max",
     "baseUrl": "https://hackathon.bitgetops.com/v1",
     "keyPresent": true,
-    "promptVersion": "3"
+    "promptVersion": "4"
   },
   "usedSources": [
     "api.stockanalysis.com",
@@ -346,13 +706,13 @@
       "detail": "no TCP or TLS response within the probe timeout"
     }
   ],
-  "summary": "8 used sources reachable; 5 candidate sources not used (3 of them unreachable from this machine); Bitget market-data toolkit unreachable (0/3); Bitget narrative gateway reachable.",
+  "summary": "8 used sources reachable; 5 candidate sources not used (3 of them unreachable from this machine); Bitget market-data toolkit reachable (3/3, 0/3 of them on a direct connection); Bitget narrative gateway reachable.",
   "wrapperMeasurement": {
-    "generatedAt": "2026-09-23T10:51:11.555Z",
+    "generatedAt": "2026-09-23T14:12:46.812Z",
     "venue": "Gate.io spot v4 (public, keyless)",
     "degraded": false,
-    "verifiedWrappers": 33,
+    "verifiedWrappers": 34,
     "referenceClosedSharePct": 81.4,
-    "medianClosedMoveSharePct": 60.9
+    "medianClosedMoveSharePct": 59.8
   }
 }

@@ -137,8 +137,19 @@ without keys or connectivity still gets the complete artefact.
 
 The connector for the official Bitget MCP (`agent.bitget.com/mcp`, JSON-RPC `tools/list`) is implemented in
 `src/data/bitget.mjs` with timeouts and precise transport-error classification. On the network this build ran
-on, all three Bitget hosts reset at the TCP layer, so **no Bitget-sourced figure ships** and the degradation is
-disclosed on every card.
+on, all three Bitget hosts reset at the TCP layer **on a direct connection**. Through a local HTTP proxy all
+three answer, and the official MCP identifies itself as `bitget-mcp-server@4.0.5` with a 67-entry catalog
+including 22 US-equity entries, no account and no API key. Both routes are measured and both are reported —
+`0/3 direct, 3/3 proxied` — because a green badge that does not say how it got there is worse than a red one.
+
+What the proxied route bought is not a data feed. It is a **cross-check**: 396 overlapping daily crypto
+fear-&-greed readings that are **identical** to the independently-sourced series this project already ships
+(mean absolute difference 0), 1,826 Bitget-disclosed earnings dates compared against the calendar derived
+independently from EDGAR full-text search (69.44% within three days), 24/24 company profiles with ISINs, and
+68/71 live quotes used to state how stale the frozen snapshot is. The deepest available test — a historical
+price cross-check — is absent because `equity_price_historical` returns HTTP 204 with an empty body, and that
+absence is recorded rather than worked around. No Bitget figure enters the retrieval features, the frozen
+conformal scale or any validated number.
 
 The §9 limitation that used to follow from this — that the 7x24 wrapper's own microstructure was unmeasured —
 has since been closed **from a venue that is reachable**: `scripts/measure-wrapper.mjs` measures tokenised US

@@ -1,0 +1,2543 @@
+{
+ "generatedAt": "2026-09-23T14:06:26.954Z",
+ "venue": {
+  "name": "Bitget official MCP (agent.bitget.com/mcp) - bitget-mcp-server, read-only US equity / ETF / crypto data, no account and no API key",
+  "transport": "MCP JSON-RPC 2.0 over streamable HTTP, proxied through a local HTTP CONNECT tunnel",
+  "endpoint": "https://agent.bitget.com/mcp"
+ },
+ "route": {
+  "proxyUsed": "127.0.0.1:7890",
+  "proxySource": "auto-detected listening local proxy 127.0.0.1:7890",
+  "envProxy": null,
+  "marketDataReachableDirect": 0,
+  "marketDataReachableViaProxy": 3,
+  "marketDataTotal": 3,
+  "hosts": [
+   {
+    "key": "mcp",
+    "url": "https://agent.bitget.com/mcp",
+    "name": "Bitget official MCP (US stocks / ETF, read-only)",
+    "direct": {
+     "route": "direct",
+     "ok": false,
+     "status": null,
+     "latencyMs": 639,
+     "kind": "connection-reset",
+     "detail": "TCP connection reset by peer before any HTTP response"
+    },
+    "proxied": {
+     "route": "proxy 127.0.0.1:7890",
+     "ok": true,
+     "status": 400,
+     "latencyMs": 485,
+     "kind": "http-400",
+     "detail": "reachable, responded 400"
+    }
+   },
+   {
+    "key": "www",
+    "url": "https://www.bitget.com",
+    "name": "Bitget web (www)",
+    "direct": {
+     "route": "direct",
+     "ok": false,
+     "status": null,
+     "latencyMs": 457,
+     "kind": "connection-reset",
+     "detail": "TCP connection reset by peer before any HTTP response"
+    },
+    "proxied": {
+     "route": "proxy 127.0.0.1:7890",
+     "ok": true,
+     "status": 200,
+     "latencyMs": 1308,
+     "kind": "ok",
+     "detail": null
+    }
+   },
+   {
+    "key": "api",
+    "url": "https://api.bitget.com/api/v2/public/time",
+    "name": "Bitget public REST (api)",
+    "direct": {
+     "route": "direct",
+     "ok": false,
+     "status": null,
+     "latencyMs": 632,
+     "kind": "connection-reset",
+     "detail": "TCP connection reset by peer before any HTTP response"
+    },
+    "proxied": {
+     "route": "proxy 127.0.0.1:7890",
+     "ok": true,
+     "status": 200,
+     "latencyMs": 1880,
+     "kind": "ok",
+     "detail": null
+    }
+   }
+  ],
+  "narrativeGateway": {
+   "url": "https://hackathon.bitgetops.com/v1/chat/completions",
+   "name": "Bitget hackathon LLM gateway (OpenAI-compatible /v1/chat/completions)",
+   "group": "narrative",
+   "route": "direct",
+   "ok": true,
+   "status": 404,
+   "latencyMs": 1379,
+   "kind": "http-404",
+   "detail": "reachable, responded 404"
+  },
+  "disclosure": "0/3 Bitget market-data hosts answer on a DIRECT connection from this machine; 3/3 answer through a local HTTP proxy (127.0.0.1:7890). Every figure below was fetched on the proxied route and is labelled as such, because a reviewer on a plain network will get the direct result instead and must not be told otherwise."
+ },
+ "server": {
+  "sessionId": "c7552bca6189466db3095f71daf71caf",
+  "serverInfo": {
+   "name": "bitget-mcp-server",
+   "version": "4.0.5"
+  },
+  "protocolVersion": "2024-11-05",
+  "initMs": 2332,
+  "toolsAdvertised": [
+   {
+    "name": "guide",
+    "summary": "List available data categories, or entries within a category (optionally filtered)."
+   },
+   {
+    "name": "do_query",
+    "summary": "Execute a catalog entry by id, forwarding validated params to agent-data-platform."
+   }
+  ],
+  "catalog": {
+   "categories": [
+    {
+     "key": "crypto",
+     "name": "加密货币",
+     "description": "加密货币行情、链上数据、机构资金流、指标、hyperliquid 等",
+     "entry_count": 39
+    },
+    {
+     "key": "equity",
+     "name": "美股",
+     "description": "美股行情、基本面、机构持仓、分析师评级等",
+     "entry_count": 22
+    },
+    {
+     "key": "etf",
+     "name": "ETF",
+     "description": "ETF 基本信息、持仓、市场表现",
+     "entry_count": 3
+    },
+    {
+     "key": "news",
+     "name": "新闻",
+     "description": "财经新闻检索",
+     "entry_count": 1
+    },
+    {
+     "key": "sentiment",
+     "name": "市场情绪",
+     "description": "市场情绪指数",
+     "entry_count": 2
+    }
+   ]
+  }
+ },
+ "sessionError": null,
+ "library": {
+  "symbols": 71,
+  "sessions": 2513,
+  "lastDate": "2026-09-18",
+  "snapshotNote": "the shipped library is frozen at 2026-09-18; a Bitget quote is live, so the two are compared as staleness, never as agreement"
+ },
+ "fearGreedCrossCheck": {
+  "entryId": "crypto_sentiment_crypto_fear_greed",
+  "provider": null,
+  "call": {
+   "ms": 2722,
+   "status": 200,
+   "ok": true,
+   "observationsReturned": 400
+  },
+  "localSource": "api.alternative.me/fng (keyless), already committed in data-cache/dataset.json",
+  "overlappingDates": 396,
+  "exactMatches": 396,
+  "exactMatchPct": 100,
+  "meanAbsDifference": 0,
+  "maxAbsDifference": 0,
+  "maxAbsDifferenceDate": null,
+  "verdict": "all 396 overlapping daily readings are identical to the independently-sourced series this project already ships",
+  "note": "Two independent transports, two independent operators, the same index. This is the one cross-check in this file where an exact numeric agreement is the expected result, so anything less is reported rather than rounded away."
+ },
+ "quotes": {
+  "entryId": "equity_price_quote",
+  "symbolsQueried": 71,
+  "symbolsAnswered": 68,
+  "provider": null,
+  "perSymbol": [
+   {
+    "sym": "AAPL",
+    "ok": true,
+    "ms": 1427,
+    "provider": null,
+    "lastPrice": 337.81,
+    "prevClose": 339.891,
+    "marketCap": 4930059945800,
+    "priceToBook": 45.8525,
+    "turnoverRatePct": 3.537,
+    "snapshotClose": 336.13,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.5
+   },
+   {
+    "sym": "MSFT",
+    "ok": true,
+    "ms": 728,
+    "provider": null,
+    "lastPrice": 499.865,
+    "prevClose": 500.5301,
+    "marketCap": 3711770296859,
+    "priceToBook": 8.3903,
+    "turnoverRatePct": 6.1672,
+    "snapshotClose": 493.78,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 1.23
+   },
+   {
+    "sym": "NVDA",
+    "ok": true,
+    "ms": 1028,
+    "provider": null,
+    "lastPrice": 227.865,
+    "prevClose": 228.55,
+    "marketCap": 5491546500000,
+    "priceToBook": 23.9822,
+    "turnoverRatePct": 4.5747,
+    "snapshotClose": 222.27,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 2.52
+   },
+   {
+    "sym": "GOOGL",
+    "ok": true,
+    "ms": 554,
+    "provider": null,
+    "lastPrice": 342.27,
+    "prevClose": 351.9,
+    "marketCap": 4185962100000,
+    "priceToBook": 6.5357,
+    "turnoverRatePct": 4.2531,
+    "snapshotClose": 349.54,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -2.08
+   },
+   {
+    "sym": "AMZN",
+    "ok": true,
+    "ms": 1890,
+    "provider": null,
+    "lastPrice": 249.625,
+    "prevClose": 255.45,
+    "marketCap": 2692533525411,
+    "priceToBook": 4.8811,
+    "turnoverRatePct": 6.757,
+    "snapshotClose": 253.71,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -1.61
+   },
+   {
+    "sym": "META",
+    "ok": true,
+    "ms": 550,
+    "provider": null,
+    "lastPrice": 750.76,
+    "prevClose": 741,
+    "marketCap": 1912565773481,
+    "priceToBook": 7.3216,
+    "turnoverRatePct": 34.783,
+    "snapshotClose": 665.75,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 12.77
+   },
+   {
+    "sym": "TSLA",
+    "ok": true,
+    "ms": 784,
+    "provider": null,
+    "lastPrice": 385.765,
+    "prevClose": 379.14,
+    "marketCap": 1523597150446,
+    "priceToBook": 17.5303,
+    "turnoverRatePct": 28.7983,
+    "snapshotClose": 364.27,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 5.9
+   },
+   {
+    "sym": "AVGO",
+    "ok": true,
+    "ms": 562,
+    "provider": null,
+    "lastPrice": 358.135,
+    "prevClose": 366.031,
+    "marketCap": 1709603931702,
+    "priceToBook": 17.1492,
+    "turnoverRatePct": 6.3088,
+    "snapshotClose": 357.61,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.15
+   },
+   {
+    "sym": "AMD",
+    "ok": true,
+    "ms": 501,
+    "provider": null,
+    "lastPrice": 616.0004,
+    "prevClose": 623.4682,
+    "marketCap": 1005605278862,
+    "priceToBook": 14.959,
+    "turnoverRatePct": 19.078,
+    "snapshotClose": 559.82,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 10.04
+   },
+   {
+    "sym": "CRM",
+    "ok": true,
+    "ms": 641,
+    "provider": null,
+    "lastPrice": 236.251,
+    "prevClose": 233,
+    "marketCap": 194434573000,
+    "priceToBook": 5.0663,
+    "turnoverRatePct": 9.6885,
+    "snapshotClose": 237.92,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -0.7
+   },
+   {
+    "sym": "ORCL",
+    "ok": true,
+    "ms": 528,
+    "provider": null,
+    "lastPrice": 146.93,
+    "prevClose": 149.19,
+    "marketCap": 444277530480,
+    "priceToBook": 6.6537,
+    "turnoverRatePct": 8.4829,
+    "snapshotClose": 147.61,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -0.46
+   },
+   {
+    "sym": "ADBE",
+    "ok": true,
+    "ms": 593,
+    "provider": null,
+    "lastPrice": 237.665,
+    "prevClose": 238.91,
+    "marketCap": 92499218000,
+    "priceToBook": 7.8629,
+    "turnoverRatePct": 11.2404,
+    "snapshotClose": 248.92,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -4.52
+   },
+   {
+    "sym": "INTC",
+    "ok": true,
+    "ms": 544,
+    "provider": null,
+    "lastPrice": 121.4415,
+    "prevClose": 124.24,
+    "marketCap": 641952552175,
+    "priceToBook": 7.3331,
+    "turnoverRatePct": 31.4321,
+    "snapshotClose": 108.6,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 11.82
+   },
+   {
+    "sym": "QCOM",
+    "ok": true,
+    "ms": 4206,
+    "provider": null,
+    "lastPrice": 195.67,
+    "prevClose": 198.2256,
+    "marketCap": 205499271322,
+    "priceToBook": 7.43,
+    "turnoverRatePct": 9.8196,
+    "snapshotClose": 177.72,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 10.1
+   },
+   {
+    "sym": "TXN",
+    "ok": true,
+    "ms": 1494,
+    "provider": null,
+    "lastPrice": 269.795,
+    "prevClose": 271.2,
+    "marketCap": 246389659444,
+    "priceToBook": 13.683,
+    "turnoverRatePct": 2.7933,
+    "snapshotClose": 266.64,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 1.18
+   },
+   {
+    "sym": "MU",
+    "ok": true,
+    "ms": 850,
+    "provider": null,
+    "lastPrice": 1090.135,
+    "prevClose": 1097.6324,
+    "marketCap": 1231191002665,
+    "priceToBook": 12.2234,
+    "turnoverRatePct": 45.1276,
+    "snapshotClose": 1015.8,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 7.32
+   },
+   {
+    "sym": "PLTR",
+    "ok": true,
+    "ms": 762,
+    "provider": null,
+    "lastPrice": 189.605,
+    "prevClose": 185.13,
+    "marketCap": 455631903100,
+    "priceToBook": 46.6158,
+    "turnoverRatePct": 41.2287,
+    "snapshotClose": 177.64,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 6.74
+   },
+   {
+    "sym": "JPM",
+    "ok": true,
+    "ms": 420,
+    "provider": null,
+    "lastPrice": 339.29,
+    "prevClose": 340.6,
+    "marketCap": 901895994102,
+    "priceToBook": 2.4076,
+    "turnoverRatePct": 2.3725,
+    "snapshotClose": 349.67,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -2.97
+   },
+   {
+    "sym": "BAC",
+    "ok": true,
+    "ms": 625,
+    "provider": null,
+    "lastPrice": 56.165,
+    "prevClose": 56.3623,
+    "marketCap": 392747711920,
+    "priceToBook": 1.3044,
+    "turnoverRatePct": 3.4594,
+    "snapshotClose": 57.73,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -2.71
+   },
+   {
+    "sym": "GS",
+    "ok": true,
+    "ms": 3889,
+    "provider": null,
+    "lastPrice": 949.945,
+    "prevClose": 950.8,
+    "marketCap": 276596823173,
+    "priceToBook": 2.2535,
+    "turnoverRatePct": 5.5924,
+    "snapshotClose": 942,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.84
+   },
+   {
+    "sym": "MS",
+    "ok": true,
+    "ms": 3846,
+    "provider": null,
+    "lastPrice": 200.055,
+    "prevClose": 200.49,
+    "marketCap": 314199639546,
+    "priceToBook": 2.701,
+    "turnoverRatePct": 1.6449,
+    "snapshotClose": 202.58,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -1.25
+   },
+   {
+    "sym": "WFC",
+    "ok": true,
+    "ms": 1147,
+    "provider": null,
+    "lastPrice": 82.77,
+    "prevClose": 83.36,
+    "marketCap": 250296425041,
+    "priceToBook": 1.3891,
+    "turnoverRatePct": 2.5894,
+    "snapshotClose": 86.12,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -3.89
+   },
+   {
+    "sym": "BLK",
+    "ok": true,
+    "ms": 422,
+    "provider": null,
+    "lastPrice": 1065.57,
+    "prevClose": 1066,
+    "marketCap": 165024036313,
+    "priceToBook": 2.566,
+    "turnoverRatePct": 1.1449,
+    "snapshotClose": 1069.78,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -0.39
+   },
+   {
+    "sym": "C",
+    "ok": true,
+    "ms": 3954,
+    "provider": null,
+    "lastPrice": 132.79,
+    "prevClose": 132.79,
+    "marketCap": 222746830415,
+    "priceToBook": 1.0506,
+    "turnoverRatePct": 3.3497,
+    "snapshotClose": 131.77,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.77
+   },
+   {
+    "sym": "UNH",
+    "ok": true,
+    "ms": 4097,
+    "provider": null,
+    "lastPrice": 368.16,
+    "prevClose": 373.3,
+    "marketCap": 330458518872,
+    "priceToBook": 3.3085,
+    "turnoverRatePct": 7.3866,
+    "snapshotClose": 376.9,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -2.32
+   },
+   {
+    "sym": "JNJ",
+    "ok": true,
+    "ms": 1473,
+    "provider": null,
+    "lastPrice": 270.48,
+    "prevClose": 268.3,
+    "marketCap": 651829372517,
+    "priceToBook": 7.6712,
+    "turnoverRatePct": 1.547,
+    "snapshotClose": 269.99,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.18
+   },
+   {
+    "sym": "LLY",
+    "ok": true,
+    "ms": 693,
+    "provider": null,
+    "lastPrice": 1160.98,
+    "prevClose": 1170.63,
+    "marketCap": 1092896725324,
+    "priceToBook": 32.2588,
+    "turnoverRatePct": 2.1437,
+    "snapshotClose": 1152.93,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.7
+   },
+   {
+    "sym": "PFE",
+    "ok": true,
+    "ms": 1021,
+    "provider": null,
+    "lastPrice": 28.005,
+    "prevClose": 27.9,
+    "marketCap": 159619358860,
+    "priceToBook": 1.8737,
+    "turnoverRatePct": 4.324,
+    "snapshotClose": 27.66,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 1.25
+   },
+   {
+    "sym": "MRK",
+    "ok": true,
+    "ms": 546,
+    "provider": null,
+    "lastPrice": 149.84,
+    "prevClose": 150.78,
+    "marketCap": 369680998238,
+    "priceToBook": 8.816,
+    "turnoverRatePct": 3.452,
+    "snapshotClose": 146.87,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 2.02
+   },
+   {
+    "sym": "ABBV",
+    "ok": true,
+    "ms": 3157,
+    "provider": null,
+    "lastPrice": 266.72,
+    "prevClose": 265.3,
+    "marketCap": 471325522255,
+    "priceToBook": -79.4146,
+    "turnoverRatePct": 0.9437,
+    "snapshotClose": 263.96,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 1.05
+   },
+   {
+    "sym": "TMO",
+    "ok": true,
+    "ms": 2423,
+    "provider": null,
+    "lastPrice": 662.11,
+    "prevClose": 660,
+    "marketCap": 244813375533,
+    "priceToBook": 4.6366,
+    "turnoverRatePct": 4.2167,
+    "snapshotClose": 651.45,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 1.64
+   },
+   {
+    "sym": "XOM",
+    "ok": true,
+    "ms": 2941,
+    "provider": null,
+    "lastPrice": 161.1,
+    "prevClose": 158.8,
+    "marketCap": 662429016756,
+    "priceToBook": 2.5539,
+    "turnoverRatePct": 2.0674,
+    "snapshotClose": 163.54,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -1.49
+   },
+   {
+    "sym": "CVX",
+    "ok": true,
+    "ms": 1343,
+    "provider": null,
+    "lastPrice": 205.75,
+    "prevClose": 202.64,
+    "marketCap": 406514939626,
+    "priceToBook": 2.1409,
+    "turnoverRatePct": 1.8273,
+    "snapshotClose": 209.51,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -1.79
+   },
+   {
+    "sym": "COP",
+    "ok": true,
+    "ms": 1642,
+    "provider": null,
+    "lastPrice": 127.56,
+    "prevClose": 125.6,
+    "marketCap": 153242608821,
+    "priceToBook": 2.345,
+    "turnoverRatePct": 2.4604,
+    "snapshotClose": 131.83,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -3.24
+   },
+   {
+    "sym": "SLB",
+    "ok": true,
+    "ms": 569,
+    "provider": null,
+    "lastPrice": 52.37,
+    "prevClose": 52.26,
+    "marketCap": 77724581007,
+    "priceToBook": 2.9809,
+    "turnoverRatePct": 2.186,
+    "snapshotClose": 51.12,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 2.45
+   },
+   {
+    "sym": "WMT",
+    "ok": true,
+    "ms": 1005,
+    "provider": null,
+    "lastPrice": 110.515,
+    "prevClose": 110.0462,
+    "marketCap": 876797965824,
+    "priceToBook": 8.9252,
+    "turnoverRatePct": 2.4462,
+    "snapshotClose": 106.73,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 3.55
+   },
+   {
+    "sym": "COST",
+    "ok": true,
+    "ms": 1709,
+    "provider": null,
+    "lastPrice": 894.705,
+    "prevClose": 899.91,
+    "marketCap": 396782703333,
+    "priceToBook": 11.8411,
+    "turnoverRatePct": 2.9125,
+    "snapshotClose": 895.31,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -0.07
+   },
+   {
+    "sym": "PG",
+    "ok": true,
+    "ms": 825,
+    "provider": null,
+    "lastPrice": 148.21,
+    "prevClose": 148.3,
+    "marketCap": 344243263362,
+    "priceToBook": 6.3653,
+    "turnoverRatePct": 1.2623,
+    "snapshotClose": 146.39,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 1.24
+   },
+   {
+    "sym": "KO",
+    "ok": true,
+    "ms": 1223,
+    "provider": null,
+    "lastPrice": 88.35,
+    "prevClose": 88.63,
+    "marketCap": 380130225619,
+    "priceToBook": 10.5154,
+    "turnoverRatePct": 1.7544,
+    "snapshotClose": 88.25,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.11
+   },
+   {
+    "sym": "MCD",
+    "ok": true,
+    "ms": 547,
+    "provider": null,
+    "lastPrice": 239.67,
+    "prevClose": 251.35,
+    "marketCap": 169600445735,
+    "priceToBook": -165.7873,
+    "turnoverRatePct": 39.0133,
+    "snapshotClose": 248.24,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -3.45
+   },
+   {
+    "sym": "NKE",
+    "ok": true,
+    "ms": 514,
+    "provider": null,
+    "lastPrice": 36.005,
+    "prevClose": 36.2,
+    "marketCap": 53413370802,
+    "priceToBook": 3.5932,
+    "turnoverRatePct": 30.2112,
+    "snapshotClose": 35.51,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 1.39
+   },
+   {
+    "sym": "HD",
+    "ok": true,
+    "ms": 486,
+    "provider": null,
+    "lastPrice": 300.7663,
+    "prevClose": 305.3885,
+    "marketCap": 300071417360,
+    "priceToBook": 18.0581,
+    "turnoverRatePct": 2.0993,
+    "snapshotClose": 299.98,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.26
+   },
+   {
+    "sym": "DIS",
+    "ok": true,
+    "ms": 706,
+    "provider": null,
+    "lastPrice": 102.845,
+    "prevClose": 103.8,
+    "marketCap": 177581114436,
+    "priceToBook": 1.6139,
+    "turnoverRatePct": 1.9045,
+    "snapshotClose": 102.67,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.17
+   },
+   {
+    "sym": "CAT",
+    "ok": false,
+    "error": "no row",
+    "ms": 612
+   },
+   {
+    "sym": "BA",
+    "ok": true,
+    "ms": 628,
+    "provider": null,
+    "lastPrice": 203.28,
+    "prevClose": 198.1899,
+    "marketCap": 160666417666,
+    "priceToBook": 26.3388,
+    "turnoverRatePct": 26.681,
+    "snapshotClose": 198.2,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 2.56
+   },
+   {
+    "sym": "GE",
+    "ok": true,
+    "ms": 496,
+    "provider": null,
+    "lastPrice": 325.29,
+    "prevClose": 319.5,
+    "marketCap": 337508709854,
+    "priceToBook": 19.1331,
+    "turnoverRatePct": 4.6052,
+    "snapshotClose": 314.27,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 3.51
+   },
+   {
+    "sym": "HON",
+    "ok": true,
+    "ms": 1536,
+    "provider": null,
+    "lastPrice": 211.73,
+    "prevClose": 211.8,
+    "marketCap": 67105708317,
+    "priceToBook": 3.6201,
+    "turnoverRatePct": 2.6223,
+    "snapshotClose": 206.46,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 2.55
+   },
+   {
+    "sym": "LMT",
+    "ok": true,
+    "ms": 1499,
+    "provider": null,
+    "lastPrice": 533,
+    "prevClose": 523.2183,
+    "marketCap": 123011471349,
+    "priceToBook": 14.0296,
+    "turnoverRatePct": 4.1894,
+    "snapshotClose": 533.38,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -0.07
+   },
+   {
+    "sym": "RTX",
+    "ok": true,
+    "ms": 496,
+    "provider": null,
+    "lastPrice": 194.01,
+    "prevClose": 191,
+    "marketCap": 261478557517,
+    "priceToBook": 3.9376,
+    "turnoverRatePct": 1.7487,
+    "snapshotClose": 194,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.01
+   },
+   {
+    "sym": "BABA",
+    "ok": true,
+    "ms": 2533,
+    "provider": null,
+    "lastPrice": 111.26,
+    "prevClose": 116.8379,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 113.24,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -1.75
+   },
+   {
+    "sym": "PDD",
+    "ok": true,
+    "ms": 3051,
+    "provider": null,
+    "lastPrice": 79.09,
+    "prevClose": 80.4,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 78.9,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.24
+   },
+   {
+    "sym": "JD",
+    "ok": true,
+    "ms": 2678,
+    "provider": null,
+    "lastPrice": 26.95,
+    "prevClose": 27.36,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 26.92,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.11
+   },
+   {
+    "sym": "BIDU",
+    "ok": true,
+    "ms": 1652,
+    "provider": null,
+    "lastPrice": 89.31,
+    "prevClose": 92.64,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 89.93,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -0.69
+   },
+   {
+    "sym": "NIO",
+    "ok": true,
+    "ms": 5053,
+    "provider": null,
+    "lastPrice": 3.67,
+    "prevClose": 3.75,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 3.66,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.27
+   },
+   {
+    "sym": "LI",
+    "ok": true,
+    "ms": 755,
+    "provider": null,
+    "lastPrice": 11.775,
+    "prevClose": 11.7,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 12.14,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -3.01
+   },
+   {
+    "sym": "SPY",
+    "ok": true,
+    "ms": 521,
+    "provider": null,
+    "lastPrice": 770.44,
+    "prevClose": 773.75,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 761.69,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 1.15
+   },
+   {
+    "sym": "QQQ",
+    "ok": true,
+    "ms": 1101,
+    "provider": null,
+    "lastPrice": 742.271,
+    "prevClose": 748.3192,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 721.45,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 2.89
+   },
+   {
+    "sym": "IWM",
+    "ok": true,
+    "ms": 5600,
+    "provider": null,
+    "lastPrice": 283.95,
+    "prevClose": 287.2198,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 284.1,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -0.05
+   },
+   {
+    "sym": "DIA",
+    "ok": true,
+    "ms": 1484,
+    "provider": null,
+    "lastPrice": 516.65,
+    "prevClose": 517.9072,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 515.88,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.15
+   },
+   {
+    "sym": "XLK",
+    "ok": true,
+    "ms": 6816,
+    "provider": null,
+    "lastPrice": 195.25,
+    "prevClose": 196.1001,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 189.6,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 2.98
+   },
+   {
+    "sym": "XLF",
+    "ok": true,
+    "ms": 2006,
+    "provider": null,
+    "lastPrice": 54.875,
+    "prevClose": 54.8863,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 55.86,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -1.76
+   },
+   {
+    "sym": "XLE",
+    "ok": true,
+    "ms": 539,
+    "provider": null,
+    "lastPrice": 62.64,
+    "prevClose": 61.86,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 64.31,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -2.6
+   },
+   {
+    "sym": "XLV",
+    "ok": true,
+    "ms": 472,
+    "provider": null,
+    "lastPrice": 169.88,
+    "prevClose": 169.77,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 168.39,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.88
+   },
+   {
+    "sym": "XLI",
+    "ok": true,
+    "ms": 1568,
+    "provider": null,
+    "lastPrice": 170.89,
+    "prevClose": 170.76,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 169.75,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.67
+   },
+   {
+    "sym": "GLD",
+    "ok": true,
+    "ms": 513,
+    "provider": null,
+    "lastPrice": 393.05,
+    "prevClose": 400,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 401.17,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -2.02
+   },
+   {
+    "sym": "TLT",
+    "ok": true,
+    "ms": 883,
+    "provider": null,
+    "lastPrice": 81.075,
+    "prevClose": 81.71,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 81.25,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": -0.22
+   },
+   {
+    "sym": "UUP",
+    "ok": false,
+    "error": "no row",
+    "ms": 1778
+   },
+   {
+    "sym": "VIXY",
+    "ok": false,
+    "error": "no row",
+    "ms": 597
+   },
+   {
+    "sym": "KWEB",
+    "ok": true,
+    "ms": 5886,
+    "provider": null,
+    "lastPrice": 24.87,
+    "prevClose": 25.3844,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 24.83,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.16
+   },
+   {
+    "sym": "FXI",
+    "ok": true,
+    "ms": 1172,
+    "provider": null,
+    "lastPrice": 34.43,
+    "prevClose": 35.2,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 34.32,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 0.32
+   },
+   {
+    "sym": "EEM",
+    "ok": true,
+    "ms": 873,
+    "provider": null,
+    "lastPrice": 68.08,
+    "prevClose": 69.05,
+    "marketCap": 0,
+    "priceToBook": 0,
+    "turnoverRatePct": 0,
+    "snapshotClose": 67.03,
+    "snapshotDate": "2026-09-18",
+    "driftFromSnapshotPct": 1.57
+   }
+  ],
+  "stalenessVsSnapshot": {
+   "snapshotDate": "2026-09-18",
+   "comparedSymbols": 68,
+   "medianAbsDriftPct": 1.49,
+   "maxAbsDriftPct": 12.77,
+   "note": "Bitget quotes are live; the library is frozen at 2026-09-18. The drift is therefore a measurement of how stale the snapshot is, not a disagreement about a price. It is reported so a reviewer can decide whether the frozen card is still readable."
+  }
+ },
+ "profiles": {
+  "entryId": "equity_profile",
+  "symbolsQueried": 24,
+  "symbolsAnswered": 24,
+  "perSymbol": [
+   {
+    "sym": "AAPL",
+    "ok": true,
+    "ms": 849,
+    "bitgetName": "Apple Inc.",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "手机",
+    "bitgetIsin": "US0378331005",
+    "bitgetFirstPriceDate": "1980-12-12",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "MSFT",
+    "ok": true,
+    "ms": 500,
+    "bitgetName": "Microsoft Corporation",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "办公软件",
+    "bitgetIsin": "US5949181045",
+    "bitgetFirstPriceDate": "1986-03-13",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "NVDA",
+    "ok": true,
+    "ms": 738,
+    "bitgetName": "Nvidia Corporation",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "数字芯片设计",
+    "bitgetIsin": "US67066G1040",
+    "bitgetFirstPriceDate": "1999-01-22",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "GOOGL",
+    "ok": true,
+    "ms": 514,
+    "bitgetName": "Alphabet Inc.",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "互动媒体与服务Ⅳ",
+    "bitgetIsin": "US02079K3059",
+    "bitgetFirstPriceDate": "2004-08-19",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Communication",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "AMZN",
+    "ok": true,
+    "ms": 1340,
+    "bitgetName": "Amazon.Com, Inc.",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "多品类零售Ⅳ",
+    "bitgetIsin": "US0231351067",
+    "bitgetFirstPriceDate": "1997-05-15",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Consumer Disc.",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "META",
+    "ok": true,
+    "ms": 828,
+    "bitgetName": "Meta Platforms, Inc.",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "互动媒体与服务Ⅳ",
+    "bitgetIsin": "US30303M1027",
+    "bitgetFirstPriceDate": "2012-05-18",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Communication",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "TSLA",
+    "ok": true,
+    "ms": 1768,
+    "bitgetName": "Tesla, Inc.",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "汽车制造",
+    "bitgetIsin": "US88160R1014",
+    "bitgetFirstPriceDate": "2010-06-29",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Consumer Disc.",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "AVGO",
+    "ok": true,
+    "ms": 1415,
+    "bitgetName": "Broadcom Inc.",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "模拟芯片设计",
+    "bitgetIsin": "US11135F1012",
+    "bitgetFirstPriceDate": "2016-02-01",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "AMD",
+    "ok": true,
+    "ms": 910,
+    "bitgetName": "Advanced Micro Devices, Inc.",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "数字芯片设计",
+    "bitgetIsin": "US0079031078",
+    "bitgetFirstPriceDate": "2015-01-02",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "CRM",
+    "ok": true,
+    "ms": 1684,
+    "bitgetName": "Salesforce, Inc.",
+    "bitgetExchange": "美国纽约证券交易所",
+    "bitgetIndustry": "企业管理软件",
+    "bitgetIsin": "US79466L3024",
+    "bitgetFirstPriceDate": "2004-06-23",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "ORCL",
+    "ok": true,
+    "ms": 1003,
+    "bitgetName": "Oracle Corporation",
+    "bitgetExchange": "美国纽约证券交易所",
+    "bitgetIndustry": "系统软件",
+    "bitgetIsin": "US68389X1054",
+    "bitgetFirstPriceDate": "2013-07-15",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "ADBE",
+    "ok": true,
+    "ms": 1540,
+    "bitgetName": "Adobe Inc.",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "行业应用软件",
+    "bitgetIsin": "US00724F1012",
+    "bitgetFirstPriceDate": "1986-08-13",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "INTC",
+    "ok": true,
+    "ms": 730,
+    "bitgetName": "Intel Corporation",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "数字芯片设计",
+    "bitgetIsin": "US4581401001",
+    "bitgetFirstPriceDate": "1971-10-13",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "QCOM",
+    "ok": true,
+    "ms": 2323,
+    "bitgetName": "Qualcomm Incorporated",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "数字芯片设计",
+    "bitgetIsin": "US7475251036",
+    "bitgetFirstPriceDate": "1991-12-13",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "TXN",
+    "ok": true,
+    "ms": 1118,
+    "bitgetName": "Texas Instruments Incorporated",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "模拟芯片设计",
+    "bitgetIsin": "US8825081040",
+    "bitgetFirstPriceDate": "2012-01-03",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "MU",
+    "ok": true,
+    "ms": 1431,
+    "bitgetName": "Micron Technology, Inc.",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "数字芯片设计",
+    "bitgetIsin": "US5951121038",
+    "bitgetFirstPriceDate": "2009-12-30",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "PLTR",
+    "ok": true,
+    "ms": 2526,
+    "bitgetName": "Palantir Technologies Inc.",
+    "bitgetExchange": "美国NASDAQ证券交易所",
+    "bitgetIndustry": "行业应用软件",
+    "bitgetIsin": "US69608A1088",
+    "bitgetFirstPriceDate": "2024-11-26",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Technology",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": false
+   },
+   {
+    "sym": "JPM",
+    "ok": true,
+    "ms": 1083,
+    "bitgetName": "Jpmorgan Chase & Co.",
+    "bitgetExchange": "美国纽约证券交易所",
+    "bitgetIndustry": "综合性银行",
+    "bitgetIsin": "US46625H1005",
+    "bitgetFirstPriceDate": "1969-03-05",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Financials",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "BAC",
+    "ok": true,
+    "ms": 824,
+    "bitgetName": "Bank Of America Corporation",
+    "bitgetExchange": "美国纽约证券交易所",
+    "bitgetIndustry": "综合性银行",
+    "bitgetIsin": "US0605051046",
+    "bitgetFirstPriceDate": "1979-06-05",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Financials",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "GS",
+    "ok": true,
+    "ms": 542,
+    "bitgetName": "The Goldman Sachs Group, Inc.",
+    "bitgetExchange": "美国纽约证券交易所",
+    "bitgetIndustry": "证券",
+    "bitgetIsin": "US38141G1040",
+    "bitgetFirstPriceDate": "1999-05-04",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Financials",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "MS",
+    "ok": true,
+    "ms": 1063,
+    "bitgetName": "Morgan Stanley",
+    "bitgetExchange": "美国纽约证券交易所",
+    "bitgetIndustry": "证券",
+    "bitgetIsin": "US6174464486",
+    "bitgetFirstPriceDate": "1986-03-21",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Financials",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "WFC",
+    "ok": true,
+    "ms": 536,
+    "bitgetName": "Wells Fargo & Company",
+    "bitgetExchange": "美国纽约证券交易所",
+    "bitgetIndustry": "综合性银行",
+    "bitgetIsin": "US9497461015",
+    "bitgetFirstPriceDate": "1962-12-10",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Financials",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "BLK",
+    "ok": true,
+    "ms": 1478,
+    "bitgetName": "Blackrock, Inc.",
+    "bitgetExchange": "美国纽约证券交易所",
+    "bitgetIndustry": "资产管理",
+    "bitgetIsin": "US09290D1019",
+    "bitgetFirstPriceDate": "1999-10-01",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Financials",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   },
+   {
+    "sym": "C",
+    "ok": true,
+    "ms": 439,
+    "bitgetName": "Citigroup Inc.",
+    "bitgetExchange": "美国纽约证券交易所",
+    "bitgetIndustry": "综合性银行",
+    "bitgetIsin": "US1729674242",
+    "bitgetFirstPriceDate": "1986-10-31",
+    "bitgetEntityStatus": "正常上市",
+    "localSector": "Financials",
+    "localFirstSession": "2016-09-20",
+    "libraryStartsAfterListing": true
+   }
+  ]
+ },
+ "earningsCrossCheck": {
+  "entryId": "equity_calendar",
+  "symbolsQueried": 24,
+  "symbolsWithBothSides": 24,
+  "bitgetSource": "Bitget equity calendar (perf_briefing_fore_dsclsr_date / perf_report_dsclsr_date)",
+  "localSource": "EDGAR full-text search, 8-K Item 2.02 for domestic filers with a 6-K fallback for foreign private issuers, filing dates clustered at 6 calendar days",
+  "matchedDates": 1826,
+  "exactSameDay": 2,
+  "exactSameDayPct": 0.11,
+  "within3Days": 1268,
+  "within3DaysPct": 69.44,
+  "within7Days": 1280,
+  "within7DaysPct": 70.1,
+  "perSymbol": [
+   {
+    "sym": "AAPL",
+    "ok": true,
+    "ms": 1647,
+    "bitgetDatesReturned": 80,
+    "localDatesDerived": 46,
+    "localDerivation": {
+     "8-K": 46,
+     "6-K": 0
+    },
+    "matched": 80,
+    "exactSameDay": 1,
+    "within1Day": 57,
+    "within3Days": 57,
+    "within7Days": 57,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1827,
+    "sample": [
+     {
+      "bitgetDate": "2026-01-28",
+      "localDate": "2026-01-29",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-29",
+      "localDate": "2026-04-30",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-29",
+      "localDate": "2026-07-30",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-29",
+      "localDate": "2026-07-30",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "MSFT",
+    "ok": true,
+    "ms": 4463,
+    "bitgetDatesReturned": 80,
+    "localDatesDerived": 45,
+    "localDerivation": {
+     "8-K": 45,
+     "6-K": 0
+    },
+    "matched": 80,
+    "exactSameDay": 0,
+    "within1Day": 57,
+    "within3Days": 57,
+    "within7Days": 57,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1818,
+    "sample": [
+     {
+      "bitgetDate": "2026-01-27",
+      "localDate": "2026-01-28",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-28",
+      "localDate": "2026-04-29",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-28",
+      "localDate": "2026-07-29",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-28",
+      "localDate": "2026-07-29",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "NVDA",
+    "ok": true,
+    "ms": 2920,
+    "bitgetDatesReturned": 80,
+    "localDatesDerived": 47,
+    "localDerivation": {
+     "8-K": 47,
+     "6-K": 0
+    },
+    "matched": 80,
+    "exactSameDay": 0,
+    "within1Day": 56,
+    "within3Days": 56,
+    "within7Days": 56,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1803,
+    "sample": [
+     {
+      "bitgetDate": "2026-02-24",
+      "localDate": "2026-02-25",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-05-19",
+      "localDate": "2026-05-20",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-08-25",
+      "localDate": "2026-08-26",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-08-25",
+      "localDate": "2026-08-26",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "GOOGL",
+    "ok": true,
+    "ms": 778,
+    "bitgetDatesReturned": 81,
+    "localDatesDerived": 44,
+    "localDerivation": {
+     "8-K": 45,
+     "6-K": 0
+    },
+    "matched": 81,
+    "exactSameDay": 0,
+    "within1Day": 54,
+    "within3Days": 54,
+    "within7Days": 55,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 2079,
+    "sample": [
+     {
+      "bitgetDate": "2026-02-03",
+      "localDate": "2026-02-04",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-02-03",
+      "localDate": "2026-02-04",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-28",
+      "localDate": "2026-04-29",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-21",
+      "localDate": "2026-07-22",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "AMZN",
+    "ok": true,
+    "ms": 1203,
+    "bitgetDatesReturned": 79,
+    "localDatesDerived": 45,
+    "localDerivation": {
+     "8-K": 45,
+     "6-K": 0
+    },
+    "matched": 79,
+    "exactSameDay": 1,
+    "within1Day": 56,
+    "within3Days": 56,
+    "within7Days": 56,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1827,
+    "sample": [
+     {
+      "bitgetDate": "2026-02-04",
+      "localDate": "2026-02-05",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-02-04",
+      "localDate": "2026-02-05",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-28",
+      "localDate": "2026-04-29",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-29",
+      "localDate": "2026-07-30",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "META",
+    "ok": true,
+    "ms": 810,
+    "bitgetDatesReturned": 71,
+    "localDatesDerived": 45,
+    "localDerivation": {
+     "8-K": 45,
+     "6-K": 0
+    },
+    "matched": 71,
+    "exactSameDay": 0,
+    "within1Day": 56,
+    "within3Days": 56,
+    "within7Days": 56,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1099,
+    "sample": [
+     {
+      "bitgetDate": "2026-01-27",
+      "localDate": "2026-01-28",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-01-27",
+      "localDate": "2026-01-28",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-28",
+      "localDate": "2026-04-29",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-28",
+      "localDate": "2026-07-29",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "TSLA",
+    "ok": true,
+    "ms": 1104,
+    "bitgetDatesReturned": 76,
+    "localDatesDerived": 91,
+    "localDerivation": {
+     "8-K": 93,
+     "6-K": 0
+    },
+    "matched": 76,
+    "exactSameDay": 0,
+    "within1Day": 56,
+    "within3Days": 56,
+    "within7Days": 56,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1785,
+    "sample": [
+     {
+      "bitgetDate": "2026-01-27",
+      "localDate": "2026-01-28",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-01-27",
+      "localDate": "2026-01-28",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-21",
+      "localDate": "2026-04-22",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-21",
+      "localDate": "2026-07-22",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "AVGO",
+    "ok": true,
+    "ms": 2129,
+    "bitgetDatesReturned": 54,
+    "localDatesDerived": 34,
+    "localDerivation": {
+     "8-K": 34,
+     "6-K": 0
+    },
+    "matched": 54,
+    "exactSameDay": 0,
+    "within1Day": 43,
+    "within3Days": 43,
+    "within7Days": 43,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 820,
+    "sample": [
+     {
+      "bitgetDate": "2026-03-03",
+      "localDate": "2026-03-04",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-06-02",
+      "localDate": "2026-06-03",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-09-01",
+      "localDate": "2026-09-02",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-09-01",
+      "localDate": "2026-09-02",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "AMD",
+    "ok": true,
+    "ms": 1381,
+    "bitgetDatesReturned": 76,
+    "localDatesDerived": 48,
+    "localDerivation": {
+     "8-K": 48,
+     "6-K": 0
+    },
+    "matched": 76,
+    "exactSameDay": 0,
+    "within1Day": 47,
+    "within3Days": 47,
+    "within7Days": 51,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1798,
+    "sample": [
+     {
+      "bitgetDate": "2026-02-02",
+      "localDate": "2026-02-03",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-05-04",
+      "localDate": "2026-05-05",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-08-03",
+      "localDate": "2026-08-04",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-08-03",
+      "localDate": "2026-08-04",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "CRM",
+    "ok": true,
+    "ms": 697,
+    "bitgetDatesReturned": 78,
+    "localDatesDerived": 46,
+    "localDerivation": {
+     "8-K": 46,
+     "6-K": 0
+    },
+    "matched": 78,
+    "exactSameDay": 0,
+    "within1Day": 55,
+    "within3Days": 55,
+    "within7Days": 56,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1807,
+    "sample": [
+     {
+      "bitgetDate": "2026-02-24",
+      "localDate": "2026-02-25",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-02-24",
+      "localDate": "2026-02-25",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-05-26",
+      "localDate": "2026-05-27",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-08-25",
+      "localDate": "2026-08-26",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "ORCL",
+    "ok": true,
+    "ms": 1094,
+    "bitgetDatesReturned": 80,
+    "localDatesDerived": 47,
+    "localDerivation": {
+     "8-K": 47,
+     "6-K": 0
+    },
+    "matched": 80,
+    "exactSameDay": 0,
+    "within1Day": 55,
+    "within3Days": 55,
+    "within7Days": 58,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1813,
+    "sample": [
+     {
+      "bitgetDate": "2026-03-09",
+      "localDate": "2026-03-10",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-06-09",
+      "localDate": "2026-06-10",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-06-09",
+      "localDate": "2026-06-10",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-09-09",
+      "localDate": "2026-09-10",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "ADBE",
+    "ok": true,
+    "ms": 678,
+    "bitgetDatesReturned": 81,
+    "localDatesDerived": 46,
+    "localDerivation": {
+     "8-K": 46,
+     "6-K": 0
+    },
+    "matched": 81,
+    "exactSameDay": 0,
+    "within1Day": 57,
+    "within3Days": 57,
+    "within7Days": 57,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1811,
+    "sample": [
+     {
+      "bitgetDate": "2026-03-11",
+      "localDate": "2026-03-12",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-06-10",
+      "localDate": "2026-06-11",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-09-09",
+      "localDate": "2026-09-10",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-09-09",
+      "localDate": "2026-09-10",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "INTC",
+    "ok": true,
+    "ms": 699,
+    "bitgetDatesReturned": 80,
+    "localDatesDerived": 46,
+    "localDerivation": {
+     "8-K": 46,
+     "6-K": 0
+    },
+    "matched": 80,
+    "exactSameDay": 0,
+    "within1Day": 55,
+    "within3Days": 55,
+    "within7Days": 55,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1812,
+    "sample": [
+     {
+      "bitgetDate": "2026-01-21",
+      "localDate": "2026-01-22",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-22",
+      "localDate": "2026-04-23",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-22",
+      "localDate": "2026-07-23",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-22",
+      "localDate": "2026-07-23",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "QCOM",
+    "ok": true,
+    "ms": 2134,
+    "bitgetDatesReturned": 80,
+    "localDatesDerived": 45,
+    "localDerivation": {
+     "8-K": 45,
+     "6-K": 0
+    },
+    "matched": 80,
+    "exactSameDay": 0,
+    "within1Day": 57,
+    "within3Days": 57,
+    "within7Days": 57,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1828,
+    "sample": [
+     {
+      "bitgetDate": "2026-02-03",
+      "localDate": "2026-02-04",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-28",
+      "localDate": "2026-04-29",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-28",
+      "localDate": "2026-07-29",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-28",
+      "localDate": "2026-07-29",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "TXN",
+    "ok": true,
+    "ms": 960,
+    "bitgetDatesReturned": 79,
+    "localDatesDerived": 45,
+    "localDerivation": {
+     "8-K": 46,
+     "6-K": 0
+    },
+    "matched": 79,
+    "exactSameDay": 0,
+    "within1Day": 54,
+    "within3Days": 54,
+    "within7Days": 55,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1827,
+    "sample": [
+     {
+      "bitgetDate": "2026-01-26",
+      "localDate": "2026-01-27",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-01-26",
+      "localDate": "2026-01-27",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-21",
+      "localDate": "2026-04-22",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-21",
+      "localDate": "2026-07-22",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "MU",
+    "ok": true,
+    "ms": 743,
+    "bitgetDatesReturned": 80,
+    "localDatesDerived": 45,
+    "localDerivation": {
+     "8-K": 45,
+     "6-K": 0
+    },
+    "matched": 80,
+    "exactSameDay": 0,
+    "within1Day": 56,
+    "within3Days": 56,
+    "within7Days": 56,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1809,
+    "sample": [
+     {
+      "bitgetDate": "2025-12-16",
+      "localDate": "2025-12-17",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-03-17",
+      "localDate": "2026-03-18",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-06-23",
+      "localDate": "2026-06-24",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-09-29",
+      "localDate": "2026-06-24",
+      "daysBitgetMinusLocal": 97
+     }
+    ]
+   },
+   {
+    "sym": "PLTR",
+    "ok": true,
+    "ms": 499,
+    "bitgetDatesReturned": 30,
+    "localDatesDerived": 24,
+    "localDerivation": {
+     "8-K": 25,
+     "6-K": 0
+    },
+    "matched": 30,
+    "exactSameDay": 0,
+    "within1Day": 30,
+    "within3Days": 30,
+    "within7Days": 30,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1,
+    "sample": [
+     {
+      "bitgetDate": "2026-02-01",
+      "localDate": "2026-02-02",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-02-01",
+      "localDate": "2026-02-02",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-05-03",
+      "localDate": "2026-05-04",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-08-02",
+      "localDate": "2026-08-03",
+      "daysBitgetMinusLocal": -1
+     }
+    ]
+   },
+   {
+    "sym": "JPM",
+    "ok": true,
+    "ms": 1063,
+    "bitgetDatesReturned": 81,
+    "localDatesDerived": 45,
+    "localDerivation": {
+     "8-K": 45,
+     "6-K": 0
+    },
+    "matched": 81,
+    "exactSameDay": 0,
+    "within1Day": 56,
+    "within3Days": 56,
+    "within7Days": 56,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1804,
+    "sample": [
+     {
+      "bitgetDate": "2026-04-13",
+      "localDate": "2026-04-14",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-13",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-10-12",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": 90
+     },
+     {
+      "bitgetDate": "2027-01-13",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": 183
+     }
+    ]
+   },
+   {
+    "sym": "BAC",
+    "ok": true,
+    "ms": 809,
+    "bitgetDatesReturned": 83,
+    "localDatesDerived": 45,
+    "localDerivation": {
+     "8-K": 47,
+     "6-K": 0
+    },
+    "matched": 83,
+    "exactSameDay": 0,
+    "within1Day": 50,
+    "within3Days": 52,
+    "within7Days": 54,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1896,
+    "sample": [
+     {
+      "bitgetDate": "2026-07-13",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-10-13",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": 91
+     },
+     {
+      "bitgetDate": "2027-01-14",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": 184
+     },
+     {
+      "bitgetDate": "2028-01-13",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": 548
+     }
+    ]
+   },
+   {
+    "sym": "GS",
+    "ok": true,
+    "ms": 1175,
+    "bitgetDatesReturned": 80,
+    "localDatesDerived": 48,
+    "localDerivation": {
+     "8-K": 48,
+     "6-K": 0
+    },
+    "matched": 80,
+    "exactSameDay": 0,
+    "within1Day": 56,
+    "within3Days": 56,
+    "within7Days": 56,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1803,
+    "sample": [
+     {
+      "bitgetDate": "2026-01-14",
+      "localDate": "2026-01-15",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-12",
+      "localDate": "2026-04-13",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-13",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-10-12",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": 90
+     }
+    ]
+   },
+   {
+    "sym": "MS",
+    "ok": true,
+    "ms": 1704,
+    "bitgetDatesReturned": 80,
+    "localDatesDerived": 45,
+    "localDerivation": {
+     "8-K": 45,
+     "6-K": 0
+    },
+    "matched": 80,
+    "exactSameDay": 0,
+    "within1Day": 54,
+    "within3Days": 54,
+    "within7Days": 54,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1807,
+    "sample": [
+     {
+      "bitgetDate": "2026-04-14",
+      "localDate": "2026-04-15",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-14",
+      "localDate": "2026-07-15",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-10-13",
+      "localDate": "2026-07-15",
+      "daysBitgetMinusLocal": 90
+     },
+     {
+      "bitgetDate": "2027-01-13",
+      "localDate": "2026-07-15",
+      "daysBitgetMinusLocal": 182
+     }
+    ]
+   },
+   {
+    "sym": "WFC",
+    "ok": true,
+    "ms": 1290,
+    "bitgetDatesReturned": 79,
+    "localDatesDerived": 48,
+    "localDerivation": {
+     "8-K": 49,
+     "6-K": 0
+    },
+    "matched": 79,
+    "exactSameDay": 0,
+    "within1Day": 50,
+    "within3Days": 50,
+    "within7Days": 50,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1801,
+    "sample": [
+     {
+      "bitgetDate": "2026-01-13",
+      "localDate": "2026-01-14",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-13",
+      "localDate": "2026-04-14",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-13",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-10-12",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": 90
+     }
+    ]
+   },
+   {
+    "sym": "BLK",
+    "ok": true,
+    "ms": 891,
+    "bitgetDatesReturned": 78,
+    "localDatesDerived": 37,
+    "localDerivation": {
+     "8-K": 37,
+     "6-K": 0
+    },
+    "matched": 78,
+    "exactSameDay": 0,
+    "within1Day": 44,
+    "within3Days": 44,
+    "within7Days": 44,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1805,
+    "sample": [
+     {
+      "bitgetDate": "2026-01-14",
+      "localDate": "2024-07-15",
+      "daysBitgetMinusLocal": 548
+     },
+     {
+      "bitgetDate": "2026-01-14",
+      "localDate": "2024-07-15",
+      "daysBitgetMinusLocal": 548
+     },
+     {
+      "bitgetDate": "2026-04-13",
+      "localDate": "2024-07-15",
+      "daysBitgetMinusLocal": 637
+     },
+     {
+      "bitgetDate": "2026-07-14",
+      "localDate": "2024-07-15",
+      "daysBitgetMinusLocal": 729
+     }
+    ]
+   },
+   {
+    "sym": "C",
+    "ok": true,
+    "ms": 2226,
+    "bitgetDatesReturned": 80,
+    "localDatesDerived": 46,
+    "localDerivation": {
+     "8-K": 50,
+     "6-K": 0
+    },
+    "matched": 80,
+    "exactSameDay": 0,
+    "within1Day": 53,
+    "within3Days": 55,
+    "within7Days": 55,
+    "medianAbsDayDifference": 1,
+    "maxAbsDayDifference": 1806,
+    "sample": [
+     {
+      "bitgetDate": "2026-01-13",
+      "localDate": "2026-01-14",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-04-13",
+      "localDate": "2026-04-14",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-07-13",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": -1
+     },
+     {
+      "bitgetDate": "2026-10-12",
+      "localDate": "2026-07-14",
+      "daysBitgetMinusLocal": 90
+     }
+    ]
+   }
+  ],
+  "note": "Two independent derivations of the same corporate event. Bitget publishes a disclosure date; this project infers one from filing text. They are not the same quantity by construction - a filing can land a day either side of the announced briefing date - so the day difference is reported as a distribution rather than collapsed into a pass/fail."
+ },
+ "wholeMarketSentiment": {
+  "entryId": "sentiment_market_fear_greed",
+  "provider": null,
+  "ok": true,
+  "call": {
+   "ms": 1104,
+   "status": 200
+  },
+  "reading": {
+   "score": 37.2286,
+   "rating": "fear",
+   "timestamp": "2026-09-23T14:01:39Z",
+   "previousClose": 35.2286,
+   "previous1Week": 27.3143,
+   "previous1Month": 54.6571,
+   "previous1Year": 56.7714
+  },
+  "usedByEngine": false,
+  "note": "Recorded, not consumed. AnalogDesk's distance function is frozen and validated as published; adding a live sentiment series to it would invalidate every figure in research/VALIDATION.md. This reading is surfaced as provenance - a Bitget-sourced number a reviewer can see - and is deliberately excluded from the retrieval features, the conformal scale and the stress engine."
+ },
+ "measuredEmpty": {
+  "entries": [
+   {
+    "entryId": "equity_price_historical",
+    "params": {
+     "symbol": "NVDA"
+    },
+    "status": 204,
+    "empty": true,
+    "ok": false,
+    "ms": 1545,
+    "errorText": null
+   },
+   {
+    "entryId": "etf_price_performance",
+    "params": {
+     "symbol": "SPY"
+    },
+    "status": 204,
+    "empty": true,
+    "ok": false,
+    "ms": 1705,
+    "errorText": null
+   }
+  ],
+  "note": "These entries completed the transport and returned HTTP 204 with an empty body at measurement time. That is recorded instead of being retried until something came back: a working session with an empty upstream is a fact about the upstream, and a deep historical price cross-check would have been the strongest test in this file, so its absence is stated rather than papered over."
+ },
+ "summary": {
+  "measured": true,
+  "measuredAt": "2026-09-23T14:07:46.571Z",
+  "route": "proxy 127.0.0.1:7890",
+  "server": "bitget-mcp-server@4.0.5",
+  "catalogCategories": 5,
+  "catalogEntries": 67,
+  "toolsAdvertised": 2,
+  "quotesAnswered": "68/71",
+  "profilesAnswered": "24/24",
+  "earningsDatesCompared": 1826,
+  "earningsExactSameDayPct": 0.11,
+  "earningsWithin3DaysPct": 69.44,
+  "fearGreedOverlappingDates": 396,
+  "fearGreedExactMatches": 396,
+  "medianSnapshotDriftPct": 1.49,
+  "entriesMeasuredEmpty": 2
+ },
+ "disclosure": "Fetched through proxy 127.0.0.1:7890 from bitget-mcp-server@4.0.5 on 2026-09-23T14:06:26.954Z. The Bitget integration contributes 68 live equity quotes, 24 company profiles, 1826 earnings-disclosure dates cross-checked against this project's own EDGAR derivation, and 396 days of crypto fear & greed cross-checked against the independently-sourced series already in the dataset. NONE of it feeds the retrieval engine, the frozen conformal scale, or any figure in research/VALIDATION.md - those stay exactly as published and remain reproducible from keyless sources alone. This file exists so the cross-check is auditable, and so the route it needed is stated: on a direct connection from this machine, 0/3 Bitget market-data hosts answer."
+}

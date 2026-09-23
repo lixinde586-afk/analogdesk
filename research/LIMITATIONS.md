@@ -129,6 +129,21 @@ caught being not enough — **LINK (Chainlink) trades near LI Auto's share price
 is refused by the correlation test at 0.227. `npm run check:wrapper` asserts that specific rejection by
 name, so quietly loosening the floor fails the build.
 
+**The return layer is now measured too, and it is smaller than the movement share implies.** A share of
+absolute movement cannot be sized, so `scripts/measure-wrapper.mjs` also reports what the wrapper actually
+*returned* while the reference market was shut. Over **136 weekend closed-market blocks** across 34 wrappers
+— pooled median return **-0.002%**, tenth percentile **-1.461%**, standard deviation **1.2789%**, negative in
+50% of them, median intra-weekend adverse excursion **-0.713%**, and **2.9%** of those weekends traded at
+least 5% below the pre-weekend close. Hour for hour, closed-session price formation was **0.5x** as volatile
+as open-session formation: the movement share above is large because there are far more closed hours than
+open ones, not because each closed hour moves more. Every block recomputes from its own entry and exit prices
+and `npm run check:wrapper` asserts that.
+
+The binding limitation is the sample, and it is stated wherever the number is quoted: 720 hourly candles is
+roughly **four distinct weekends**, so the 136 pooled blocks are 34 wrappers over the same 4 weekends and are
+highly cross-correlated. The pooled `n` is printed next to the distinct-weekend count so the effective sample
+size is visible rather than implied.
+
 **What is still not measured — and this is the part that matters.**
 
 - **The outcome distribution is unchanged and still 5x24.** Every forward return, the frozen conformal scale
@@ -187,13 +202,52 @@ horizon.
   breaks the build; the raw HTTP cache and the committed `dataset.json` make the shipped artefacts
   reproducible offline regardless.
 
-## 12. Bitget: two integrations, opposite results, both disclosed
+## 12. Bitget: two integrations, three results, and the route each one needed
 
 Bitget appears in this project in two separate places, and the honest summary is neither "0 endpoints" nor
 "Bitget connected" — it is one of each. `probeAllBitget()` reports the two groups separately and `reachable`
 deliberately keeps meaning *the market-data toolkit is reachable*, so no panel can start claiming a Bitget
-data integration that does not exist. The header badge reads `bitget: data unreachable · gateway reachable`
-for exactly that reason.
+data integration that does not exist. The header badge names the route whenever the direct connection was not what produced the answer, for
+exactly that reason.
+
+**Update, measured `2026-09-23T14:07Z`: the market-data result is route-dependent, and the earlier
+"0 of 3" was true only of a direct connection.** All three hosts — `agent.bitget.com/mcp`,
+`www.bitget.com` and `api.bitget.com` — still reset at the TCP layer on a direct connection from this
+machine, and all three answer through a local HTTP proxy (`127.0.0.1:7890`, auto-detected). Through it the
+official MCP completes a JSON-RPC handshake and identifies itself as **`bitget-mcp-server@4.0.5`** with a
+67-entry catalog in 5 categories (crypto 39, **US equity 22**, ETF 3, news 1, sentiment 2), no account and
+no API key. `scripts/measure-bitget.mjs` now measures both routes, records which one produced each answer,
+and commits the result to `data-cache/bitget-probe.json`; `npm run check:bitget` gates it.
+
+What that route bought, as cross-checks against this project's own committed keyless data rather than as
+demo calls:
+
+- **Crypto fear & greed, exact agreement.** 400 daily readings from Bitget against the
+  `api.alternative.me` series already in `data-cache/dataset.json`: **396 overlapping dates, 396 identical,
+  mean absolute difference 0 index points.** Two independent transports and operators, the same index.
+- **Earnings dates, distributional agreement.** 1,826 Bitget-disclosed dates against the calendar this
+  project derived independently from EDGAR full-text search (8-K Item 2.02 with a 6-K fallback): **0.11%
+  same day, 69.44% within three days, 70.1% within seven.** Not the same quantity by construction — a filing
+  can land either side of an announced briefing date — so the day difference is reported as a distribution.
+  The gate fails if the same-day rate ever exceeds 90%, because a near-perfect match would mean one side was
+  derived from the other and the check had stopped being independent.
+- **Identity and quotes.** 24/24 company profiles (ISIN, exchange, industry, listing date) and 68/71 live
+  equity quotes. `CAT`, `UUP` and `VIXY` are not covered and are recorded as uncovered. Quotes are compared
+  to the frozen snapshot as **staleness** (median 1.49% drift from the `2026-09-18` close), never as a price
+  disagreement.
+- **What did not come back.** `equity_price_historical` and `etf_price_performance` complete the transport
+  and return HTTP 204 with an empty body. That is recorded rather than retried into a result, and it matters:
+  a deep historical price cross-check would have been the strongest test available and it is absent.
+
+**The boundary is unchanged and is the reason this is safe to add.** No Bitget figure enters the retrieval
+features, the frozen conformal scale, or any number in `research/VALIDATION.md`. Those remain reproducible
+from keyless sources alone, on any network, with no proxy. A reviewer who cannot reach Bitget loses the
+cross-check and nothing else.
+
+**And the honest reading of the green badge.** It says the integration works *from a machine with a local
+proxy*. On a plain network it does not, and the badge says so too — `0/3 direct` is carried next to
+`3/3 proxied` in the tooltip and in the provenance panel. Reporting only the proxied success would be the
+same error as reporting only the direct failure, in the opposite direction.
 
 **Market data — 0 of 3 reachable.** `agent.bitget.com/mcp` (JSON-RPC `tools/list`), `www.bitget.com` and
 `api.bitget.com` each fail at the TCP layer: `connection-reset — TCP connection reset by peer before any HTTP

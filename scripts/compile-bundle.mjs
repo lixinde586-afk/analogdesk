@@ -279,7 +279,30 @@ function build() {
   const wrapperFull = readJsonOrNull(join(ROOT, "data-cache", "wrapper-probe.json"));
   const wrapper = wrapperFull ? (({ pairs, ...rest }) => rest)(wrapperFull) : null;
   if (!wrapper) log("WARNING no data-cache/wrapper-probe.json - the static build ships no 7x24 wrapper block.");
-  else log(`wrapper: ${Object.keys(wrapper.bySymbol || {}).length} verified wrapper(s), reference market closed ${wrapper.referenceMarket?.closedSharePct}% of the week, median closed-hours move ${wrapper.summary?.medianReferenceClosedMoveSharePct}%`);
+  else log(`wrapper: ${Object.keys(wrapper.bySymbol || {}).length} verified wrapper(s), reference market closed ${wrapper.referenceMarket?.closedSharePct}% of the week, median closed-hours move ${wrapper.summary?.medianReferenceClosedMoveSharePct}%, ${wrapper.closedSessionReturns?.pooled?.weekendReturnDistribution?.n ?? 0} weekend return block(s)`);
+
+  // The committed Bitget measurement, written by scripts/measure-bitget.mjs. Baked in for the same
+  // reason as the wrapper probe: the static package makes no network call, and a keyless reviewer must
+  // still be able to read what the official MCP returned and how it was cross-checked. The per-symbol
+  // arrays are dropped - the full file is published next to the bundle as bitget-probe.json - so the
+  // panel carries the cross-check totals without carrying 71 quote rows into every page load.
+  const bitgetFull = readJsonOrNull(join(ROOT, "data-cache", "bitget-probe.json"));
+  const stripPerSymbol = (o) => (o ? (({ perSymbol, ...rest }) => rest)(o) : null);
+  const bitgetMeasurement = bitgetFull ? {
+    generatedAt: bitgetFull.generatedAt || null,
+    route: bitgetFull.summary?.route || null,
+    server: bitgetFull.server?.serverInfo || null,
+    summary: bitgetFull.summary || null,
+    fearGreedCrossCheck: bitgetFull.fearGreedCrossCheck || null,
+    earningsCrossCheck: stripPerSymbol(bitgetFull.earningsCrossCheck),
+    quotes: stripPerSymbol(bitgetFull.quotes),
+    profiles: stripPerSymbol(bitgetFull.profiles),
+    wholeMarketSentiment: bitgetFull.wholeMarketSentiment || null,
+    measuredEmpty: bitgetFull.measuredEmpty || null,
+    disclosure: bitgetFull.disclosure || null
+  } : null;
+  if (!bitgetMeasurement) log("WARNING no data-cache/bitget-probe.json - the static build ships no Bitget cross-check block.");
+  else log(`bitget: ${bitgetMeasurement.server?.name || "?"}@${bitgetMeasurement.server?.version || "?"} on the ${bitgetMeasurement.route} route; ${bitgetMeasurement.fearGreedCrossCheck?.exactMatches ?? 0}/${bitgetMeasurement.fearGreedCrossCheck?.overlappingDates ?? 0} fear-&-greed readings identical, ${bitgetMeasurement.earningsCrossCheck?.matchedDates ?? 0} earnings dates cross-checked`);
 
   // Replay cache: any generation already stored for an exact card ships with the package, so a
   // judge can see a real model-written narrative without needing a key. The template still renders
@@ -321,7 +344,19 @@ function build() {
       usedSources: netProbe.usedSources, unusedSources: netProbe.unusedSources, rejectedSources: netProbe.rejectedSources,
       targets: (netProbe.targets || []).map((x) => ({ name: x.name, role: x.role, ok: x.ok, status: x.status, kind: x.kind, detail: x.detail, latencyMs: x.latencyMs }))
     } : null,
-    bitget: netProbe?.bitget || { reachable: false, summary: "not probed in the static build", endpoints: [], disclosure: null },
+    // The committed probe result, plus the committed measurement that route paid for. Merged rather
+    // than replaced: network-probe.json can be older than bitget-probe.json and neither should hide
+    // the other.
+    bitget: {
+      ...(netProbe?.bitget || { reachable: false, summary: "not probed in the static build", endpoints: [], disclosure: null }),
+      ...(bitgetMeasurement ? {
+        measurement: bitgetMeasurement,
+        measurementSummary: bitgetMeasurement.disclosure || null,
+        reachable: netProbe?.bitget?.reachable ?? Boolean(bitgetMeasurement.summary?.measured),
+        reachableDirectCount: netProbe?.bitget?.reachableDirectCount ?? null,
+        proxy: netProbe?.bitget?.proxy || null
+      } : {})
+    },
     llm: {
       mode: Object.keys(replaySeed).length ? "REPLAY/TEMPLATE" : "TEMPLATE", model: null, keyPresent: false,
       // The endpoint the narrative layer is configured against. It is the Bitget-operated hackathon
@@ -338,7 +373,12 @@ function build() {
       available: Boolean(wrapper.summary && !wrapper.degradation), degraded: Boolean(wrapper.degradation),
       measuredAt: wrapper.generatedAt || null, venueName: wrapper.venue?.name || null,
       summary: wrapper.summary || null, referenceMarket: wrapper.referenceMarket || null,
-      verified: Object.keys(wrapper.bySymbol || {}).length
+      verified: Object.keys(wrapper.bySymbol || {}).length,
+      // The pooled return layer, so the keyless site can quote the weekend distribution the server
+      // quotes. Per-pair blocks stay in bySymbol and are read from there by the card.
+      closedSessionReturns: wrapper.closedSessionReturns
+        ? { pairsWithReturnLayer: wrapper.closedSessionReturns.pairsWithReturnLayer, distinctWeekendStarts: wrapper.closedSessionReturns.distinctWeekendStarts, pooled: wrapper.closedSessionReturns.pooled, caveat: wrapper.closedSessionReturns.caveat, convention: wrapper.closedSessionReturns.convention }
+        : null
     } : null
   };
 
@@ -352,7 +392,7 @@ function build() {
     return transformModule(key, mod.src);
   });
 
-  return { dataset, validation, replaySeed, provenance, promptVersion, transformed, ms: Date.now() - t0, validationFull, netProbe, wrapper, wrapperFull };
+  return { dataset, validation, replaySeed, provenance, promptVersion, transformed, ms: Date.now() - t0, validationFull, netProbe, wrapper, wrapperFull, bitgetFull, bitgetMeasurement };
 }
 
 /* -------------------------------- assemble -------------------------------- */
@@ -435,12 +475,15 @@ function emit() {
   // The full measurement, rejections included, next to the trimmed copy inside the bundle: a reviewer
   // reading the static site should be able to audit why a candidate was refused without cloning.
   if (b.wrapperFull) writeFileSync(join(DIST, "wrapper-probe.json"), JSON.stringify(b.wrapperFull, null, 2), "utf8");
+  // Same reasoning, same treatment: the full Bitget measurement including all 71 per-symbol quote rows
+  // and every earnings-date pairing, so the cross-check can be audited without cloning the repo.
+  if (b.bitgetFull) writeFileSync(join(DIST, "bitget-probe.json"), JSON.stringify(b.bitgetFull, null, 2), "utf8");
 
   const size = (f) => statSync(join(DIST, f)).size;
   const mb = (n) => `${(n / 1048576).toFixed(2)} MB`;
   const gz = gzipSync(Buffer.from(bundle, "utf8")).length;
   log(`bundle: ${b.transformed.length} modules, ${mb(size("app.bundle.js"))} raw, ${mb(gz)} gzipped (build ${b.ms} ms)`);
-  for (const f of ["index.html", "styles.css", "app.bundle.js", "validation-summary.json", "network-probe.json", "wrapper-probe.json"]) {
+  for (const f of ["index.html", "styles.css", "app.bundle.js", "validation-summary.json", "network-probe.json", "wrapper-probe.json", "bitget-probe.json"]) {
     if (existsSync(join(DIST, f))) log(`  dist/${f.padEnd(26)} ${mb(size(f))}`);
   }
   log(`payload: library ${b.provenance.sessions} sessions x ${b.provenance.symbols} instruments (${b.provenance.from} .. ${b.provenance.to});`

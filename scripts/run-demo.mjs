@@ -26,7 +26,7 @@ import { fileURLToPath } from "node:url";
 import { resolveConfig } from "../src/llm/config.mjs";
 import { registerNodeFs, createNodeStore } from "../src/llm/replay.mjs";
 import { narrate, detectLang, PROMPT_VERSION } from "../src/llm/narrate.mjs";
-import { probeAllBitget } from "../src/data/bitget.mjs";
+import { probeAllBitgetRouted } from "../src/data/bitget-routes.mjs";
 import { buildAllowlist, verifyNumbers, defaultAllowance } from "../src/llm/verify-numbers.mjs";
 import { createDesk, DEFAULT_HORIZON, DEFAULT_K } from "../src/desk.mjs";
 import * as fs from "node:fs";
@@ -337,6 +337,32 @@ function renderMarkdownPart2(ctx) {
       L.push(`| liquidity at the snapshot | spread ${n(lq.spreadBps)} bp, ${n(lq.depthWithin50BpsUsdt, 0)} USDT within 50 bp, ${n(lq.depthWithin200BpsUsdt, 0)} USDT within 200 bp, 24h quote volume ${n(lq.quoteVolume24hUsdt, 0)} USDT |`);
       L.push(``);
       L.push(`Convention, so the figure can be checked: ${mdEsc(s24.conventionNote || "")}`);
+
+      // The return layer. The movement share above cannot be sized - nobody can ask "what did it do"
+      // of a percentage of |returns| - so the same hourly candles also report the realised return
+      // distribution of the closed-market blocks, with the intra-block path.
+      const cr = w.closedSessionReturns;
+      if (cr && cr.weekendReturnDistribution) {
+        const wd = cr.weekendReturnDistribution, mae = cr.weekendMaeDistribution || {};
+        L.push(``);
+        L.push(`**The return layer - what the wrapper did while the cash market was shut.** A share of absolute movement cannot be sized, so the ${n(cr.weekendBlocks, 0)} weekend closed-market block(s) in the observed window are reported as a distribution:`);
+        L.push(``);
+        L.push(`| measured | value |`);
+        L.push(`|---|---|`);
+        L.push(`| weekend block return | median ${pl(wd.medianPct)}, p10 ${pl(wd.p10Pct)}, p90 ${pl(wd.p90Pct)}, sd ${pl(wd.stdPct)}, negative in ${pl(wd.shareNegativePct)} of ${n(wd.n, 0)} |`);
+        L.push(`| intra-weekend adverse excursion | median ${pl(mae.medianPct)}, p10 ${pl(mae.p10Pct)}, worst ${pl(mae.minPct)} |`);
+        L.push(`| breached -5% inside the block | ${pl(cr.weekendShareBreached5PctDrawdownPct)} of weekends |`);
+        L.push(`| closed-hour vs open-hour volatility | ${n(cr.hourlyStdRatioOutsideOverInside, 2)}x per hour |`);
+        if (cr.pooledWeekendReturnDistribution) L.push(`| pooled across every verified wrapper | ${n(cr.pooledWeekendReturnDistribution.n, 0)} blocks over ${n(cr.pooledPairs, 0)} wrappers and **${n(cr.pooledDistinctWeekendStarts, 0)} distinct weekends** - median ${pl(cr.pooledWeekendReturnDistribution.medianPct)}, p10 ${pl(cr.pooledWeekendReturnDistribution.p10Pct)}, median MAE ${pl(cr.pooledWeekendMaeDistribution?.medianPct)} |`);
+        L.push(``);
+        L.push(`How a block is defined: ${mdEsc(cr.conventionNote || "")}`);
+        L.push(``);
+        L.push(`> ${mdEsc(cr.caveatNote || "")}`);
+      } else {
+        L.push(``);
+        L.push(`**No return layer on this build.** No closed-session block in the observed window was long enough to measure for this instrument, so the movement share above is reported without a return distribution behind it. That is a gap in the measurement, not a small number.`);
+      }
+
       L.push(``);
       L.push(`> ${mdEsc(w.caveat || "")}`);
     } else {
@@ -354,9 +380,10 @@ function renderMarkdownPart2(ctx) {
   L.push(`npm run build:data     # rebuild data-cache/dataset.json from the keyless sources (cached; ~10s warm)`);
   L.push(`npm run verify         # re-fit and re-score the frozen validation -> research/VALIDATION.md`);
   L.push(`npm run demo           # regenerate this file and demo/run-record.json
-npm run measure:wrapper# re-measure the 7x24 wrapper layer -> data-cache/wrapper-probe.json`);
-  L.push(`npm run check          # nine gates: numeric grid, LUI, markup, bundle-in-a-DOM-stub, wrapper
-                       # measurement, replay cache, MCP, server, real headless Chrome`);
+npm run measure:wrapper# re-measure the 7x24 wrapper layer -> data-cache/wrapper-probe.json
+npm run measure:bitget # re-measure the official Bitget MCP on both routes -> data-cache/bitget-probe.json`);
+  L.push(`npm run check          # ten gates: numeric grid, LUI, markup, bundle-in-a-DOM-stub, wrapper
+                       # measurement, Bitget cross-check, replay cache, MCP, server, real headless Chrome`);
   L.push(`npm start              # the interactive desk at http://127.0.0.1:3000`);
   L.push("```");
   L.push(``);
@@ -458,7 +485,7 @@ const wrapperProbe = readJson(join(ROOT, "data-cache", "wrapper-probe.json"));
     log(`probing Bitget endpoints ...`);
     // The narrative probe names the model this run is configured for, so the recorded disclosure says which
 // integration is actually in use rather than implying a market-data feed.
-const live = await probeAllBitget({ timeoutMs: Number(cfg.bitget.probeTimeoutMs), model: cfg.llm.model });
+const live = await probeAllBitgetRouted({ timeoutMs: Number(cfg.bitget.probeTimeoutMs), model: cfg.llm.model });
     if (isClassified(live)) {
       bitget = live;
       bitgetProbeSource = `live probe ${live.probedAt || "n/a"}`;
@@ -481,7 +508,7 @@ const live = await probeAllBitget({ timeoutMs: Number(cfg.bitget.probeTimeoutMs)
     priceSource: dataset.meta?.sources?.prices || null,
     earningsSource: dataset.meta?.sources?.earningsDates || null,
     bitget,
-    bitgetMcp: { status: bitget?.reachable ? "connected" : "degraded", reason: bitget?.reachable ? null : (bitget?.endpoints?.[0] ? `${bitget.endpoints[0].kind}: ${bitget.endpoints[0].detail}` : "not probed") },
+    bitgetMcp: { status: bitget?.reachable ? "reachable-not-consumed" : "degraded", reason: bitget?.reachable ? null : (bitget?.endpoints?.[0] ? `${bitget.endpoints[0].kind}: ${bitget.endpoints[0].detail}` : "not probed") },
     llm: { mode: cfg.llm.enabled ? "LIVE" : "TEMPLATE", model: cfg.llm.model, baseUrl: cfg.llm.baseUrl, keyPresent: cfg.llm.enabled, promptVersion: PROMPT_VERSION }
   };
   log(`analysis done in ${analyzeMs} ms (retrieval ${analysis.detail.timing.retrievalMs} ms); ${analysis.card.distribution?.n ?? 0} analogs, ${analysis.card.stress?.length ?? 0} scenarios`);

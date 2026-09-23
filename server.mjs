@@ -24,7 +24,10 @@ import { resolveConfig, ROOT } from "./src/llm/config.mjs";
 import { registerNodeFs, createNodeStore } from "./src/llm/replay.mjs";
 import { narrate, detectLang, PROMPT_VERSION } from "./src/llm/narrate.mjs";
 import { probeLlm } from "./src/llm/client.mjs";
-import { probeAllBitget } from "./src/data/bitget.mjs";
+// The routed probe measures every Bitget host on BOTH a direct connection and through a local
+// proxy when one is present, and folds in the committed cross-check measurement. It lives in its own
+// module because it needs node:net/node:tls, and src/data/bitget.mjs is in the browser module graph.
+import { probeAllBitgetRouted } from "./src/data/bitget-routes.mjs";
 import { createDesk, DEFAULT_HORIZON } from "./src/desk.mjs";
 import { parseIdea, explain as explainIdea } from "./src/llm/lui.mjs";
 
@@ -125,7 +128,7 @@ log(`validation loaded for horizons: ${Object.keys(desk.allValidation()).join(",
 let bitget = networkProbe?.bitget
   ? { ...networkProbe.bitget, fromCache: true, cachedAt: networkProbe.generatedAt }
   : { reachable: false, summary: "probe pending", endpoints: [], disclosure: null, probedAt: null, pending: true };
-probeAllBitget({ timeoutMs: Number(cfg.bitget.probeTimeoutMs), model: cfg.llm.model }).then((r) => {
+probeAllBitgetRouted({ timeoutMs: Number(cfg.bitget.probeTimeoutMs), model: cfg.llm.model }).then((r) => {
   bitget = r;
   log(`Bitget toolkit probe: ${r.summary}`);
 }).catch((e) => { bitget = { reachable: false, summary: `probe failed: ${e.message}`, endpoints: [], disclosure: null, probedAt: new Date().toISOString() }; });
@@ -207,11 +210,14 @@ function provenance() {
   return {
     ...provenanceBase,
     bitget: bitget ? {
-      status: bitget.reachable ? "connected" : "degraded", summary: bitget.summary, disclosure: bitget.disclosure,
+      status: bitget.reachable ? "reachable-not-consumed" : "degraded", summary: bitget.summary, disclosure: bitget.disclosure,
       endpoints: bitget.endpoints, probedAt: bitget.probedAt, configuredUrl: cfg.bitget.mcpUrl,
       // Reported separately, because the two Bitget integrations have opposite results on this
       // network and one badge for both would be wrong whichever way it pointed.
-      marketData: bitget.marketData || null, narrative: bitget.narrative || null
+      marketData: bitget.marketData || null, narrative: bitget.narrative || null,
+      // The route that produced each answer, and the committed measurement that route paid for.
+      reachableDirectCount: bitget.reachableDirectCount ?? null, proxy: bitget.proxy || null,
+      measurement: bitget.measurement || null, measurementSummary: bitget.measurementSummary || null
     } : null,
     wrapper: desk.wrapper(),
     wrapperMeasurement: wrapperAudit,
@@ -256,7 +262,7 @@ async function handleAnalyze(params, res) {
   const prov = { ...provenanceBase, bitget: provenance().bitget, llm: provenance().llm };
   analysis.card.provenance = { ...analysis.card.provenance, ...prov,
     priceSource: dataset.meta?.sources?.prices || null,
-    bitgetMcp: { status: bitget?.reachable ? "connected" : "degraded", reason: bitget?.reachable ? null : (bitget?.endpoints?.[0] ? `${bitget.endpoints[0].kind}: ${bitget.endpoints[0].detail}` : "not probed") } };
+    bitgetMcp: { status: bitget?.reachable ? "reachable-not-consumed" : "degraded", reason: bitget?.reachable ? null : (bitget?.endpoints?.[0] ? `${bitget.endpoints[0].kind}: ${bitget.endpoints[0].detail}` : "not probed") } };
 
   let narrative = null;
   if (withNarrative) {
@@ -288,7 +294,7 @@ const server = http.createServer(async (req, res) => {
           ok: true, uptimeS: Math.round(process.uptime()), engineInitMs: desk.initMs,
           rssMb: Math.round(process.memoryUsage().rss / 1e6), node: process.version,
           llm: { mode: cfg.llm.enabled ? "LIVE" : "TEMPLATE", model: cfg.llm.model, keyPresent: cfg.llm.enabled, probe: llmProbe },
-          bitget: { status: bitget?.reachable ? "connected" : "degraded", summary: bitget?.summary || null,
+          bitget: { status: bitget?.reachable ? "reachable-not-consumed" : "degraded", summary: bitget?.summary || null,
             marketData: bitget?.marketData?.summary || null, narrative: bitget?.narrative?.summary || null },
           wrapper: desk.wrapper(),
           library: { symbols: desk.engine.mx.nSym, sessions: desk.engine.mx.nDates, from: desk.engine.mx.dates[0], to: desk.engine.mx.dates.at(-1) },
@@ -314,7 +320,7 @@ const server = http.createServer(async (req, res) => {
       }
       if (path === "/api/dataset") return send(res, 200, fs.readFileSync(datasetPath), "application/json; charset=utf-8");
       if (path === "/api/bitget-probe") {
-        bitget = await probeAllBitget({ timeoutMs: Number(cfg.bitget.probeTimeoutMs) });
+        bitget = await probeAllBitgetRouted({ timeoutMs: Number(cfg.bitget.probeTimeoutMs), model: cfg.llm.model });
         return sendJson(res, { ok: true, bitget });
       }
       if (path === "/api/analyze") {

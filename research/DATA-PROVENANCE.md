@@ -149,7 +149,7 @@ win32 / node v24.21.0:
 
 ---
 
-## 6. Bitget official MCP — degraded, and disclosed
+## 6. Bitget official MCP — route-dependent, measured on both routes, and cross-checked
 
 `agent.bitget.com/mcp` (JSON-RPC `tools/list`), `www.bitget.com` and `api.bitget.com` were each probed 3 times.
 **0 of 3 reachable.** Every attempt fails at the transport layer:
@@ -263,3 +263,51 @@ pair can be delisted, reissued under a new suffix, or start trading at a level t
 committed snapshot is what every card reports, and it is timestamped; re-running `npm run measure:wrapper`
 produces a new snapshot and `npm run check:wrapper` re-verifies every acceptance rule against it. A card
 never shows a wrapper figure without the timestamp it was measured at.
+
+## 10. Bitget official MCP — what it returned, and what it was checked against
+
+Measured `2026-09-23T14:07Z` by `scripts/measure-bitget.mjs`, committed as
+`data-cache/bitget-probe.json`, gated by `npm run check:bitget`, published next to the static bundle as
+`dist/bitget-probe.json`.
+
+| | |
+|---|---|
+| Endpoint | `https://agent.bitget.com/mcp`, MCP JSON-RPC 2.0 over streamable HTTP |
+| Server | `bitget-mcp-server@4.0.5`, protocol `2024-11-05` |
+| Credentials | none. No Bitget account, no API key, no key written to any file |
+| Catalog | 67 entries in 5 categories — crypto 39, **US equity 22**, ETF 3, news 1, sentiment 2 |
+| Tools | `guide` (catalog) and `do_query` (execute an entry by id) |
+| Route | **0/3 market-data hosts answer on a direct connection from this machine; 3/3 answer through a local HTTP proxy** (`127.0.0.1:7890`, auto-detected). Every figure below was fetched on the proxied route and is labelled as such |
+| Transport | `src/data/proxy.mjs` — a zero-dependency CONNECT tunnel on `node:net` + `node:tls`, handed to `node:https` via `createConnection`. Node's `fetch` does not honour a system proxy and undici's `ProxyAgent` is not importable, so the tunnel is implemented directly |
+
+**Entries that returned data, and the cross-check each one paid for.**
+
+| Entry | Result | Checked against |
+|---|---|---|
+| `crypto_sentiment_crypto_fear_greed` | 400 daily readings | the `api.alternative.me` series in §1 — **396 overlapping dates, 396 identical, mean absolute difference 0** |
+| `equity_calendar` | disclosure dates for 24 symbols | the EDGAR-derived calendar in §2 — **1,826 dates compared: 0.11% same day, 69.44% within 3 days, 70.1% within 7** |
+| `equity_price_quote` | live quotes for **68 of 71** library instruments | the frozen `2026-09-18` close, reported as **staleness** (median 1.49% drift), not as agreement |
+| `equity_profile` | **24 of 24** profiles with ISIN, exchange, industry, listing date | the library's own universe metadata and first session |
+| `sentiment_market_fear_greed` | whole-market score 37.2 (`fear`) at `2026-09-23T14:01:39Z` | nothing — this project carries no equivalent series. **Recorded, not consumed** |
+
+**Entries that answered with an empty body.** `equity_price_historical` and `etf_price_performance` complete
+the transport and return HTTP 204 with no data. Both are recorded in `measuredEmpty` with their status. This
+is the most consequential absence in the file: a deep historical price cross-check against the 2,513-session
+library would have been the strongest test available here, and the upstream does not currently serve it.
+
+**Not covered.** `CAT`, `UUP` and `VIXY` return no quote row. Each is recorded with its reason rather than
+dropped from the denominator.
+
+**Boundary.** No Bitget figure enters the retrieval features, the frozen conformal scale, or any number in
+`research/VALIDATION.md`. The engine remains reproducible from the keyless sources in §1 alone, on any
+network, with no proxy; a reviewer who cannot reach Bitget loses the cross-check and nothing else. The
+`sentiment_market_fear_greed` reading is excluded explicitly and the exclusion is justified in the file —
+adding a live series to a frozen, published distance function would invalidate every validated figure.
+
+**Trust boundary.** This is a free, unauthenticated, third-party-operated endpoint behind Cloudflare with no
+published SLA, and its upstreams fail independently of it: during measurement the crypto fear-&-greed,
+Treasury-yield and macro-indicator upstreams of the *separate* `bitget-signal` service
+(`datahub.noxiaohao.com/mcp`, `market-data-mcp@1.26.0`, 19 tools) returned empty results or connect
+timeouts while the transport itself stayed healthy. That service was probed and is **not** a dependency of
+anything in this project. The committed snapshot is timestamped, `npm run check:bitget` re-verifies the
+arithmetic against it, and no card quotes a Bitget figure without the route and timestamp it was measured on.

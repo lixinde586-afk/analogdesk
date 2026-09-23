@@ -222,6 +222,62 @@ else {
   else ok("loading the measurement changes the card id, so a runtime that forgets it cannot silently serve another runtime's prose");
 }
 
+/* --------------- 6b. the return layer, not just the movement share --------------- */
+
+section("the return layer: what the wrapper did while the cash market was shut");
+{
+  const probeFile = JSON.parse(readFileSync(join(ROOT, "data-cache", "wrapper-probe.json"), "utf8"));
+  const rl = probeFile.closedSessionReturns;
+  if (!rl) bad("wrapper-probe.json carries no closedSessionReturns block - the movement share is published but the return distribution the thesis actually needs is not");
+  else {
+    const pw = rl.pooled?.weekendReturnDistribution;
+    if (!pw || !(pw.n > 0)) bad("the pooled weekend return distribution is empty, so the 7x24 claim still has no return-layer number behind it");
+    else ok(`${pw.n} weekend closed-market blocks pooled over ${rl.pairsWithReturnLayer} wrapper(s) and ${rl.distinctWeekendStarts} distinct weekend start(s)`);
+
+    // The pooled n must be the sum of the per-pair blocks, or the pooling is counting something else.
+    const perPair = (probeFile.pairs || []).reduce((s, a) => s + (a.closedReturns?.weekendBlocks?.length || 0), 0);
+    if (perPair !== (rl.weekendBlocks?.length ?? -1)) bad(`pooled weekend blocks (${rl.weekendBlocks?.length}) do not equal the sum over pairs (${perPair})`);
+    else ok(`pooled count reconciles with the per-pair counts (${perPair})`);
+
+    // Distinct weekend starts bound the effective sample size. If that number is missing or larger
+    // than n, the caveat that makes the pooled n readable is not backed by anything.
+    if (!(rl.distinctWeekendStarts > 0) || rl.distinctWeekendStarts > (pw?.n ?? 0)) bad("distinctWeekendStarts is not a usable bound on the pooled sample size");
+    else ok(`effective-sample bound stated: ${rl.distinctWeekendStarts} distinct weekend(s) behind ${pw.n} pooled block(s)`);
+
+    // Recompute every block from its own entry/exit/low. A block whose stored return does not match
+    // its stored prices is a block that was edited after measurement.
+    let checked = 0, wrong = 0, maeBad = 0;
+    for (const b of rl.weekendBlocks || []) {
+      if (!(b.entry > 0) || !(b.exit > 0)) { wrong++; continue; }
+      const ret = Number((((b.exit / b.entry) - 1) * 100).toFixed(3));
+      if (Math.abs(ret - b.returnPct) > 0.002) wrong++;
+      // The intra-block low cannot sit above the exit, and the MAE cannot be a gain.
+      if (b.maePct != null && (b.maePct > 0.0001 || b.maePct > b.returnPct + 0.0001)) maeBad++;
+      checked++;
+    }
+    if (!checked) bad("no weekend block carried an entry and an exit price, so nothing was verifiable");
+    else if (wrong) bad(`${wrong}/${checked} weekend block(s) have a return that does not match their own entry and exit prices`);
+    else ok(`all ${checked} weekend block(s) recompute from their own entry/exit prices`);
+    if (maeBad) bad(`${maeBad} weekend block(s) report an adverse excursion that is a gain, or above the block's own return`);
+    else if (checked) ok("every intra-block adverse excursion is a loss and never better than the block's own return");
+
+    // The pooled figures the card and the UI quote must be the pooled ones, recomputed here.
+    const med = (arr) => { const a = arr.filter(Number.isFinite).slice().sort((x, y) => x - y); return a.length ? a[Math.floor(a.length / 2)] : NaN; };
+    const recomputed = med((rl.weekendBlocks || []).map((b) => b.returnPct));
+    if (Number.isFinite(recomputed) && pw?.medianPct != null && Math.abs(recomputed - pw.medianPct) > 0.01) bad(`pooled median weekend return (${pw.medianPct}%) does not match the median of the pooled blocks (${recomputed.toFixed(3)}%)`);
+    else if (pw) ok(`pooled median weekend return ${pw.medianPct}% (p10 ${pw.p10Pct}%, sd ${pw.stdPct}%) recomputes from the blocks`);
+    if (pw && !(Number.isFinite(pw.shareNegativePct))) bad("the pooled distribution reports no share-negative figure");
+    else if (pw) ok(`${pw.shareNegativePct}% of pooled weekend blocks closed below their pre-weekend price`);
+
+    // The caveat is the whole reason this block is safe to publish next to a validated 5x24 engine.
+    const cav = String(rl.caveat || "");
+    for (const must of ["NOT the outcome distribution", "5x24", "distinct weekend starts"]) {
+      if (!cav.includes(must)) bad(`the return-layer caveat does not state "${must}", so a reader could take a wrapper weekend for the retrieved distribution`);
+    }
+    if (cav.includes("NOT the outcome distribution") && cav.includes("5x24") && cav.includes("distinct weekend starts")) ok("the caveat says what this is not: wrapper returns, not the retrieved 5x24 outcome distribution, with the sample-size bound stated");
+  }
+}
+
 /* ------------------------- 7. it ships ------------------------- */
 
 section("the static build");
