@@ -28,8 +28,9 @@ the run record. Nothing was tuned away to look better. See **[Honest results](#h
 
 **Or locally:** `dist/` is a **fully static deployment**: the entire analog library (2513 sessions x 71 instruments), the
 retrieval engine, the stress engine and the narrative renderer are compiled into one classic `<script>`
-bundle that runs **in the browser** with **zero `fetch` calls**. Judges without a DashScope key get the
-complete product.
+bundle that runs **in the browser** with **zero `fetch` calls**. Judges without any API key get the complete
+product, model-written narrative included: seven canonical research cards ship with cached `qwen3.8-max`
+generations baked into that bundle, so the language layer is visible with no key, no server and no network.
 
 ```
 # option A - literally open the file
@@ -52,10 +53,15 @@ npm start                      # zero dependencies; open http://127.0.0.1:3000
 dependencies): an agent host gets the identical engine, the identical numeric gate and the identical
 request-normalisation disclosures as the browser UI.
 
-Optional: copy `.env.example` to `.env` and set `DASHSCOPE_API_KEY=...` to switch the narrative layer from
-the deterministic template renderer to live **qwen-plus** via the OpenAI-compatible endpoint
-`https://dashscope.aliyuncs.com/compatible-mode/v1`. **Without a key nothing is lost** — the app falls back
-to cached generations and then to the template renderer, and every card states which mode produced it.
+Optional: copy `.env.example` to `.env` and set `LLM_API_KEY=...` to switch the narrative layer from cached
+generations to a live model call. The shipped cache was generated against the Bitget hackathon gateway
+`https://hackathon.bitgetops.com/v1`, model `qwen3.8-max`, with `LLM_ENABLE_THINKING=false` — that model
+reasons before it writes, and with reasoning on the gateway ran 244s and returned **HTTP 504** before emitting
+a word of content, while the same call answered in 2.1s with reasoning off. DashScope
+(`https://dashscope.aliyuncs.com/compatible-mode/v1`, `qwen-plus`) and any other OpenAI-compatible endpoint
+work by changing `LLM_BASE_URL` / `LLM_MODEL`; no code path differs. **Without a key nothing is lost** — the
+app falls back to cached generations and then to the template renderer, and every card states which mode
+produced it.
 
 The cached generations are what make that sentence true, and they are produced by `npm run replay:warm`:
 it runs the canonical card set through the live model, stores **only** prose that passed the numeric gate
@@ -81,7 +87,7 @@ scenarios):
 | `demo/narrative.txt` | The narrative layer text only |
 
 Every numeral in the narrative passes a **verification gate**: the renderer extracts each number and traces it
-back to the engine payload. The last demo run passed **140/140**. A number the engine did not produce cannot
+back to the engine payload. The last demo run passed **168/168**. A number the engine did not produce cannot
 be printed.
 
 ---
@@ -187,7 +193,7 @@ plain-language idea  ->  LUI parser (zh + en, alias table)
                      ->  distribution + path risk (MAE / MFE / drawdown breach) on RAW session OHLC
                      ->  frozen conformal multiplier -> calibrated interval
                      ->  13 stress scenarios (6 named crisis windows + 7 shock overlays)
-                     ->  narrative layer (qwen-plus | replay cache | template) + numeric gate
+                     ->  narrative layer (qwen3.8-max | replay cache | template) + numeric gate
                      ->  research card, charts, provenance panel
 ```
 
@@ -309,7 +315,10 @@ AnalogDesk 是一台**决策压力测试台**：你用一句自然语言说出�
 和 7 个冲击叠加做压力测试，最后由 LLM 写成研究卡。**每一个数字都必须能追溯到引擎输出**，通不过校验就不渲染。
 
 - 零依赖、零密钥即可运行：打开 `dist/index.html`，或 `npm start` 后访问 `http://127.0.0.1:3000`。
-- 可选填 `DASHSCOPE_API_KEY` 启用 qwen-plus 实时叙述；没有密钥时自动回落到回放缓存/模板，并在卡片上标明模式。
+- 可选填 `LLM_API_KEY` 启用实时叙述。已提交的回放缓存是用黑客松网关 `https://hackathon.bitgetops.com/v1`
+  的 `qwen3.8-max` 生成的，且必须配 `LLM_ENABLE_THINKING=false`（该模型先推理再写作，开着推理时网关 244 秒后
+  返回 HTTP 504，关掉后 2.1 秒返回）。7 张规范研究卡已全部预热并随包发布，**没有密钥也看得到模型写的文案**，
+  卡片徽章显示 `mode: REPLAY` / `model: qwen3.8-max`；未预热的查询才回落到模板，并在卡片上标明模式。
 - 诚实结论：区间**没有**比"同名无条件分布"更窄（同覆盖率下宽 7.6%），概率校准未通过 PIT 均匀性检验，
   方向命中率 50.1%。它是压力测试与溯源工具，**不是** alpha 来源，也不构成投资建议。
 - 非法或越界请求会被规范化并**如实披露**：期限对齐到已测量档位（1/5/10/20/40/60），邻居数限制在 10..200；

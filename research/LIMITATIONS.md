@@ -150,12 +150,19 @@ failure, it falls back to the persisted classified probe and labels which run th
 ## 13. The LLM layer verifies numbers, not interpretation
 
 The numeric gate traces every numeral in the generated narrative back to the engine payload (last demo run
-**140/140**; gate smoke **144/144** renders). It cannot verify an adjective. A live `qwen-plus` generation can
+**168/168**; gate smoke **144/144** renders). It cannot verify an adjective. A live `qwen3.8-max` generation can
 still frame a conservative median as an expectation or call a 26-analog scenario "robust" while every number
 in the sentence is correct. Mitigations: the template renderer is deterministic and is the reference copy;
 the card always states which mode produced the text; the verdict and caveats panels are engine-rendered, not
 LLM-rendered, so the honest verdict cannot be talked out of. The replay cache is keyed to exact research
-cards, so an unseen query with no key falls back to the template rather than to a stale generation.
+cards and to the prompt version that produced them, so an unseen query with no key falls back to the template
+rather than to a stale generation, and bumping `PROMPT_VERSION` invalidates the whole cache by design. Seven
+canonical cards - the two `check:browser` auto-loads, the `npm run demo` default, the stated-drawdown-tolerance
+variant, SPY and TSLA at H=20 - ship with cached `qwen3.8-max` generations, so a reviewer with no key at all
+still reads model-written prose at every documented entry point. The digest deliberately excludes clocks,
+provenance and machine timings; while it did not, no cached record could ever be found again and every
+published build silently rendered the template instead. `npm run check:replay` now asserts both the digest
+invariants and the coverage, so that failure mode stops the build rather than reaching a judge.
 
 ## 14. The static bundle is a frozen snapshot
 

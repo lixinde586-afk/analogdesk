@@ -144,6 +144,8 @@ win32 / node v24.21.0:
 | `en.wikipedia.org` | **connect timeout** | not used — no narrative depends on it |
 | `api.github.com`, `registry.npmjs.org` | reachable, HTTP 200 | available; the project has zero runtime dependencies, so npm is tooling only |
 | `dashscope.aliyuncs.com` | reachable, **HTTP 401** without a key | optional narrative layer; the product is complete without it |
+| `hackathon.bitgetops.com` | reachable, **HTTP 200** with the hackathon key | the endpoint the committed replay cache was generated from: model `qwen3.8-max` with `enable_thinking:false`, the only model this key admits (`qwen-plus` and `qwen3-max` return 403 `Model.AccessDenied`). Narrative text only - it never supplies a figure |
+| `*.bitget.com`, re-tested | **connection-reset** on all three endpoints, from a second independent network | the 0/3 result in section 6 is not an artefact of one machine's network - it reproduces elsewhere, which is why no Bitget-sourced figure ships |
 
 ---
 
