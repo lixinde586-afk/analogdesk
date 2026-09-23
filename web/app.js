@@ -271,7 +271,9 @@ function browserRuntime(mods) {
     const lang = language && language !== "auto" ? language : detectLang(question);
     // Same helper the server uses, so the static build and server.mjs apply an identical gate.
     const allow = buildAllowlist(card, defaultAllowance(card));
-    const id = cardDigest(card, { model: "", promptVersion: mods.PROMPT_VERSION || "1" });
+    // Same key the server computes: provenance, clocks and timings are stripped inside cardDigest,
+    // and the model is not part of it, so a record warmed with an API key is found here too.
+    const id = cardDigest(card, { promptVersion: mods.PROMPT_VERSION || "1", language: lang });
     const warnings = [];
     const finish = (text, mode, model, extra = {}) => {
       const check = verifyNumbers(text, allow);

@@ -273,8 +273,11 @@ function build() {
   const netProbe = readJsonOrNull(join(ROOT, "data-cache", "network-probe.json"));
 
   // Replay cache: any generation already stored for an exact card ships with the package, so a
-  // judge can see a real model-written narrative without needing a key. Empty is fine - the
-  // template then renders, through the same gate, and the UI says so.
+  // judge can see a real model-written narrative without needing a key. The template still renders
+  // through the same gate when a card has no record, so an empty cache is not BROKEN - but it does
+  // mean the deployed site never shows a model writing a sentence, which on an AI track is the
+  // difference between a reviewer seeing the language layer and not seeing it. So it is counted out
+  // loud here and gated by npm run check:replay rather than left to chance.
   const replayDir = join(ROOT, "data-cache", "llm-replay");
   const replaySeed = {};
   if (existsSync(replayDir)) {
@@ -282,6 +285,14 @@ function build() {
       const rec = readJsonOrNull(join(replayDir, f));
       if (rec?.text) replaySeed[f.replace(/\.json$/, "")] = rec;
     }
+  }
+  const replayCount = Object.keys(replaySeed).length;
+  if (!replayCount) {
+    log("WARNING replaySeed is EMPTY: data-cache/llm-replay holds no cached generation, so every card");
+    log("        on the static site renders in TEMPLATE mode and a judge with no API key never sees");
+    log("        model-written prose. Fix: npm run replay:warm, then re-run npm run compile.");
+  } else {
+    log(`replaySeed: ${replayCount} cached generation(s) baked into the bundle`);
   }
 
   const promptSrc = readFileSync(join(ROOT, "src", "llm", "narrate.mjs"), "utf8");

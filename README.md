@@ -57,6 +57,14 @@ the deterministic template renderer to live **qwen-plus** via the OpenAI-compati
 `https://dashscope.aliyuncs.com/compatible-mode/v1`. **Without a key nothing is lost** — the app falls back
 to cached generations and then to the template renderer, and every card states which mode produced it.
 
+The cached generations are what make that sentence true, and they are produced by `npm run replay:warm`:
+it runs the canonical card set through the live model, stores **only** prose that passed the numeric gate
+under `data-cache/llm-replay/`, and `npm run compile` bakes those records into the static bundle as
+`replaySeed`. `npm run check:replay` fails the build if that cache is empty or has drifted from the
+current dataset, so the deployed site cannot silently regress to template-only prose. Records are keyed by
+a digest that excludes clocks, provenance and machine timings (see `src/llm/replay.mjs`), so one warm run
+serves both the keyed server and the keyless browser bundle.
+
 ## The complete research task (submission run record)
 
 ```
@@ -86,7 +94,9 @@ Node >= 20. **No `npm install` is required — the project has zero runtime depe
 npm run build:data     # rebuild data-cache/dataset.json from the keyless sources (network)
 npm run verify         # re-run the whole out-of-sample validation -> research/VALIDATION.md
 npm run demo           # re-run the research task -> demo/RUN-RECORD.md
-npm run check          # seven gates: numeric, LUI, markup, bundle-in-a-DOM-stub, MCP, server, browser
+npm run replay:warm    # author-side: fill data-cache/llm-replay with real model prose (needs a key)
+npm run check          # eight gates: numeric, LUI, markup, bundle-in-a-DOM-stub, replay cache,
+                       # MCP, server, browser
 npm run check:live     # run the same browser checks against the deployed GitHub Pages site
 npm run probe          # re-measure network reachability of every source -> data-cache/network-probe.json
 npm run form:text      # author-side: regenerate the paste-ready hackathon form text
@@ -100,7 +110,7 @@ node mcp-server.mjs    # the same desk as an MCP tool server (stdio JSON-RPC 2.0
 npm run publish:github # publish HEAD through api.github.com (see the note below)
 ```
 
-`npm run check` is seven gates (it recompiles `dist/` first), and all seven have to pass before anything
+`npm run check` is eight gates (it recompiles `dist/` first), and all eight have to pass before anything
 is published:
 
 - **`check:gate`** - the numeric gate smoke test: 144 template renders, and every numeral in every one of
@@ -117,6 +127,16 @@ is published:
   `dist/index.html`**, so `getElementById` returns `null` for anything the markup does not actually
   contain. Then it asserts that boot completed, that the click and key handlers were attached, that all
   fifteen panels rendered, and that `fetch` was never called.
+- **`check:replay`** - asserts the replay-cache contract twice over. First the digest invariants: two
+  identical requests must hash to the same id even though `buildCard()` stamps a fresh `generatedAt`, a
+  Node-side card and a browser-runtime card (rewritten provenance, trimmed validation, different timings)
+  must hash identically, the model name must NOT be part of the key while the language must be, and a
+  different symbol or horizon must still produce a different id. Then the cache itself: every canonical
+  card must have a stored generation that still passes the numeric gate, and that id must be present in
+  the compiled bundle. This gate exists because the cache shipped empty once and all seven of the other
+  gates passed while the deployed site rendered the template for every card - a keyless reviewer on an AI
+  track never saw a model write a sentence, and nothing failed. Waive once on a WIP branch with
+  `ANALOGDESK_ALLOW_EMPTY_REPLAY=1`; never publish with it set.
 - **`check:mcp`** - spawns the real `mcp-server.mjs` over stdio, performs the handshake a host performs,
   calls every tool it advertises, and asserts stdout purity, engine-computed numbers, and that a request
   which had to be adjusted says so instead of quietly answering a different question.
@@ -273,8 +293,10 @@ src/engine/                features, analog, distribution, stress, validation
 src/llm/                   client, config, prompt, card, lui, narrate, template, replay, verify-numbers
 src/desk.mjs               the facade the UI and the demo both call
 scripts/                   verify.mjs, run-demo.mjs, compile-bundle.mjs, probe-network.mjs,
-                           check-{gate,lui,html,bundle,mcp,server,browser}.mjs, publish-github.mjs
-data-cache/                dataset.json (committed), network-probe.json, build-report.md, raw/ (git)
+                           check-{gate,lui,html,bundle,replay,mcp,server,browser}.mjs,
+                           replay-cards.mjs, warm-replay.mjs, publish-github.mjs
+data-cache/                dataset.json (committed), llm-replay/ (committed), network-probe.json,
+                           build-report.md, raw/ (git)
 research/                  VALIDATION.md, THESIS.md, DATA-PROVENANCE.md, LIMITATIONS.md
 demo/                      RUN-RECORD.md, run-record.json, narrative.txt
 ```

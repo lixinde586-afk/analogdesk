@@ -41,6 +41,14 @@ export const LLM_DEFAULTS = {
   temperature: 0.2
 };
 
+/** "false"/"0"/"no" -> false, "true"/"1"/"yes" -> true, anything else (incl. "") -> undefined. */
+function parseTriState(v) {
+  const s = String(v == null ? "" : v).trim().toLowerCase();
+  if (["false", "0", "no", "off"].includes(s)) return false;
+  if (["true", "1", "yes", "on"].includes(s)) return true;
+  return undefined;
+}
+
 export function resolveConfig(env = {}) {
   const file = loadDotEnv();
   const get = (k, d) => {
@@ -56,6 +64,9 @@ export function resolveConfig(env = {}) {
       timeoutMs: Number(get("LLM_TIMEOUT_MS", LLM_DEFAULTS.timeoutMs)),
       maxTokens: Number(get("LLM_MAX_TOKENS", LLM_DEFAULTS.maxTokens)),
       temperature: Number(get("LLM_TEMPERATURE", LLM_DEFAULTS.temperature)),
+      // undefined means "do not send the flag at all": endpoints that do not know enable_thinking
+      // reject unknown parameters, so this is opt-in per deployment rather than a global default.
+      enableThinking: parseTriState(get("LLM_ENABLE_THINKING", "")),
       enabled: Boolean(apiKey)
     },
     server: { port: Number(get("PORT", 3000)), host: get("HOST", "127.0.0.1") },

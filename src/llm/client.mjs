@@ -40,6 +40,14 @@ export async function chat(cfg, messages, opts = {}) {
     stream: false
   };
   if (opts.json) body.response_format = { type: "json_object" };
+  // A reasoning model spends its whole token budget - and the gateway's patience - on chain of
+  // thought before emitting one word of content. Measured on the Bitget hackathon gateway with
+  // qwen3.8-max: thinking on, a full research-card narrative ran 244s and died with HTTP 504
+  // Gateway Time-out; thinking off, the same endpoint answered a probe in 2.1s. So the flag is
+  // configurable. It is only sent when the deployment asked for it, because an endpoint that does
+  // not know the parameter rejects the request rather than ignoring it.
+  if (cfg.enableThinking === false) body.enable_thinking = false;
+  else if (cfg.enableThinking === true) body.enable_thinking = true;
 
   let lastErr = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
