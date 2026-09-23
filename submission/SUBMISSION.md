@@ -3,9 +3,11 @@
 Track **🟧 AI Trading Desk** · Sub-theme **Decision Stress Testing** · Deadline **2026-09-27 (UTC+8)**, target submit **2026-09-25**.
 Form: https://forms.gle/GyWZCMCPocgJdJon6
 
-Everything below is **paste-ready**. Replace the three `<...>` placeholders (GitHub URL, demo URL, video URL)
-once the repo is public. Every figure quoted here is reproduced by `npm run verify` / `npm run demo` from
-committed data — no number is hand-entered.
+Everything below is **paste-ready**. The GitHub and demo URLs are already filled in; the only placeholder left
+is the demo-video link, and `npm run video:link -- "<url>"` substitutes it into the three deliverable lines
+once the recording is uploaded (section **G**). Every figure quoted here is reproduced by `npm run verify`,
+`npm run demo` or `npm run video:probe` from committed data or from the recorded file — no number is
+hand-entered.
 
 ---
 
@@ -91,37 +93,40 @@ completion, not P&L. **AnalogDesk runs no strategy, takes no position and report
 calibration 2019-01-01..2022-12-31, test 2023-01-01..2026-09-18, **2698 out-of-sample queries** over 71
 instruments, coverage target 80%, standard errors clustered by query date (38 clusters).
 
-- Out-of-sample coverage of the conformal analog interval at H = 5 sessions: **81.8%** vs the 80% target,
-  clustered SE **+/- 1.87 pp**, mean width **10.73%** — [OBSERVED]
-- Matched-coverage width **10.29%** vs **9.48%** for a same-name unconditional point-in-time band: the analog
-  interval is **8.5% WIDER**. The negative result is reported in-product, in the README and in
+- Out-of-sample coverage of the conformal analog interval at H = 5 sessions: **80.8%** vs the 80% target,
+  clustered SE **+/- 1.95 pp**, mean width **10.40%** — [OBSERVED]
+- Matched-coverage width **10.20%** vs **9.48%** for a same-name unconditional point-in-time band: the analog
+  interval is **7.6% WIDER**. The negative result is reported in-product, in the README and in
   `research/LIMITATIONS.md` — [OBSERVED]
-- Matched-coverage gain by horizon: H=1 **+0.4%**, H=5 **-8.5%**, H=10 **-3.4%**, H=20 **-5.3%**, H=40
-  **-5.5%**, H=60 0.0% — [OBSERVED]
-- Coverage discipline at longer horizons: at H = 20 the analog interval covers **86.9%** while the same-name
+- Matched-coverage gain by horizon, negative at all six: H=1 **-1.1%**, H=5 **-7.6%**, H=10 **-2.4%**,
+  H=20 **-3.4%**, H=40
+  **-4.9%**, H=60 **-0.7%** — [OBSERVED]
+- Coverage discipline at longer horizons: at H = 20 the analog interval covers **87.4%** while the same-name
   band falls to **76.6%** — [OBSERVED]
-- Regime adaptivity: width scales **1.94x** from the calm to the stressed volatility tercile;
-  corr(width, own 20-session vol) = **0.955**; coverage drift +6.2 pp (calm) to -2.7 pp (stressed) — [OBSERVED]
-- Probability calibration **FAILS**: PIT chi-square **212.5** vs a 5% critical value of **16.92**; median PIT
-  0.580; directional hit rate **50.6%** (a coin toss) — [OBSERVED]
-- Per-name consistency: per-symbol coverage SD **8.7 pp**, 53/71 symbols within +/-10 pp; worst BIDU 63.2%,
+- Regime adaptivity: width scales **2.06x** from the calm to the stressed volatility tercile;
+  corr(width, own 20-session vol) = **0.960**; coverage drift +4.4 pp (calm) to -2.6 pp (stressed) — [OBSERVED]
+- Probability calibration **FAILS**: PIT chi-square **208.6** vs a 5% critical value of **16.92**; median PIT
+  0.580; directional hit rate **50.1%** (a coin toss) — [OBSERVED]
+- Per-name consistency: per-symbol coverage SD **8.5 pp**, 57/71 symbols within +/-10 pp; worst PLTR 60.5%,
   best DIA 100.0% — [OBSERVED]
-- Cost: retrieval **8.4 ms** mean per query across the 2698-query sweep (**14.7 ms** in a dedicated 108-query
-  cold harness), engine build **614-626 ms**, full research card **167 ms**, full 13-scenario stress report
-  **~191 ms**, peak RSS **346 MB** — [OBSERVED]
+- Cost: retrieval **8.5 ms** mean per query across the 2698-query sweep (**14.7 ms** in a dedicated 108-query
+  cold harness), engine build **613-637 ms**, full research card **163 ms**, full 13-scenario stress report
+  **~191 ms**, peak RSS **364 MB** — [OBSERVED]
 
 **Observed — data.** 6 keyless sources; **2513 sessions x 71 instruments** (55 single names + 16 ETFs),
 2016-09-20..2026-09-18; 11 FRED macro series; **92** FOMC decision dates; **2680** earnings dates of which
 **402 (15.0%)** recovered through a purpose-built 6-K fallback for the six China ADRs that file no 8-K.
 
 **Observed — product QA.** The narrative layer passes a numeric gate that traces every numeral back to the
-engine payload: **144/144** renders in the gate smoke suite, **142/142** numerals in the shipped demo run.
-`npm run check` is **four** gates: the numeric gate; an attribute-aware scan of the markup cross-checked
-against every element id the UI reads; the bundle evaluated against a DOM stub seeded from the real
-`dist/index.html` (**15/15** panels, **0** undefined/NaN leaks, **zero** network calls); and **real headless
-Chrome** on the built package - two auto-run deep links, a cold load, and an injected probe that types a
-question, presses Enter, switches tab, changes symbol and clicks Analyze (**PASS**: narrative **3914** chars,
-**13** stress rows, **50** analog rows). In-browser engine init **0.5-1.0 s** and **0.15-0.45 s** per analysis
+engine payload: **144/144** renders in the gate smoke suite, **140/140** numerals in the shipped demo run.
+`npm run check` is **seven** gates: the numeric gate; the language-understanding contract (Chinese and
+English sentences driven through the one shared LUI parser); an attribute-aware scan of the markup
+cross-checked against every element id the UI reads; the bundle evaluated against a DOM stub seeded from the
+real `dist/index.html` (**15/15** panels, **0** undefined/NaN leaks, **zero** network calls); the MCP tool
+server driven over real stdio (handshake, every tool, stdout purity); the HTTP server's route, status-code
+and clamping-disclosure contract; and **real headless Chrome** on the built package - two auto-run deep links, a cold load, and an injected probe that types a
+question, presses Enter, switches tab, changes symbol and clicks Analyze (**PASS**: narrative **3906** chars,
+**13** stress rows, **50** analog rows). In-browser engine init **501 ms** and **135-192 ms** per analysis
 across 4 test queries (NVDA/BABA/SPY/KWEB, H = 5/20/1/10), varying with machine load. The same page assertions
 re-run against the deployed site (`npm run check:live`) after every publish.
 
@@ -146,12 +151,14 @@ to report anything.
 
 **Built and working.**
 - Data pipeline (`src/data/`): 6 keyless sources, raw HTTP cache (225 files, 20.8 MB), idempotent rebuild,
-  per-symbol coverage report. 7.09 MB committed dataset — the demo and validation run with **no network**.
+  per-symbol coverage report. 8.03 MB committed dataset — the demo and validation run with **no network**.
 - Engine (`src/engine/`): 28 features in 5 weighted groups (name 30 / market 20 / macro 20 / crypto 10 /
   event 20), 25 in the distance metric; expanding point-in-time z-scores winsorised at +/-3 sigma; k = 50
   exact retrieval with <= 2 analogs per calendar date, >= 10 sessions between uses of the same symbol, and an
   embargo `j + H <= q`; forward returns on the **adjusted** close; distribution + path-risk module (MAE/MFE,
-  drawdown-breach probabilities, VaR90/CVaR90); 13-scenario stress module (6 named crisis windows drawn from
+  drawdown-breach probabilities, VaR90/CVaR90) on **raw** session OHLC anchored at the raw close of the
+  decision session - one price basis per ratio, never mixed; 13-scenario stress module (6 named crisis windows
+  drawn from
   the library's own worst benchmark windows + 7 shock overlays); split-conformal calibration fitted on
   2019-2022 and frozen.
 - Validation harness (`scripts/verify.mjs`): 6 horizons, 5 predictors, clustered SEs, matched-coverage
@@ -167,8 +174,11 @@ to report anything.
   SVG charts are hand-rolled — no chart library.
 - Server (`server.mjs`): zero-dependency `node:http` API + static server, path-traversal safe, `.env` never
   served, network probe at start-up with transport-level error classification.
+- MCP tool server (`mcp-server.mjs`): the same desk as a stdio JSON-RPC 2.0 server for agent hosts, zero
+  dependencies, sharing the LUI parser (`src/llm/lui.mjs`), the engine and the numeric gate with the UI;
+  every request normalisation is disclosed in the tool result.
 - Static deployment (`npm run compile` -> `dist/`): a self-written zero-dependency bundler compiles the whole
-  engine + dataset into one classic `<script>` (7.5 MB, 2.78 MB gzipped) that runs the **full engine in the
+  engine + dataset into one classic `<script>` (8.49 MB, 3.13 MB gzipped) that runs the **full engine in the
   browser with zero fetch calls**, so a judge with no API key and no network gets the complete product.
 - Reproducible run record (`npm run demo` -> `demo/RUN-RECORD.md`, `demo/run-record.json`,
   `demo/narrative.txt`): one complete research task from question to actionable insight, code-generated, with
@@ -195,7 +205,7 @@ every tail statistic optimistic, and this is stated in `research/LIMITATIONS.md`
    every card.
 4. `dv20z` was O(n^2) per symbol. Rewritten with prefix sums and a two-pointer window (O(n)); equivalence
    verified against the naive reference over **12,360** values on 5 symbols: **0** mismatches above 1e-4, max
-   absolute difference **9.4e-7**.
+   absolute difference **9.15e-7**.
 5. A coverage figure rendered as **8000%** in the UI and the prose: `pct()` multiplies by 100 and the caller
    passed an already-multiplied value. Fixed at the source, and the conformal scale is now emitted at full
    precision instead of being pre-rounded.
@@ -218,6 +228,34 @@ every tail statistic optimistic, and this is stated in `research/LIMITATIONS.md`
    is scanned attribute-aware and cross-checked against the ids the UI reads, the stub is seeded from the real
    `dist/index.html`, real headless Chrome drives the controls, and the UI renders an on-page banner naming
    any missing element instead of failing quietly in a console nobody reads.
+10. An off-grid request returned **a card with empty panels instead of an error**. Forward returns are
+   precomputed for six horizons only, so `horizon=7` retrieved 50 analogs, found no `fwd[7]` on any of them and
+   rendered a distribution of en-dashes with no explanation; `k=-5` retrieved nothing and did the same; and
+   `k=999` was accepted silently even though **every published out-of-sample figure was measured at k = 50** —
+   on the 2026-09-18 NVDA query the 5-session median moves from **+0.86%** at k=50 (33 distinct symbols) to
+   **+0.55%** at k=200 (53 of the 71 symbols in the library), i.e. the card quietly stops being about this
+   state and becomes a market average. The desk now snaps horizons to the measured set, clamps k to
+   `10..200`, **fails with a message that names the fix** when a request cannot be answered at all (unknown
+   symbol, session before the library starts, too little history, no completed outcome at that horizon), and
+   prints every adjustment in an amber strip above the card — including the disclosure that the frozen
+   conformal scale and the validation panel describe k = 50 rather than the k in front of the reader. The
+   notes ship in `card.retrieval.notes`, and `npm run check:browser` drives real headless Chrome through
+   k=999 and back to k=50, asserting the strip appears and then disappears. Across a 22-case edge sweep the
+   desk now returns **0** hollow cards and **0** numeric-gate failures. Documented as
+   `research/LIMITATIONS.md` §17, with falsification criterion 5 (a per-k calibration sweep) stated in advance.
+11. **Adjusted close and raw OHLC were mixed inside single ratios.** `gap20` divided the raw open by the
+   previous **adjusted** close; `dist52` divided the adjusted close by a raw window high; the dollar-volume
+   feature used the adjusted close; and MAE/MFE divided raw session lows and highs by the **adjusted** close
+   of the decision session. For any name with a large cumulative dividend/split factor the path-risk numbers
+   became artefacts of that factor: on RTX the mixed-basis `gap20` medians **11.5%** where the true overnight
+   gaps median **0.50%** (GE: **64.5%** vs **0.66%**). Fixed by carrying **both bases** per symbol through the
+   dataset and enforcing one price basis per ratio: forward returns stay `A[q+H] / A[q] - 1` on the adjusted
+   close; MAE/MFE and the drawdown-breach probabilities divide raw session highs and lows by the **raw** close
+   at the decision session; `gap20` is `abs(raw open[t] / raw close[t-1] - 1)`; and `features.mjs` hard-errors
+   on a symbol missing its raw close instead of silently falling back. Nothing was re-tuned afterwards — k,
+   the feature weights, winsorisation, the conformal protocol and the era splits are untouched — and the
+   re-validated results moved slightly **worse** (H=5 coverage 81.8% -> 80.8%; the matched-coverage gain is
+   now negative at all six horizons). Both facts are kept.
 
 **Frameworks, models and APIs used.** Node.js >= 20 with **zero runtime dependencies** (`node:http`, `node:fs`,
 Web `fetch`). No ML framework — split conformal prediction and weighted k-NN are implemented directly
@@ -238,7 +276,7 @@ JSON-RPC 2.0 `tools/list`) but unreachable from this network.
 4. **Out-of-sample validation report + the code that produces it**:
    `https://github.com/lixinde586-afk/analogdesk/blob/main/research/VALIDATION.md` (`npm run verify`)
 5. **Research documents**: `research/THESIS.md`, `research/DATA-PROVENANCE.md`, `research/LIMITATIONS.md`
-6. **3-minute demo video**: `<VIDEO_URL>`
+6. **Demo video, 96 s screen capture of the live demo** — `<VIDEO_URL>`
 
 Local reproduction, no install step: `npm run demo` (run record) · `npm run verify` (validation) ·
 `npm run check` (numeric gate · markup · bundle-in-a-DOM-stub · real headless browser) · `npm run check:live`
@@ -311,29 +349,31 @@ AnalogDesk 不运行策略、不建仓、不汇报夏普比率，也不声称有
 
 **已观测（引擎，预注册协议）**：校准期 2019-01-01..2022-12-31，测试期 2023-01-01..2026-09-18，
 **2698 个样本外查询** x 71 个标的，覆盖率目标 80%，标准误按查询日聚类（38 个簇）。
-- H = 5 个交易日，共形类比区间样本外覆盖率 **81.8%**（目标 80%），聚类标准误 **+/- 1.87 个百分点**，
-  平均带宽 **10.73%**；
-- 同覆盖率下带宽 **10.29%**，而"同名无条件分布"为 **9.48%**——类比区间**宽 8.5%**。这个负面结论
+- H = 5 个交易日，共形类比区间样本外覆盖率 **80.8%**（目标 80%），聚类标准误 **+/- 1.95 个百分点**，
+  平均带宽 **10.40%**；
+- 同覆盖率下带宽 **10.20%**，而"同名无条件分布"为 **9.48%**——类比区间**宽 7.6%**。这个负面结论
   在产品界面、README 与 `research/LIMITATIONS.md` 中同样醒目；
-- 各期限的同覆盖率增益：H=1 **+0.4%**、H=5 **-8.5%**、H=10 **-3.4%**、H=20 **-5.3%**、H=40 **-5.5%**、H=60 0.0%；
-- 长期限下的覆盖率纪律：H = 20 时类比区间覆盖 **86.9%**，同名无条件带跌到 **76.6%**；
-- 状态自适应：从低波动三分位到高波动三分位，带宽放大 **1.94 倍**，corr(带宽, 自身 20 日波动) = **0.955**；
-- 概率校准**未通过**：PIT 卡方 **212.5**（5% 临界值 16.92），PIT 中位数 0.580，方向命中率 **50.6%**（等同抛硬币）；
-- 单标的差异：每标的覆盖率标准差 **8.7 个百分点**，71 个标的中 53 个落在 +/-10 个百分点内，最差 BIDU 63.2%；
-- 成本：2698 次查询平均每次检索 **8.4 毫秒**（独立的 108 次冷启动基准为 **14.7 毫秒**），引擎构建
-  **614-626 毫秒**，整张研究卡 **167 毫秒**，13 个压力情景全套 **约 191 毫秒**，峰值内存 **346 MB**。
+- 各期限的同覆盖率增益：H=1 **-1.1%**、H=5 **-7.6%**、H=10 **-2.4%**、H=20 **-3.4%**、H=40 **-4.9%**、
+H=60 **-0.7%**——六个期限全部为负；
+- 长期限下的覆盖率纪律：H = 20 时类比区间覆盖 **87.4%**，同名无条件带跌到 **76.6%**；
+- 状态自适应：从低波动三分位到高波动三分位，带宽放大 **2.06 倍**，corr(带宽, 自身 20 日波动) = **0.960**；
+- 概率校准**未通过**：PIT 卡方 **208.6**（5% 临界值 16.92），PIT 中位数 0.580，方向命中率 **50.1%**（等同抛硬币）；
+- 单标的差异：每标的覆盖率标准差 **8.5 个百分点**，71 个标的中 57 个落在 +/-10 个百分点内，最差 PLTR 60.5%；
+- 成本：2698 次查询平均每次检索 **8.5 毫秒**（独立的 108 次冷启动基准为 **14.7 毫秒**），引擎构建
+  **613-637 毫秒**，整张研究卡 **163 毫秒**，13 个压力情景全套 **约 191 毫秒**，峰值内存 **364 MB**。
 
 **已观测（数据）**：6 个免密钥数据源；**2513 个交易日 x 71 个标的**（55 只个股 + 16 只 ETF），
 2016-09-20..2026-09-18；11 条 FRED 宏观序列；**92** 个 FOMC 决议日；**2680** 个财报日，其中 **402 个
 （15.0%）** 由专为 6 只不发 8-K 的中概 ADR 编写的 6-K 回退检索得到。
 
 **已观测（产品质量）**：叙述层设有数字校验闸门，把生成文本中的每个数字回溯到引擎载荷——闸门冒烟测试
-**144/144** 通过，交付 demo 运行 **142/142** 个数字全部可溯源。`npm run check` 现为**四道**闸门：数字闸门；
+**144/144** 通过，交付 demo 运行 **140/140** 个数字全部可溯源。`npm run check` 现为**七道**闸门：数字闸门；
+语言理解契约（中英句子过同一个共享 LUI 解析器）；
 按属性感知方式解析标记、并与界面读取的每个元素 id 交叉核对；把整包放在**由真实 `dist/index.html` 播种的
-DOM stub** 中求值（**15/15** 个面板、**0** 处 undefined/NaN 泄漏、**0** 次网络请求）；以及在**真实 headless
-Chrome** 中加载构建产物——两个自动运行的深链、一次冷加载，外加一段注入探针：输入问题、按回车、切换标签页、
-改标的、点 Analyze（**PASS**：叙述 **3914** 字、**13** 行压力情景、**50** 条类比）。4 个测试查询
-（NVDA/BABA/SPY/KWEB，H = 5/20/1/10）下浏览器内引擎初始化 **0.5-1.0 秒**、单次分析 **0.15-0.45 秒**
+DOM stub** 中求值（**15/15** 个面板、**0** 处 undefined/NaN 泄漏、**0** 次网络请求）；MCP 工具服务器（真实 stdio 握手、逐个工具、stdout
+纯净性）；HTTP 服务端的路由/状态码/夹取披露契约；以及在**真实 headless Chrome** 中加载构建产物——两个自动运行的深链、一次冷加载，外加一段注入探针：输入问题、按回车、切换标签页、
+改标的、点 Analyze（**PASS**：叙述 **3906** 字、**13** 行压力情景、**50** 条类比）。4 个测试查询
+（NVDA/BABA/SPY/KWEB，H = 5/20/1/10）下浏览器内引擎初始化 **501 毫秒**、单次分析 **135-192 毫秒**
 （随机器负载波动）。每次发布后，同一组页面断言会对已部署站点再跑一遍（`npm run check:live`）。
 
 **已观测（降级）**：Bitget 官方 MCP **3 个端点 0 个可达**，每次尝试都在 TCP 层被重置（`connection-reset`）。
@@ -351,17 +391,20 @@ Chrome** 中加载构建产物——两个自动运行的深链、一次冷加�
 
 ### 4 · 进度
 
-**已完成**：数据流水线（6 个免密钥源 + 225 个原始响应缓存 + 幂等重建 + 逐标的覆盖报告，7.09 MB 数据集已提交，
+**已完成**：数据流水线（6 个免密钥源 + 225 个原始响应缓存 + 幂等重建 + 逐标的覆盖报告，8.03 MB 数据集已提交，
 demo 与验证可**完全离线**运行）；引擎（28 个特征 / 5 组权重，其中 25 个进入距离度量；扩展式时点 z 分数并按
 +/-3 sigma 缩尾；k = 50 精确检索，同一日历日 <= 2 个类比、同标的间隔 >= 10 个交易日、禁运 `j + H <= q`；
-前向收益用**复权收盘价**；分布与路径风险模块；13 情景压力模块；2019-2022 拟合并冻结的分裂共形校准）；
+前向收益用**复权收盘价**，路径风险（MAE/MFE、回撤击穿、VaR90/CVaR90）用**原始 OHLC** 并锚定决策日
+原始收盘价——同一比率只用同一价格口径，绝不混用；13 情景压力模块；2019-2022 拟合并冻结的分裂共形校准）；
 验证框架（6 个期限 x 5 个预测器、聚类标准误、同覆盖率对比、PIT 校准、可靠性曲线、分年/分行业/分标的拆解、
 时延、以及优化等价性检验；`research/VALIDATION.md` 中**每个数字都在运行时重算，无手填**）；LLM 层
 （DashScope OpenAI 兼容端点 + `qwen-plus`；严格数字闸门；按研究卡精确键值的回放缓存；确定性模板兜底；
 每张卡片标明生成模式）；界面（中英自然语言输入，"英伟达"可解析为 NVDA；研究卡、分布图、压力面板、类比清单、
 含 Bitget 披露的数据溯源面板、诚实结论面板；图表全部手写 SVG，无图表库）；零依赖 `node:http` 服务端
-（防目录穿越，`.env` 永不外泄，启动时做网络探测并精确分类传输层错误）；静态部署包（自写零依赖打包器把整套
-引擎与数据集编译进一个传统 `<script>`，7.5 MB / gzip 2.78 MB，**浏览器内跑全量引擎且零 fetch**，
+（防目录穿越，`.env` 永不外泄，启动时做网络探测并精确分类传输层错误）；MCP 工具服务器
+（`mcp-server.mjs`，把同一张研究桌做成 stdio JSON-RPC 2.0 服务供 agent 宿主调用，零依赖，与界面共用
+LUI 解析器、引擎与数字闸门，每次请求归一化都在工具结果中披露）；静态部署包（自写零依赖打包器把整套
+引擎与数据集编译进一个传统 `<script>`，8.49 MB / gzip 3.13 MB，**浏览器内跑全量引擎且零 fetch**，
 评审无密钥无网络也能得到完整产品）；可复现运行记录（`npm run demo` 生成 `demo/RUN-RECORD.md`、
 `demo/run-record.json`、`demo/narrative.txt`，文末打印复现命令）。
 
@@ -379,7 +422,7 @@ JD（78）存在过度识别（干净季度节奏约 40 次），因此这 6 个
 ③ `BAMLH0A0HYM2` 在 2023-09-19 之前无观测、`FNG` 在 2018-02-01 之前无观测，故 `hyChg20` 与 `fng`
 在库内大部分时段为空——不做插补，而是**从距离度量中剔除**（仍计算、仍展示），并在每张卡片上说明；
 ④ `dv20z` 原为 O(n^2)，改写为前缀和 + 双指针 O(n)，与朴素实现对比 5 个标的 **12360** 个取值：
-超过 1e-4 的不一致 **0** 处，最大绝对差 **9.4e-7**；⑤ 界面上覆盖率一度显示为 **8000%**——`pct()` 已乘 100
+超过 1e-4 的不一致 **0** 处，最大绝对差 **9.15e-7**；⑤ 界面上覆盖率一度显示为 **8000%**——`pct()` 已乘 100
 而调用方又乘了一次，在源头修复，共形乘子改为全精度输出而非预先四舍五入；⑥ 数字闸门最初误杀合法文案
 （白名单不含协议整数与 "52 周 / VaR90 / 标普 500" 一类标签词），改为服务端与浏览器共用同一个
 `defaultAllowance(card)`，两端不可能再对"什么算可核验"产生分歧；⑦ 静态包的 CJS 兼容层暴露两个真实缺陷
@@ -392,7 +435,26 @@ JD（78）存在过度识别（干净季度节奏约 40 次），因此这 6 个
 吞进了这一个属性值，`boot()` 随即在 `try` 之外抛出且无人接管。Node 侧测试之所以放行，是因为它的 DOM stub
 会为任何被问到的 id 凭空造一个元素，而对源码做正则匹配也照样能"找到"`id="tabs"` 这段文本——**是评审发现的**。
 现在：标记按属性感知解析并与界面所需 id 交叉核对，stub 由真实 `dist/index.html` 播种，真实 headless Chrome
-驱动控件，界面在缺元素时直接在页面上列出缺失项，不再只在无人查看的控制台里静默失败。
+驱动控件，界面在缺元素时直接在页面上列出缺失项，不再只在无人查看的控制台里静默失败；
+⑩ 越界请求一度返回**空面板卡片**而不是报错：前向收益只对 6 个期限预计算，所以 `horizon=7` 会检索出 50 个类比、
+却在任何一个身上都找不到 `fwd[7]`，界面于是渲染出一排短横线且不作解释；`k=-5` 什么都没检索到，结果相同；
+`k=999` 则被静默接受，而**全部已发表的样本外指标都是在 k = 50 下测得的**——2026-09-18 的 NVDA 查询，5 日中位数
+从 k=50 的 **+0.86%**（33 个不同标的）变为 k=200 的 **+0.55%**（库内 71 个标的中占 53 个），卡片实际上退化成了
+市场均值。现在：期限自动对齐到已测量档位，k 被限制在 `10..200`，根本无法回答的请求**直接报错并指出怎么改**
+（未知标的、早于库起点、历史长度不足、该期限没有已完成结果），每一次调整都以琥珀色提示条打印在卡片上方——
+包括"冻结的共形尺度与验证面板描述的是 k = 50，而不是你眼前的这个 k"这一披露。提示条同时随
+`card.retrieval.notes` 出现在 API 返回里，`npm run check:browser` 用真实 headless Chrome 走一遍 k=999 再回到
+k=50，断言提示条出现又消失；22 个边界用例现在返回 **0** 张空壳卡片、**0** 处数字闸门失败。已写入
+`research/LIMITATIONS.md` §17，并预先给出可证伪条件 5（按 k 重新校准）；
+⑪ **复权收盘价与原始 OHLC 曾在同一个比率里混用**：`gap20` 用原始开盘价除以上一个**复权**收盘价；
+`dist52` 用复权收盘价除以原始窗口最高价；成交额特征用了复权收盘价；MAE/MFE 用原始日内最低/最高价
+除以决策日的**复权**收盘价。对累计分红/拆股因子较大的标的，路径风险数字就成了该因子的伪影：RTX 的
+混口径 `gap20` 中位数为 **11.5%**，而真实隔夜跳空中位数只有 **0.50%**（GE：**64.5%** vs **0.66%**）。
+修复方式：数据集为每个标的**同时保留两种口径**，并强制"同一比率只用同一价格口径"——前向收益仍是复权
+收盘价上的 `A[q+H] / A[q] - 1`；MAE/MFE 与回撤击穿概率用原始日内最高/最低价除以决策日的**原始**收盘价；
+`gap20` = `abs(原始 open[t] / 原始 close[t-1] - 1)`；`features.mjs` 在标的缺少原始收盘价时**直接报错**，
+不再静默回落。修复后未做任何重新调参——k、特征权重、缩尾、共形协议与时代划分全部未动——重新验证的结果
+略微**变差**（H=5 覆盖率 81.8% -> 80.8%；同覆盖率增益在全部六个期限上均为负）。两个事实都如实保留。
 
 **使用的框架、模型与 API**：Node.js >= 20，**零运行时依赖**（`node:http`、`node:fs`、Web `fetch`）；
 不使用机器学习框架——分裂共形预测与加权 k 近邻直接实现（`src/engine/` 约 900 行）；大模型为
@@ -409,7 +471,7 @@ JD（78）存在过度识别（干净季度节奏约 40 次），因此这 6 个
    机器可读版 `https://github.com/lixinde586-afk/analogdesk/blob/main/demo/run-record.json`、生成脚本 `https://github.com/lixinde586-afk/analogdesk/blob/main/scripts/run-demo.mjs`
 4. **样本外验证报告 + 生成它的代码**：`https://github.com/lixinde586-afk/analogdesk/blob/main/research/VALIDATION.md`（`npm run verify`）
 5. **研究文档**：`research/THESIS.md`、`research/DATA-PROVENANCE.md`、`research/LIMITATIONS.md`
-6. **3 分钟演示视频**：`<VIDEO_URL>`
+6. **演示视频，96 秒实机录屏** —— `<VIDEO_URL>`
 
 ### 6 · 对 AI Trading 的看法（选填）
 
@@ -444,7 +506,7 @@ That is enforced mechanically, not by prompt engineering. `src/llm/verify-number
 from the generated text and traces it back to the engine payload, with surface-form normalisation (percent,
 basis points, rounded variants) and a structural allowlist derived from the same card (protocol integers,
 library size, retrieval settings, label vocabulary). If a numeral does not trace, **the render fails** rather
-than being shown. Current status: 144/144 renders pass the gate smoke suite, and 142/142 numerals in the
+than being shown. Current status: 144/144 renders pass the gate smoke suite, and 140/140 numerals in the
 shipped demo run trace to the card. The server and the in-browser renderer share one `defaultAllowance()`
 implementation, so the two can never disagree about what counts as verifiable.
 
@@ -513,21 +575,23 @@ Track: AI Trading Desk / Sub-theme: Decision Stress Testing
    https://github.com/lixinde586-afk/analogdesk/blob/main/research/DATA-PROVENANCE.md
    https://github.com/lixinde586-afk/analogdesk/blob/main/research/LIMITATIONS.md      (negative results, stated plainly)
 
-6. DEMO VIDEO (3 min)
+6. DEMO VIDEO (96 s screen capture, 2560x1368)
    <VIDEO_URL>
 
 Reproduce locally, no install step:
    npm run demo    -> demo/RUN-RECORD.md
    npm run verify  -> research/VALIDATION.md
-   npm run check   -> 4 gates: numeric, markup, bundle-in-a-DOM-stub, real headless browser
+   npm run check   -> 7 gates: numeric, LUI, markup, bundle-in-a-DOM-stub, MCP, server, browser
    npm start       -> http://127.0.0.1:3000
 ```
 
-**Deployment notes.** `https://lixinde586-afk.github.io/analogdesk/`: `dist/` is a plain static site — GitHub Pages (enable Pages on `/dist` of a
-`gh-pages` branch, or move `dist/*` to `docs/` and point Pages at `/docs`), Netlify drop, Vercel or any object
-bucket. It is one HTML + one CSS + one JS file with **zero** `fetch` calls, so it cannot break from CORS,
+**Deployment notes.** `https://lixinde586-afk.github.io/analogdesk/`: `dist/` is a plain static site. This repo publishes it
+with `npm run publish:github`, which pushes the working tree to `main` through the Git Data API and then
+repoints `gh-pages` at `main` HEAD's `dist/` subtree, so Pages serves byte-for-byte the committed build
+(`npm run check:live` re-runs the same page assertions against the deployed URL afterwards). The identical
+folder also drops onto Netlify, Vercel or any object bucket unchanged. It is one HTML + one CSS + one JS file with **zero** `fetch` calls, so it cannot break from CORS,
 mixed content or a dead backend. `https://github.com/lixinde586-afk/analogdesk`: the repo must be **public** and the README complete, or the
-submission counts as inaccessible. Keep `data-cache/dataset.json` (7 MB) committed — it is what makes the demo
+submission counts as inaccessible. Keep `data-cache/dataset.json` (8 MB) committed — it is what makes the demo
 and the validation reproducible offline. `.gitignore` already excludes `data-cache/raw/` (20.8 MB cache) and
 `research/validation-results.json` (20 MB, regenerable via `npm run verify`).
 
@@ -542,49 +606,129 @@ https://x.com/Bitget_AI/status/2100519318824055159?s=20, substantive product int
 ### F1. How to post (30 seconds)
 
 1. Open https://x.com/Bitget_AI/status/2100519318824055159?s=20
-2. Tap **Quote** (引用) — *not* Repost. Quoting attaches the link without consuming your character budget.
-3. Paste the text from F2. Attach one image: a screenshot of the research card from the demo
+2. Tap **Quote** (引用) — *not* Repost. Quoting attaches the official post without eating your character budget.
+3. Open `submission/X-POST-MAIN-EN.txt` (or `X-POST-MAIN-CN.txt`) in Notepad, Ctrl+A, Ctrl+C, paste into the
+   quote box. Attach one image: a screenshot of the research card from the demo
    (`dist/index.html` -> NVDA example -> scroll to the distribution panel).
 4. Post. Then copy your post's URL (Share -> Copy link) into the form field **X Promotional Post Link**.
+5. Optional, and it helps the Best Spread Award: reply to your own post with **F4**, then with **F5**.
 
-### F2. Post text — English (276 characters, fits the 280 limit; the quote-tweet does not consume characters)
+Those `.txt` files are generated from the blocks below by `npm run xpost`, which also recomputes the weighted
+length of every block and **aborts if any of them exceeds 280 or drops the tag or the handle** — so the counts
+in the headings are measured, not hand-entered. Counting follows X's own rule: U+0000–U+10FF, U+2000–U+200F,
+U+2010–U+201F and U+2032–U+2037 weigh 1, everything else (CJK, full-width punctuation, emoji) weighs 2, and
+any URL weighs a flat 23. The quoted post does not count against you.
 
-```
-AnalogDesk - built for #BitgetHackathon Track 3.
-
-Type a trade idea. It retrieves the 50 closest historical market states and shows what ACTUALLY happened next - tails and path risk included, so you can size the position.
-
-No invented numbers: all engine-traced. @Bitget_AI
-```
-
-### F3. Post text — 中文（257 weighted characters under X's CJK double-width counting, fits the 280 limit; can be posted as its own quote-post with the same tags）
+### F2. Main post — ENGLISH, quote-tweet (273/280 weighted, demo link included)
 
 ```
-为 #BitgetHackathon Track 3 做的 AnalogDesk：开仓前的决策压力测试台。
+AnalogDesk — my #BitgetHackathon entry for the AI Trading Desk track. @Bitget_AI
 
-用一句中文说出交易想法，它检索历史上与当下最相似的 50 个市场状态，告诉你之后真实发生了什么——包括决定你能不能拿住的路径风险。
+Type a trade idea. It pulls the 50 closest historical market states and shows what actually happened next — tails and path risk, not a price target.
 
-每个数字都由引擎算出并可回溯，模型不允许自己编数。@Bitget_AI
+Try it, no login: https://lixinde586-afk.github.io/analogdesk/
 ```
 
-### F4. Optional follow-up post, dev-log style (268 characters; good for the Best Spread Award, which judges on your own account's reach)
+### F3. 主帖 — 中文，引用转发（245/280 加权，含 Demo 链接）
+
+与 F2 二选一：想覆盖中文圈就发这条，想给国际评审看就发 F2；也可以 F2 发主帖、F3 作为跟帖回复自己。
 
 ```
-AnalogDesk's proudest feature is a negative result. #BitgetHackathon
+为 #BitgetHackathon AI Trading Desk 赛道做的 AnalogDesk @Bitget_AI
 
-2698 out-of-sample queries: coverage 81.8% vs an 80% target. But at matched coverage it is 8.5% WIDER than a band that only knows the stock's own history.
+开仓前的决策压力测试台：输入一句交易想法，检索历史上最相似的 50 个市场状态，告诉你之后真实发生了什么——含左尾与路径风险，数字全部引擎可回溯。
 
-So every card says it out loud. @Bitget_AI
+免登录试用：https://lixinde586-afk.github.io/analogdesk/
 ```
+
+### F4. Optional dev-log follow-up — reply it under your main post (279/280 weighted)
+
+```
+AnalogDesk's proudest feature is a negative result. #BitgetHackathon @Bitget_AI
+
+2698 out-of-sample queries: coverage 80.8% vs an 80% target. But at matched coverage the interval is 7.6% WIDER than one that only knows the stock's own history.
+
+Every card admits it in plain text.
+```
+
+### F5. Optional 3-tweet thread (223 / 265 / 251 weighted) — tweet 1 replaces F2, then 2 and 3 as replies
+
+```
+AnalogDesk — a pre-trade decision stress-testing desk, built for #BitgetHackathon (AI Trading Desk track). @Bitget_AI
+
+You are about to size a position at 3am. What does "this setup" actually look like historically? Thread.
+```
+
+```
+What it is not: a forecast. Forecasts stay unverifiable until it is too late. An episode-conditioned distribution is auditable before you press the button.
+
+71 instruments x 2513 sessions, 2016-2026, all committed to the repo. The demo runs offline in your browser.
+```
+
+```
+The honest part: directional hit rate 50.1% (a coin toss), and probability calibration fails its chi-square test. Both printed on the card, not buried.
+
+Code, dataset, run record, validation harness: https://lixinde586-afk.github.io/analogdesk/ #BitgetHackathon @Bitget_AI
+```
+
+**Where every figure in F2-F5 comes from.** `k = 50` analogs: §B/1 and `src/engine/`. 2698 out-of-sample queries,
+80.8% coverage against an 80% target, 7.6% wider at matched coverage, 50.1% directional hit rate, failed PIT
+chi-square (208.6 vs a 16.92 critical value): `research/VALIDATION.md`. 71 instruments x 2513 sessions,
+2016-2026: `research/DATA-PROVENANCE.md`. "Runs offline": the bundle gate of `npm run check` asserts zero network calls
+in the shipped bundle. Nothing in the copy is a claim the repo cannot reproduce.
 
 ---
 
-## G. 3-minute demo video — storyboard
+## G. Demo video — the recorded take, and how it gets published
 
-Target: 180 s, 1080p, screen capture + voiceover, English VO with Chinese subtitles (or either language —
-judges are bilingual; the run record is in English). Record the **static demo** (`dist/index.html`) so the
-video matches exactly what a judge can open, and cut to the terminal for the reproducibility beat. No music
-bed louder than -20 dB; captions on.
+Recorded 2026-09-22 with the Xbox Game Bar window capture, pointed at the deployed demo. Every number
+below is read out of the MP4 box tree by `npm run video:probe` — no ffmpeg, no dependencies, nothing
+typed by hand — and the same command fails if this section drifts from the recording.
+
+Measured by `npm run video:probe` — 96 s · 2560x1368 · 19.3 fps · avc1 · 71.8 MB · audio track present (AAC `mp4a`, 2 ch, 48000 Hz) · sha256 `238e6866c56dc3bf…`
+
+**Status of this take.** The recording predates the adjusted-close / raw-OHLC price-basis fix (problem 11 in
+§4), so the figures visible on screen in it are the pre-fix ones - `142/142` gate numerals, 81.8% coverage,
+8.5% wider at matched coverage, 50.6% directional hit rate. The storyboard, clip list and YouTube metadata
+below already carry the **current** measured numbers, which is exactly why the take must be re-recorded
+against the republished demo before its link goes into the submission form. `submission/VIDEO-FACTS.json`
+carries `publishedUrl: null`, so no stale link can ship by accident.
+
+| Property | Value | What it means for the submission |
+|---|---|---|
+| Length | 96 s (1m 36s) | Shorter than the 180 s storyboard target. The form does not require a video at all, so this is a bonus item rather than a gap — but see G3 for the beats it cannot hold |
+| Picture | 2560x1368 (1.871:1) | Wider than 16:9, so a 16:9 player adds thin bars top and bottom. Harmless; a 2432x1368 centre crop removes them |
+| Codec | H.264 (`avc1`) in an MP4 container | Re-encodes fast on YouTube and plays natively on Windows, macOS and Linux |
+| Frame rate | 19.3 fps over 1855 frames | Variable-rate screen capture. Fine for a UI walkthrough, and the frames are large enough to keep the tables legible |
+| Audio | AAC (`mp4a`), 2 ch, 48000 Hz, ~128 kbps CBR | A track spans the whole take. CBR spends the same bytes on speech and on silence, so the container cannot prove a voiceover exists — play it back first (G1) |
+| Integrity | sha256 `238e6866c56dc3bf…`, 75,293,655 bytes | Every value above is written to `submission/VIDEO-FACTS.json`, tying it to the exact take that gets uploaded |
+
+Reproduce on the machine that recorded it. The video itself is not committed — it is a 71.8 MB binary,
+and the GitHub contents API caps a single file at 1 MB:
+
+```
+npm run video:probe -- "C:\Users\26973\Videos\Captures\新标签页 - Google Chrome 2026-09-22 17-00-55.mp4"
+```
+
+### G1. Three checks only a human can do, before uploading
+
+1. **Play it with the sound on.** If there is no voiceover, add one in Clipchamp (Windows 11: Start →
+   Clipchamp → Create a new video) or let YouTube auto-caption it and correct the captions. A silent
+   screencast is acceptable — every panel is self-labelled — but the honest-verdict beat lands harder spoken.
+2. **Check what the window capture caught.** Game Bar records the whole Chrome window, not just the page.
+   The file is named 新标签页 (New Tab), so confirm the opening frames show the desk rather than a start
+   page, and that no other tab title, bookmark, e-mail address, Bitget UID or `.env` value is visible.
+3. **Check legibility after upload.** YouTube downscales 2560x1368. If the 50-analog table is unreadable
+   at 1080p, re-record with the browser zoomed to 125%.
+
+### G2. Storyboard — the shot list this take was recorded against
+
+The original target was 180 s at 1080p, screen capture plus voiceover, English VO with Chinese subtitles
+(or either language — judges are bilingual; the run record is in English). Record the **static demo**
+(`dist/index.html`) so the video matches exactly what a judge can open, and cut to the terminal for the
+reproducibility beat. No music bed louder than -20 dB; captions on. At 96 s the take cannot hold all nine
+beats at this pacing, so treat the table as a coverage checklist: tick what is actually in the recording,
+and use G3 for whatever is missing.
 
 | # | Time | On screen | Voiceover / caption |
 |---|---|---|---|
@@ -594,11 +738,68 @@ bed louder than -20 dB; captions on.
 | 4 | 0:55-1:25 | Analog list, scrolling; hover one row to show its date, symbol, distance, realised return. | "Then the evidence: the 50 historical sessions whose state most resembles now. At most 2 per calendar date, at least 10 sessions between two uses of the same name, and every candidate embargoed so its outcome was fully realised before today. You can click any of them and check." |
 | 5 | 1:25-1:55 | Distribution chart + path-risk table (p10/p90, VaR90/CVaR90, median MAE, drawdown-breach probabilities) + conformal interval. | "What actually happened next. Not a forecast - a distribution, plus the part that decides position size: how far underwater these episodes went before they recovered, and the probability of breaching a 10% drawdown intra-path. The interval is wrapped in a conformal multiplier fitted on 2019 to 2022 and then frozen." |
 | 6 | 1:55-2:20 | Stress panel: 13 scenarios; click `2020-02/03 liquidity crash` and `2025-04 tariff shock`; show the analog count (48 vs 26). | "Thirteen stress scenarios: six named crisis windows taken from the library's own worst benchmark windows, seven shock overlays. Each prints how many analogs backed it, so a 26-analog scenario is visibly weaker than a 48-analog one." |
-| 7 | 2:20-2:40 | Cut to terminal: `npm run demo`, then scroll `demo/RUN-RECORD.md`; show the gate line `142/142 numerals traced to the card`. | "The whole thing is reproducible from committed data with one command, and it writes this run record. Every numeral in the narrative is traced back to the engine payload by a verification gate - 142 of 142 in this run. If a number cannot be traced, the render fails." |
-| 8 | 2:40-2:55 | The honest-verdict panel: the 8.5%-wider statement, PIT failure, 50.6% directional hit rate. | "And the verdict it prints about itself: out of sample it covers 81.8% against an 80% target, but at matched coverage it is 8.5% wider than a band that only knows the stock's own history, its probability calibration fails a uniformity test, and its directional hit rate is a coin toss. It is a stress-testing and provenance instrument, not an alpha source." |
+| 7 | 2:20-2:40 | Cut to terminal: `npm run demo`, then scroll `demo/RUN-RECORD.md`; show the gate line `140/140 numerals traced to the card`. | "The whole thing is reproducible from committed data with one command, and it writes this run record. Every numeral in the narrative is traced back to the engine payload by a verification gate - 140 of 140 in this run. If a number cannot be traced, the render fails." |
+| 8 | 2:40-2:55 | The honest-verdict panel: the 7.6%-wider statement, PIT failure, 50.1% directional hit rate. | "And the verdict it prints about itself: out of sample it covers 80.8% against an 80% target, but at matched coverage it is 7.6% wider than a band that only knows the stock's own history, its probability calibration fails a uniformity test, and its directional hit rate is a coin toss. It is a stress-testing and provenance instrument, not an alpha source." |
 | 9 | 2:55-3:00 | End card: demo URL, repo URL, `#BitgetHackathon`. Show the Bitget MCP disclosure line. | "AnalogDesk. Zero dependencies, runs with no API key, and discloses what it could not reach - the Bitget MCP endpoints reset at the TCP layer from this network, so no Bitget-sourced figure ships." |
 
 **Recording tips.** Use the NVDA latest-session example so the video matches the committed run record exactly.
 Zoom the browser to 125% before capture so the tables are legible at 1080p. Keep cuts on panel boundaries;
 never cut mid-number. If a shot needs a re-take, re-run `npm run demo` so the on-screen record and the
 committed one stay identical.
+
+### G3. Optional extension — the beats a page capture cannot show (+~55 s)
+
+Record three short clips and drop them after the existing take in Clipchamp, or re-record one continuous
+take against G2:
+
+| Clip | Length | What to show | Why it earns its seconds |
+|---|---|---|---|
+| A | ~25 s | Terminal: `npm run demo`, then scroll `demo/RUN-RECORD.md` to the gate line `140/140 numerals traced to the card` | Reproducibility is what sets this project apart, and it is the one claim a static page cannot demonstrate |
+| B | ~20 s | The honest-verdict panel: 7.6% wider at matched coverage, failed PIT chi-square, 50.1% directional hit rate | A project that reports its own negative results is exactly what this sub-theme asks for |
+| C | ~10 s | End card: demo URL, repo URL, `#BitgetHackathon`, and the Bitget MCP disclosure line | Ties the video to the submission and to the compliant X post in section F |
+
+### G4. Publish it, then wire the link in with one command
+
+1. Upload to YouTube as **Unlisted** — judges reach it from the form, and Unlisted keeps it out of search.
+   If YouTube is unreachable, Bilibili works too: a public link there plays without an account.
+2. Copy the watch link (`https://youtu.be/...` or `https://www.youtube.com/watch?v=...`).
+3. Run `npm run video:link` with the URL in quotes as its argument. It rejects non-https links and hosts
+   that would need an account, stores the URL in `submission/VIDEO-FACTS.json`, and substitutes it into
+   the three deliverable lines (item 6 of sections B and C, and item 6 of the section E block). Re-running
+   with a new URL replaces the old one, so a corrected re-upload is a single command.
+4. `npm run form:text && npm run xpost` to refresh the paste-ready files, then `npm run publish:github`.
+
+### G5. YouTube metadata — paste-ready
+
+**Title**
+
+```
+AnalogDesk — decision stress testing for a 7x24 market | Bitget Hackathon S2
+```
+
+**Description**
+
+```
+AnalogDesk - pre-trade decision stress testing for tokenised US equities in a market that never closes.
+Bitget AI Base Camp Hackathon S2, Track 3 (AI Trading Desk), sub-theme: Decision Stress Testing.
+
+Try it yourself - no login, no API key, no network:
+https://lixinde586-afk.github.io/analogdesk/
+Source, dataset, run record and the out-of-sample validation harness:
+https://github.com/lixinde586-afk/analogdesk
+
+What this recording shows: a Chinese natural-language question resolved to NVDA and a 5-session horizon,
+the 28 point-in-time features describing the current state, the 50 historical analogs retrieved for it,
+the resulting return distribution and path-risk table, and 13 stress scenarios each printed with the
+number of analogs that backs it.
+
+What it does not claim: out of sample the interval covers 80.8% against an 80% target, but at matched
+coverage it is 7.6% wider than a band that only knows the stock's own history, its probability
+calibration fails a uniformity test, and its directional hit rate is a coin toss. AnalogDesk is a
+stress-testing and provenance instrument, not an alpha source.
+
+#BitgetHackathon @Bitget_AI
+```
+
+Chapters are optional. If you add them, read the times off the player rather than off the storyboard —
+the recorded take is 96 s, so the G2 timings do not describe it.

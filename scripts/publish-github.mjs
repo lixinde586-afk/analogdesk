@@ -19,8 +19,14 @@
  * Auth
  *   GH_TOKEN environment variable, or `gh auth token` when the GitHub CLI is installed.
  *   The token is never printed or written to disk.
+ * Requirements
+ *   A git executable. It does not have to be on PATH: common install locations (including the
+ *   runtime-bundled Git under %USERPROFILE%\.cache\codex-runtimes) are probed automatically,
+ *   so the publisher also runs from a plain user shell.
  */
 import { execFileSync } from "node:child_process";
+import { readdirSync } from "node:fs";
+import { delimiter, dirname, join } from "node:path";
 
 const argv = process.argv.slice(2);
 const flag = (name) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? argv[i + 1] : null; };
@@ -31,8 +37,39 @@ const DRY = has("dry-run");
 const API = "https://api.github.com";
 const UA = "analogdesk-publish";
 
-const git = (args, opts = {}) => execFileSync("git", args, { encoding: "utf8", maxBuffer: 1 << 28, ...opts }).trim();
-const gitRaw = (args, input) => execFileSync("git", args, { input, maxBuffer: 1 << 30 });
+const subdirs = (root) => { try { return readdirSync(root, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name); } catch { return []; } };
+
+function gitCandidates() {
+  const exe = process.platform === "win32" ? "git.exe" : "git";
+  const dirs = [];
+  const add = (dir) => { if (dir) dirs.push(dir); };
+  const localAppData = process.env.LOCALAPPDATA || "";
+  const home = process.env.USERPROFILE || process.env.HOME || "";
+  for (const root of [join(home, ".cache", "codex-runtimes"), join(localAppData, ".cache", "codex-runtimes")]) {
+    for (const sub of subdirs(root)) add(join(root, sub, "dependencies", "native", "git", "cmd"));
+  }
+  add(join(process.env.ProgramFiles || "C:\\Program Files", "Git", "cmd"));
+  add(join(process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)", "Git", "cmd"));
+  add(join(localAppData, "Programs", "Git", "cmd"));
+  add(join(process.env.USERPROFILE || "", "scoop", "apps", "git", "current", "cmd"));
+  add(join(localAppData, "Microsoft", "WinGet", "Links"));
+  const desktop = join(localAppData, "GitHubDesktop");
+  for (const sub of subdirs(desktop)) add(join(desktop, sub, "resources", "app", "git", "cmd"));
+  return ["git", ...dirs.map((dir) => join(dir, exe))];
+}
+
+function resolveGit() {
+  for (const candidate of gitCandidates()) {
+    try { execFileSync(candidate, ["--version"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); } catch { continue; }
+    if (candidate !== "git") process.env.PATH = `${dirname(candidate)}${delimiter}${process.env.PATH || ""}`;
+    return candidate;
+  }
+  throw new Error("no git executable found: install Git for Windows or add git.exe to PATH, then re-run");
+}
+
+const GIT = resolveGit();
+const git = (args, opts = {}) => execFileSync(GIT, args, { encoding: "utf8", maxBuffer: 1 << 28, ...opts }).trim();
+const gitRaw = (args, input) => execFileSync(GIT, args, { input, maxBuffer: 1 << 30 });
 const log = (...a) => console.log(...a);
 
 function remoteSlug() {
@@ -73,7 +110,7 @@ const REPO = remoteSlug();
 const AUTH = token();
 const head = git(["rev-parse", "HEAD"]);
 const rootTree = git(["rev-parse", "HEAD^{tree}"]);
-const message = MESSAGE ?? execFileSync("git", ["log", "-1", "--format=%B"], { encoding: "utf8", maxBuffer: 1 << 26 }).replace(/\n+$/, "");
+const message = MESSAGE ?? execFileSync(GIT, ["log", "-1", "--format=%B"], { encoding: "utf8", maxBuffer: 1 << 26 }).replace(/\n+$/, "");
 const [an, ae, ad, cn, ce, cd] = git(["log", "-1", "--format=%an%x09%ae%x09%aI%x09%cn%x09%ce%x09%cI"]).split("\t");
 
 log(`repo      ${REPO}`);

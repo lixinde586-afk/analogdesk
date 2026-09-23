@@ -23,6 +23,16 @@ function cachePath(url) {
 /** Cache-reuse window for data-cache/raw. Raise it to rebuild from disk without re-hitting the network. */
 export const CACHE_TTL_HOURS = Number(process.env.ANALOGDESK_CACHE_TTL_HOURS || 24);
 
+/**
+ * End date of the EDGAR full-text-search window. It defaults to today, and because the whole URL is
+ * the on-disk cache key, that makes every earnings search a cache miss on any day after the one it
+ * was first fetched - which, offline, silently returns zero earnings dates for all 55 companies and
+ * quietly rewrites four distance features (dte, eventLoad5, isFomcDay and the event group weight
+ * behind them). Pin it (ANALOGDESK_EDGAR_END=YYYY-MM-DD) to rebuild from data-cache/raw and get the
+ * same events block the published numbers were measured on.
+ */
+export const EDGAR_END = process.env.ANALOGDESK_EDGAR_END || new Date().toISOString().slice(0, 10);
+
 export async function get(url, { headers = {}, timeout = 30000, retries = 3, ttlHours = CACHE_TTL_HOURS, force = false, label = "" } = {}) {
   const cp = cachePath(url);
   if (!force && existsSync(cp)) {
@@ -48,7 +58,21 @@ export async function get(url, { headers = {}, timeout = 30000, retries = 3, ttl
 }
 
 /* ------------------------------- prices ---------------------------------- */
-/** api.stockanalysis.com daily OHLCV. Verified: range=10Y -> 2513 rows (15Y/30Y silently fall back to 1Y). */
+/**
+ * api.stockanalysis.com daily OHLCV. Verified: range=10Y -> 2513 rows (15Y/30Y silently fall back to 1Y).
+ *
+ * The vendor returns TWO price bases on one row and AnalogDesk keeps both, because they answer
+ * different questions and are not interchangeable:
+ *   o / h / l / c  the session's traded prices - split-adjusted but NOT dividend-adjusted, so all
+ *                  four sit on one scale. The only basis on which an intraday low may be compared
+ *                  with an entry price, so it is what path risk (MAE/MFE) and the overnight gap use.
+ *   a              close adjusted for splits AND dividends - the total-return basis, so it is what
+ *                  every forward return uses: A[q+H]/A[q] - 1.
+ * Dividing one basis by the other is a category error, not a rounding issue: `a` sits below `c` by the
+ * cumulative dividend factor (0.47x for RTX over this window), so a raw low over an adjusted close
+ * reports a large favourable excursion on a name that actually fell. A row missing either basis is
+ * dropped here rather than back-filled from the other downstream.
+ */
 export async function fetchPrices(sym, { range = "10Y" } = {}) {
   const url = `https://api.stockanalysis.com/api/symbol/s/${encodeURIComponent(sym)}/history?range=${range}&period=Daily`;
   const t = await get(url, { headers: { "User-Agent": UA_BROWSER }, label: `prices ${sym}` });
@@ -56,8 +80,8 @@ export async function fetchPrices(sym, { range = "10Y" } = {}) {
   if (!j?.data?.length) throw new Error(`no price rows for ${sym}`);
   const rows = j.data.map((r) => ({
     d: r.t, o: r.o ?? null, h: r.h ?? null, l: r.l ?? null,
-    c: r.c ?? null, a: r.a ?? r.c ?? null, v: r.v ?? null
-  })).filter((r) => r.d && r.a != null);
+    c: r.c ?? null, a: r.a ?? null, v: r.v ?? null
+  })).filter((r) => r.d && r.a != null && r.c != null && r.o != null && r.h != null && r.l != null);
   rows.sort((x, y) => (x.d < y.d ? -1 : 1));
   return rows;
 }
@@ -160,7 +184,7 @@ export const SIX_K_QUERIES = ["unaudited", "financial results"];
  * @returns {{dates:string[], via:{"8-K":number,"6-K":number}}}
  */
 export async function fetchEarningsDates(cik, { from = "2015-06-01", to, clusterDays = 6 } = {}) {
-  const end = to || new Date().toISOString().slice(0, 10);
+  const end = to || EDGAR_END;
   const via = { "8-K": 0, "6-K": 0 };
   const found = new Set();
   try {

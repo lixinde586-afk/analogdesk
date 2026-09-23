@@ -40,19 +40,25 @@ const engine = createEngine(ds);
 log(`engine init: ${engine.initMs}ms | matrix ${engine.mx.nSym}x${engine.mx.nDates} | metric features ${engine.active.length}/${NF} (excluded from distance: ${DISTANCE_EXCLUDE.join(", ")})`);
 
 /* ------------------- 1. dv20z optimisation equivalence check ---------------- */
+/**
+ * Naive O(n^2) reference for the liquidity-regime feature. Dollar volume is a raw-basis quantity -
+ * shares times the price actually traded - so this uses the raw close (prices[sym].c), exactly as
+ * features.mjs does. If the two ever disagree about which basis they are on, this check catches it:
+ * it is the one place in the repo where the same feature is computed twice.
+ */
 function naiveDv20z(dsx, sym, nDates) {
-  const P = dsx.prices[sym], a = P.a, v = P.v;
+  const P = dsx.prices[sym], c = P.c, v = P.v;
   const out = new Float64Array(nDates).fill(NaN);
   const mean = (arr) => { let n = 0, s = 0; for (const x of arr) { if (x == null || !Number.isFinite(x)) continue; n++; s += x; } return n ? s / n : NaN; };
   const stdev = (arr) => { let n = 0, s = 0, s2 = 0; for (const x of arr) { if (x == null || !Number.isFinite(x)) continue; n++; s += x; s2 += x * x; } if (n < 2) return NaN; const vr = (s2 - (s * s) / n) / (n - 1); return vr > 0 ? Math.sqrt(vr) : 0; };
   for (let i = 20; i < nDates; i++) {
     let s20 = 0, n20 = 0;
-    for (let j = i - 19; j <= i; j++) if (v[j] != null && a[j] != null) { s20 += v[j] * a[j]; n20++; }
+    for (let j = i - 19; j <= i; j++) if (v[j] != null && c[j] != null) { s20 += v[j] * c[j]; n20++; }
     if (!n20) continue;
     const cur = s20 / n20, hist = [];
     for (let j = Math.max(20, i - 249); j <= i - 20; j++) {
       let s = 0, n = 0;
-      for (let k2 = j - 19; k2 <= j; k2++) if (v[k2] != null && a[k2] != null) { s += v[k2] * a[k2]; n++; }
+      for (let k2 = j - 19; k2 <= j; k2++) if (v[k2] != null && c[k2] != null) { s += v[k2] * c[k2]; n++; }
       if (n) hist.push(s / n);
     }
     const mu = mean(hist), sdv = stdev(hist);
@@ -177,6 +183,7 @@ function renderMarkdown(P) {
   push(`| Anti-clustering | <= ${R.engineConfig.maxPerCalendarDate} analogs per calendar date; same symbol >= ${R.engineConfig.minSameSymbolGap} trading sessions apart |`);
   push(`| Embargo | candidate session j eligible only if j + H <= q, so every analog return was fully realised before the decision date |`);
   push(`| Outcome | forward return on the ADJUSTED close, A[q+H]/A[q] - 1 |`);
+  push(`| Price bases | adjusted close for every return and return-derived feature; RAW session OHLC for path risk (MAE/MFE = raw low/high over the raw close of the decision session) and for gap20 (raw open[t] / raw close[t-1] - 1). The two bases are never divided by each other |`);
   push(`| Calibration era | ${ERAS.calibration.from} .. ${ERAS.calibration.to} |`);
   push(`| Test era | ${ERAS.test.from} .. ${P.dataset.to} (never used to fit anything deployable) |`);
   push(`| Query grid | every ${R.protocol.strideCalib}th session (calibration) / ${R.protocol.strideTest}th session (test) x ${R.protocol.symbols ? R.protocol.symbols.length + " symbols" : "all symbols"} |`);

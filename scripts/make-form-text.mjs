@@ -114,8 +114,16 @@ Bitget AI Base Camp Hackathon S2 | 赛道 3：AI Trading Desk | 子题：Decisio
 
 let en = header.en + markdownToPlainText(extract("## B. Project Description — ENGLISH (paste as one field)", "\n---\n\n## C."), "en") + "\n";
 let cn = header.cn + markdownToPlainText(extract("## C. 项目描述 — 中文（可整段粘贴；与英文版等价）", "\n---\n\n## D."), "cn") + "\n";
-en = en.replace(/6\. 3-minute demo video: <VIDEO_URL>/, "6. 3-minute demo video - link given in the Submission Materials Link field");
-cn = cn.replace(/6\. 3 分钟演示视频：<VIDEO_URL>/, "6. 3 分钟演示视频 —— 链接见「提交材料链接」字段");
+// Deliverable 6 is the demo video. Once `npm run video:link` has wired the real URL into
+// SUBMISSION.md this replacement does nothing and the URL ships as-is; while the placeholder is
+// still there, say where the link will live rather than pasting a raw <VIDEO_URL> into a judged
+// field. The measured length in that line comes from `npm run video:probe`, not from here.
+const VIDEO_FALLBACK = {
+  en: "link given in the Submission Materials Link field",
+  cn: "链接见「提交材料链接」字段",
+};
+en = en.replace(/<VIDEO_URL>/g, VIDEO_FALLBACK.en);
+cn = cn.replace(/<VIDEO_URL>/g, VIDEO_FALLBACK.cn);
 
 // refuse to ship a raw placeholder or leftover Markdown into a judged form field
 for (const [name, text] of [["EN", en], ["CN", cn]]) {

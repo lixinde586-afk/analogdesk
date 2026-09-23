@@ -58,8 +58,8 @@ A **research card**: one page, one trade idea, six parts.
 2. **Analogs** — the k = 50 historical sessions whose weighted z-distance to today is smallest, subject to
    <= 2 per calendar date, >= 10 sessions between two uses of the same symbol, and the embargo `j + H <= q`.
    Each is listed with its date, symbol, distance and realised outcome. You can go and look at every one.
-3. **Distribution** — what actually happened next over H = 1/5/10/20/40/60 sessions on the **adjusted** close,
-   including the tail and path statistics above.
+3. **Distribution** — what actually happened next over H = 1/5/10/20/40/60 sessions: forward returns on the
+   **adjusted** close, tail statistics and path risk (MAE / MFE / drawdown breach) on **raw** session OHLC.
 4. **Calibrated interval** — median +/- a conformal multiplier fitted on 2019-2022 only and **frozen**,
    reported with its out-of-sample coverage and standard error.
 5. **Stress** — 13 scenarios: 6 named crisis windows drawn from the library's own worst benchmark windows
@@ -77,14 +77,21 @@ A **research card**: one page, one trade idea, six parts.
   group weights, the anti-clustering rules, the calibration/test split and the 80% target were fixed before
   any test-era number was inspected. Cost: the engine could not be tuned into looking better, and it does not
   look better — see `research/LIMITATIONS.md` §1.
-- **Point-in-time everything.** Expanding-window statistics, embargoed candidates, adjusted-close outcomes,
-  forward-filled macro with identical treatment for query and analog dates. Cost: features that are null for
-  much of the library had to be excluded from the distance metric rather than patched.
+- **Point-in-time everything.** Expanding-window statistics, embargoed candidates, adjusted-close return
+  outcomes, raw-OHLC path risk, forward-filled macro with identical treatment for query and analog dates.
+  Cost: features that are null for much of the library had to be excluded from the distance metric rather
+  than patched.
+- **One price basis per ratio.** Forward returns are computed on the adjusted close; MAE / MFE / gap
+  features are computed on raw session OHLC anchored at the raw close of the decision session, and no ratio
+  ever divides one basis by the other. Cost: both closes are carried for every symbol (the committed
+  dataset is 8.0 MB). Benefit: path risk is measured against the prices that actually traded — the earlier
+  mixed-basis version divided raw opens and lows by adjusted closes and read a median `gap20` of 11.5% on
+  RTX where the true overnight gaps median 0.50%.
 - **A numeric gate on the language layer.** Every numeral the narrative contains is extracted and traced back
   to the engine payload; if it does not trace, the render fails. Cost: the LLM cannot embellish, so the prose
   is plainer than a free-running model's. Benefit: the sentence and the number are never separately wrong.
 - **Negative results are first-class output.** The card states that the interval is not sharper than a
-  same-name band, that PIT uniformity fails, and that directional accuracy is 50.6%. Cost: a worse demo
+  same-name band, that PIT uniformity fails, and that directional accuracy is 50.1%. Cost: a worse demo
   headline. Benefit: a judge can trust every other number on the page.
 - **Degradation is disclosed in-product.** The Bitget MCP probe result, with timestamp and error class, is
   rendered on the card. Cost: the product shows a red line at start-up. Benefit: no silent substitution of
@@ -97,13 +104,13 @@ parametric band cannot:
 
 1. **Auditability.** Every figure decomposes into a list of 50 dated episodes a sceptic can inspect. A
    volatility model gives you a number and a promise.
-2. **Regime conditioning that survives longer horizons.** At H = 20 the analog interval covers 86.9% while
-   the same-name unconditional band falls to 76.6%; width scales 1.94x from calm to stressed terciles with
-   corr(width, own volatility) = 0.955.
+2. **Regime conditioning that survives longer horizons.** At H = 20 the analog interval covers 87.4% while
+   the same-name unconditional band falls to 76.6%; width scales 2.06x from calm to stressed terciles with
+   corr(width, own volatility) = 0.960.
 3. **A natural language for stress.** "What did the 2024-08-05 carry unwind do to names that looked like this
    one" is a question a retrieval engine answers directly and a parametric model cannot even express.
 
-What it costs: 8.5% more width at matched coverage at H = 5, a PIT distribution that is skewed conservative,
+What it costs: 7.6% more width at matched coverage at H = 5, a PIT distribution that is skewed conservative,
 and a library that cannot retrieve 2008. That trade is explicit and it is documented.
 
 ## 6. Who this is for
@@ -121,7 +128,7 @@ needed to decide whether to believe it.
 
 ## 7. What this is not
 
-Not an alpha source (directional hit rate 50.6%). Not a forecasting model. Not investment advice. Not
+Not an alpha source (directional hit rate 50.1%). Not a forecasting model. Not investment advice. Not
 execution — AnalogDesk never places an order and never touches funds. Not a live-data product in its static
 form: `dist/` is a frozen snapshot of the library as of 2026-09-18 with zero network calls, so a judge
 without keys or connectivity still gets the complete artefact.

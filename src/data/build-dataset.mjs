@@ -91,21 +91,40 @@ const noDates = Object.entries(earnings).filter(([, a]) => a.length === 0).map((
 console.log(`      6-K fallback fired for ${sixK.length}/${stocks.length}: ${sixK.join(", ") || "-"}`);
 if (!sixK.length) notes.push("6-K fallback never fired - verify the China ADR CIKs");
 if (noDates.length) notes.push(`still zero earnings dates after the 6-K fallback: ${noDates.join(", ")}`);
+// The event group carries 20% of the distance metric. A build that comes back with no earnings dates
+// at all - EDGAR unreachable, or the cache missed because the search window ends "today" and the URL
+// is the cache key - still produces a dataset that loads and queries fine. It just silently re-scores
+// every analog against the dte=45 / eventLoad5=0 defaults, so a published metric could be
+// regenerated on top of an events block that does not exist. Refuse to write that dataset.
+if (eCounts.length && eCounts.at(-1) === 0) {
+  throw new Error(`no earnings dates for any of the ${stocks.length} companies - dte/eventLoad5 would be fabricated defaults, not measurements. `
+    + `Restore access to efts.sec.gov, or rebuild from data-cache/raw with ANALOGDESK_EDGAR_END pinned to the date the cache was fetched.`);
+}
 
 const cal = [...new Set((prices.SPY || prices.QQQ || []).map((r) => r.d))].sort();
 if (!cal.length) throw new Error("no benchmark calendar - SPY/QQQ prices missing");
 const idxOf = new Map(cal.map((d, i) => [d, i]));
+// Both price bases are aligned onto the benchmark calendar and shipped side by side, because they
+// are not interchangeable downstream (see the header of fetchPrices in sources.mjs):
+//   o / h / l / c  raw session OHLC - one scale, split-adjusted only. Path risk (MAE/MFE) and the
+//                  overnight gap feature are computed on this basis and on nothing else.
+//   a              split- AND dividend-adjusted close. Every forward return is A[q+H]/A[q] - 1.
+// Keeping `c` is what makes that separation possible: without a raw close the engine has no entry
+// price on the same scale as the raw low and high it measures excursions against.
 const pricesAligned = {};
 for (const u of UNIVERSE) {
   const rows = prices[u.s]; if (!rows) continue;
-  const o = new Array(cal.length).fill(null), h = o.slice(), l = o.slice(), a = o.slice(), v = o.slice();
+  const o = new Array(cal.length).fill(null), h = o.slice(), l = o.slice(), c = o.slice(), a = o.slice(), v = o.slice();
   let dropped = 0;
   for (const r of rows) {
     const i = idxOf.get(r.d); if (i == null) { dropped++; continue; }
-    o[i] = round(r.o, 4); h[i] = round(r.h, 4); l[i] = round(r.l, 4); a[i] = round(r.a, 4); v[i] = r.v;
+    o[i] = round(r.o, 4); h[i] = round(r.h, 4); l[i] = round(r.l, 4);
+    c[i] = round(r.c, 4); a[i] = round(r.a, 4); v[i] = r.v;
   }
-  pricesAligned[u.s] = { o, h, l, a, v };
+  pricesAligned[u.s] = { o, h, l, c, a, v };
   if (dropped) notes.push(`${u.s}: ${dropped} price rows outside benchmark calendar`);
+  const halfBasis = c.reduce((n, x, i) => n + ((x == null) !== (a[i] == null) ? 1 : 0), 0);
+  if (halfBasis) notes.push(`${u.s}: ${halfBasis} sessions carry only one of the two price bases - path risk or the forward return is unmeasurable there`);
 }
 
 const dataset = {
@@ -120,6 +139,11 @@ const dataset = {
       sentiment: "api.alternative.me/fng (keyless)",
       earningsDates: 'efts.sec.gov full-text search (keyless, contact UA): forms=8-K q="Item 2.02" for domestic filers; forms=6-K q="unaudited" / q="financial results" fallback for foreign private issuers; filing dates clustered at 6 calendar days',
       fomc: "federalreserve.gov fomccalendars.htm + fomc_historical.htm (parsed document dates)"
+    },
+    priceBases: {
+      raw: "prices[sym].o/h/l/c - the session's traded prices (split-adjusted, not dividend-adjusted), one scale. Basis for path risk: MAE/MFE measured from the raw close of the decision session against raw lows/highs, and for the gap20 feature (raw open[t] / raw close[t-1] - 1).",
+      adjusted: "prices[sym].a - close adjusted for splits and dividends. Basis for every forward return, A[q+H]/A[q] - 1, and for return-derived features (ret5/ret20/ret60, vol20, dd60, relBench20).",
+      rule: "The two bases are never divided by each other. A raw open, high or low is only ever compared with a raw close; an adjusted close is only ever compared with another adjusted close."
     },
     notes
   },
@@ -141,6 +165,7 @@ const rep = [
   `- trading calendar: ${cal[0]} .. ${cal.at(-1)}  (${cal.length} sessions)`,
   `- symbols with prices: ${Object.keys(pricesAligned).length}/${UNIVERSE.length}`,
   `- companies with earnings dates: ${Object.keys(earnings).length}/${stocks.length}`,
+  "- price bases carried per symbol: raw OHLC (o/h/l/c) for path risk and gaps + adjusted close (a) for forward returns; never mixed",
   `- FOMC decision dates parsed: ${fomc.length}`,
   `- FRED series: ${Object.keys(macro).join(", ")}`,
   `- crypto/sentiment: ${Object.keys(crypto).join(", ")}`, "",

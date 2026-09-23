@@ -26,6 +26,7 @@ import { narrate, detectLang, PROMPT_VERSION } from "./src/llm/narrate.mjs";
 import { probeLlm } from "./src/llm/client.mjs";
 import { probeAllBitget } from "./src/data/bitget.mjs";
 import { createDesk, DEFAULT_HORIZON } from "./src/desk.mjs";
+import { parseIdea, explain as explainIdea } from "./src/llm/lui.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const WEB = join(HERE, "web");
@@ -55,7 +56,15 @@ if (!fs.existsSync(datasetPath)) {
 }
 const t0 = Date.now();
 const dataset = readJson(datasetPath);
-const validationResults = readJson(join(RESEARCH, "validation-results.json"));
+// research/validation-results.json (20 MB, regenerable, git-ignored) is the full audit dump; the
+// committed dist/validation-summary.json is the same structure minus the per-query rows. A reviewer
+// who clones the repo and runs `npm start` must still get the frozen conformal scale and the
+// out-of-sample panel, so the server falls back to the committed summary instead of silently
+// serving cards with no calibration on them.
+const validationFull = readJson(join(RESEARCH, "validation-results.json"));
+const validationSummary = readJson(join(HERE, "dist", "validation-summary.json"));
+const validationResults = validationFull || validationSummary;
+const validationSource = validationFull ? "research/validation-results.json" : (validationSummary ? "dist/validation-summary.json" : null);
 const networkProbe = readJson(join(CACHE, "network-probe.json"));
 const buildReport = fs.existsSync(join(CACHE, "build-report.md")) ? fs.readFileSync(join(CACHE, "build-report.md"), "utf8") : null;
 
@@ -76,9 +85,16 @@ const provenanceBase = {
 };
 
 const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg });
+
+// The library view handed to the shared parser: symbols, the session calendar (so "10 个交易日前"
+// resolves to a real session rather than an approximate calendar day) and the measured horizon grid.
+const luiLib = (() => {
+  const l = desk.library();
+  return { symbols: l.symbols, dates: l.dates, from: l.from, to: l.to, horizons: l.horizons };
+})();
 log(`engine ready in ${Date.now() - t0}ms - ${desk.engine.mx.nSym} instruments x ${desk.engine.mx.nDates} sessions (${dataset.meta?.from} .. ${dataset.meta?.to})`);
 log(`narrative mode: ${cfg.llm.enabled ? `LIVE (${cfg.llm.model} @ ${cfg.llm.baseUrl})` : "TEMPLATE (no LLM_API_KEY set - engine numbers are unaffected)"}`);
-log(`validation summary loaded for horizons: ${Object.keys(desk.allValidation()).join(", ") || "none - run node scripts/verify.mjs"}`);
+log(`validation loaded for horizons: ${Object.keys(desk.allValidation()).join(", ") || "none - run node scripts/verify.mjs"}${validationSource ? ` (from ${validationSource})` : ""}`);
 
 // Seed from the persisted probe so the very first request already carries an accurate Bitget
 // disclosure instead of "pending": the live probe is asynchronous and can take several seconds,
@@ -179,19 +195,31 @@ function provenance() {
 }
 
 async function handleAnalyze(params, res) {
-  const symbol = String(params.symbol || params.sym || "").trim().toUpperCase();
-  if (!symbol) return badRequest(res, "symbol is required");
   const question = String(params.question ?? params.q ?? "").trim();
-  const horizon = Number(params.horizon ?? DEFAULT_HORIZON);
-  const k = Number(params.k ?? 50);
-  const date = params.date && params.date !== "latest" ? String(params.date) : "latest";
+  // The same parser the browser uses, so a sentence means the same thing over HTTP as it does in the
+  // UI, and an agent host calling this endpoint gets its question understood rather than rejected.
+  const parsed = question ? parseIdea(question, luiLib) : null;
+  const symbol = String(params.symbol || params.sym || (parsed && parsed.symbol) || "").trim().toUpperCase();
+  if (!symbol) {
+    return badRequest(res, question
+      ? `no instrument recognised in "${question.slice(0, 80)}". Name one of the ${luiLib.symbols.length} library instruments (a ticker such as NVDA, or a name such as 英伟达), or pass symbol= explicitly.`
+      : "symbol is required - or send question= and let the parser find the instrument");
+  }
+  // Explicit parameters win; the sentence fills whatever they left out. The UI resolves its own
+  // controls before it calls, so what arrives here is already the user's intent.
+  const asNum = (v, fb) => { const n = Number(v); return Number.isFinite(n) ? n : fb; };
+  const horizon = asNum(params.horizon, parsed && parsed.horizon != null ? parsed.horizon : DEFAULT_HORIZON);
+  const k = asNum(params.k, parsed && parsed.k != null ? parsed.k : 50);
+  const date = params.date && params.date !== "latest" ? String(params.date) : ((parsed && parsed.date) || "latest");
+  const riskRaw = asNum(params.risk ?? params.riskTolerance, parsed && parsed.riskTolerancePct != null ? parsed.riskTolerancePct : NaN);
+  const riskTolerancePct = Number.isFinite(riskRaw) && riskRaw > 0 ? riskRaw : null;
   const language = params.language || params.lang || (question ? detectLang(question) : "en");
   const mode = params.mode === "TEMPLATE" || params.mode === "REPLAY" ? params.mode : null;
   const withNarrative = String(params.narrative ?? "1") !== "0";
 
   let analysis;
   const includeStress = String(params.stress ?? params.scenarios ?? "1") !== "0";
-  try { analysis = desk.analyze({ symbol, date, horizon, k, includeStress }); }
+  try { analysis = desk.analyze({ symbol, date, horizon, k, includeStress, riskTolerancePct }); }
   catch (e) { return badRequest(res, e.message); }
 
   const prov = { ...provenanceBase, bitget: provenance().bitget, llm: provenance().llm };
@@ -207,7 +235,11 @@ async function handleAnalyze(params, res) {
       narrative = { text: null, sections: {}, mode: "ERROR", warnings: [e.message] };
     }
   }
-  sendJson(res, { ok: true, question, language, card: analysis.card, detail: analysis.detail, narrative });
+  sendJson(res, { ok: true, question, language,
+    // What the desk understood, and how it said so in one line: the caller can check the reading
+    // instead of trusting it, which is the whole posture of this project.
+    parsed: parsed ? { ...parsed, explain: explainIdea(parsed, { language }) } : null,
+    card: analysis.card, detail: analysis.detail, narrative });
 }
 
 /* -------------------------------- router --------------------------------- */
@@ -263,7 +295,8 @@ server.listen(port, host, () => {
   log(`  GET /                  research desk UI`);
   log(`  GET /api/health        status`);
   log(`  GET /api/library       ${desk.engine.mx.nSym} instruments, ${desk.engine.mx.nDates} sessions`);
-  log(`  GET /api/analyze?symbol=NVDA&question=...   full research card + narrative`);
+  log(`  GET /api/analyze?question=英伟达 未来 5 个交易日   sentence only - the parser finds the instrument`);
+  log(`  GET /api/analyze?symbol=NVDA&horizon=5&k=50       explicit parameters win over the sentence`);
   log(`  GET /api/validation    frozen out-of-sample summary`);
   log(`  GET /api/provenance    data sources, network probe, Bitget status, LLM mode`);
   if (!cfg.llm.enabled) log(`  no LLM_API_KEY: narrative runs in TEMPLATE mode. Copy .env.example to .env and set LLM_API_KEY to enable ${cfg.llm.model}.`);

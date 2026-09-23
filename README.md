@@ -15,9 +15,9 @@ the idea against named crisis windows and shock overlays, and prints where every
 
 **Read this first.** AnalogDesk is a research instrument, not an alpha source and not investment advice.
 Its own out-of-sample test says the interval is **not sharper** than a same-name unconditional band at
-matched coverage (**10.29%** vs **9.48%**, i.e. 8.5% wider), its probability calibration **fails** a PIT
-uniformity test (chi-square **212.5** vs a 5% critical value of **16.92**), and its directional hit rate is
-**50.6%** — a coin toss. All three facts are shown in the product UI, in `research/VALIDATION.md`, and in
+matched coverage (**10.20%** vs **9.48%**, i.e. 7.6% wider), its probability calibration **fails** a PIT
+uniformity test (chi-square **208.6** vs a 5% critical value of **16.92**), and its directional hit rate is
+**50.1%** — a coin toss. All three facts are shown in the product UI, in `research/VALIDATION.md`, and in
 the run record. Nothing was tuned away to look better. See **[Honest results](#honest-results)**.
 
 ---
@@ -48,6 +48,10 @@ npx serve dist                 # or: python -m http.server -d dist 8080
 npm start                      # zero dependencies; open http://127.0.0.1:3000
 ```
 
+`node mcp-server.mjs` exposes the same desk as an **MCP tool server** over stdio (JSON-RPC 2.0, zero
+dependencies): an agent host gets the identical engine, the identical numeric gate and the identical
+request-normalisation disclosures as the browser UI.
+
 Optional: copy `.env.example` to `.env` and set `DASHSCOPE_API_KEY=...` to switch the narrative layer from
 the deterministic template renderer to live **qwen-plus** via the OpenAI-compatible endpoint
 `https://dashscope.aliyuncs.com/compatible-mode/v1`. **Without a key nothing is lost** — the app falls back
@@ -69,7 +73,7 @@ scenarios):
 | `demo/narrative.txt` | The narrative layer text only |
 
 Every numeral in the narrative passes a **verification gate**: the renderer extracts each number and traces it
-back to the engine payload. The last demo run passed **142/142**. A number the engine did not produce cannot
+back to the engine payload. The last demo run passed **140/140**. A number the engine did not produce cannot
 be printed.
 
 ---
@@ -82,18 +86,26 @@ Node >= 20. **No `npm install` is required — the project has zero runtime depe
 npm run build:data     # rebuild data-cache/dataset.json from the keyless sources (network)
 npm run verify         # re-run the whole out-of-sample validation -> research/VALIDATION.md
 npm run demo           # re-run the research task -> demo/RUN-RECORD.md
-npm run check          # four gates: numeric gate, markup, bundle-in-a-DOM-stub, real headless browser
+npm run check          # seven gates: numeric, LUI, markup, bundle-in-a-DOM-stub, MCP, server, browser
 npm run check:live     # run the same browser checks against the deployed GitHub Pages site
 npm run probe          # re-measure network reachability of every source -> data-cache/network-probe.json
 npm run form:text      # regenerate the paste-ready form text from submission/SUBMISSION.md
+npm run xpost          # regenerate the X post copy from SUBMISSION.md section F, and fail if any
+                       # block exceeds 280 weighted units or drops #BitgetHackathon / @Bitget_AI
 npm start              # serve the desk on http://127.0.0.1:3000
+node mcp-server.mjs    # the same desk as an MCP tool server (stdio JSON-RPC 2.0) for agent hosts
 npm run publish:github # publish HEAD through api.github.com (see the note below)
 ```
 
-`npm run check` is four gates, and all four have to pass before anything is published:
+`npm run check` is seven gates (it recompiles `dist/` first), and all seven have to pass before anything
+is published:
 
 - **`check:gate`** - the numeric gate smoke test: 144 template renders, and every numeral in every one of
   them has to be traceable to the engine payload.
+- **`check:lui`** - the language-understanding contract: every sentence a reviewer might type (zh + en)
+  goes through the same parser the UI, the HTTP API and the MCP server share; a symbol is only resolved
+  if the library really contains it, a horizon only if the engine measures it, and a fuzzy typo repair is
+  reported as a repair instead of being silently applied.
 - **`check:html`** - parses `web/index.html` and `dist/index.html` with an attribute-aware scanner, then
   cross-checks the element ids it finds against the ids `web/app.js` looks up and the `REQUIRED_IDS` list
   app.js asserts at boot. A regex cannot do this job: an id sitting inside another element's attribute
@@ -102,13 +114,19 @@ npm run publish:github # publish HEAD through api.github.com (see the note below
   `dist/index.html`**, so `getElementById` returns `null` for anything the markup does not actually
   contain. Then it asserts that boot completed, that the click and key handlers were attached, that all
   fifteen panels rendered, and that `fetch` was never called.
+- **`check:mcp`** - spawns the real `mcp-server.mjs` over stdio, performs the handshake a host performs,
+  calls every tool it advertises, and asserts stdout purity, engine-computed numbers, and that a request
+  which had to be adjusted says so instead of quietly answering a different question.
+- **`check:server`** - spawns the real `server.mjs` and asserts its HTTP contract: the routes that must
+  exist, the status codes they must return, the sentence-driven analyze call, the clamping disclosure,
+  and the paths that must never be reachable.
 - **`check:browser`** - serves `dist/` on 127.0.0.1 and loads it in **real headless Chrome**: two auto-run
   deep links, a cold load, and an injected probe that types a question, presses Enter, clicks a tab,
   switches the symbol and clicks Analyze, then reports a machine-readable verdict. Needs Chrome or Edge;
   set `CHROME` to an executable path to override the default locations. `npm run check:live` runs the
   same page checks against the deployed site after a publish.
 
-The last two gates exist because the first published version of this demo shipped broken. One mis-quoted
+The markup and browser gates exist because the first published version of this demo shipped broken. One mis-quoted
 attribute in `web/index.html` - a `placeholder` opened with `'` and closed with `"` - never terminated, so
 the HTML tokenizer absorbed the next 25 elements (the Analyze button, every `<select>`, the tab bar, all
 five result panels) into that single attribute value. The page still looked like a page and did nothing at
@@ -143,7 +161,7 @@ plain-language idea  ->  LUI parser (zh + en, alias table)
                      ->  state vector: 28 features in 5 weighted groups
                      ->  analog retrieval: k = 50 nearest sessions by weighted z-score distance
                      ->  realised forward returns on the ADJUSTED close (embargoed)
-                     ->  distribution + path risk (MAE / MFE / drawdown breach probabilities)
+                     ->  distribution + path risk (MAE / MFE / drawdown breach) on RAW session OHLC
                      ->  frozen conformal multiplier -> calibrated interval
                      ->  13 stress scenarios (6 named crisis windows + 7 shock overlays)
                      ->  narrative layer (qwen-plus | replay cache | template) + numeric gate
@@ -164,10 +182,22 @@ excluded because they degraded retrieval, but they stay in the payload and are s
 | Same-symbol gap | >= 10 trading sessions |
 | Embargo | candidate session `j` eligible only if `j + H <= q` (every analog return fully realised before the decision date) |
 | Outcome | forward return on the **adjusted** close, `A[q+H] / A[q] - 1` |
+| Path risk | MAE / MFE / drawdown breach on **raw** session OHLC against the **raw** close at the decision session; `gap20` = abs(raw open[t] / raw close[t-1] - 1). One price basis per ratio - the two are never mixed |
 | Calibration | 2019-01-01 .. 2022-12-31 (fit the conformal multiplier, then freeze it) |
 | Test | 2023-01-01 .. 2026-09-18 (never used to fit anything deployable) |
 | Queries | 2698 out-of-sample queries x 71 instruments |
 | Coverage target | 80% |
+
+**Requests are normalised, and every normalisation is disclosed.** The desk runs on a closed grid: a horizon
+outside the measured set is snapped to the nearest one, and a neighbour count outside `10..200` is clamped into
+it. Any card **not** run at `k = 50` carries an on-page note saying that the frozen conformal scale and every
+out-of-sample figure in the validation panel were fitted and measured at `k = 50`, so they describe that
+configuration rather than the one in front of the reader. A request the engine cannot answer — unknown symbol,
+a session before the library starts, too little history behind the query, no completed outcome at that horizon —
+fails with a message that names the fix instead of returning a card full of en-dashes. The notes render as an
+amber strip above the card, are returned by the API in `card.retrieval.notes`, and `npm run check:browser`
+drives real headless Chrome through `k = 999` and back to `k = 50`, asserting the strip appears and then
+disappears.
 
 ---
 
@@ -177,22 +207,23 @@ Out of sample, H = 5 sessions, 2698 queries, coverage SEs clustered by query dat
 
 | Predictor | Test coverage | Clustered SE | Test width | Width at matched 80% coverage |
 |---|---|---|---|---|
-| **Analog + frozen conformal (this project)** | **81.8%** | +/- 1.87 pp | **10.73%** | **10.29%** |
-| Analog raw p10-p90 (uncalibrated) | 72.9% | +/- 2.44 pp | 8.88% | 10.42% |
+| **Analog + frozen conformal (this project)** | **80.8%** | +/- 1.95 pp | **10.40%** | **10.20%** |
+| Analog raw p10-p90 (uncalibrated) | 73.1% | +/- 2.43 pp | 8.87% | 10.30% |
 | Same-name unconditional, point-in-time | 82.4% | +/- 2.21 pp | 10.12% | **9.48%** |
 | Volatility harness (60d vol x sqrt H) | 77.4% | +/- 2.31 pp | 9.67% | 10.30% |
 | Pooled unconditional (whole library) | 83.1% | +/- 1.80 pp | 10.53% | 9.46% |
 
-Fitted analog multiplier **1.348** (calibration era, frozen).
+Fitted analog multiplier **1.310** (calibration era, frozen).
 
-**What the engine is good at.** It hits its coverage target out of sample (81.8% vs 80.0%), and it keeps
-hitting it as the horizon lengthens — at H = 20 the analog interval covers 86.9% while the same-name
+**What the engine is good at.** It hits its coverage target out of sample (80.8% vs 80.0%), and it keeps
+hitting it as the horizon lengthens — at H = 20 the analog interval covers 87.4% while the same-name
 unconditional band collapses to 76.6%. Its width tracks each instrument's own realised volatility
-(correlation 0.955). Retrieval costs **8.4 ms** per query averaged over the 2698-query validation sweep (**14.7 ms** in a dedicated 108-query cold harness; see `research/LIMITATIONS.md` §15).
+(correlation 0.960). Retrieval costs **8.5 ms** per query averaged over the 2698-query validation sweep (**14.7 ms** in a dedicated 108-query cold harness; see `research/LIMITATIONS.md` §15).
 
-**What it is not good at.** At matched coverage it is **8.5% wider** than a band that only knows the symbol's
-own history. Matched-coverage gain is negative at H = 5/10/20/40 (-8.5% / -3.4% / -5.3% / -5.5%) and only
-marginally positive at H = 1 (+0.4%). Probability calibration fails. Directional accuracy is a coin toss.
+**What it is not good at.** At matched coverage it is **7.6% wider** than a band that only knows the symbol's
+own history. Matched-coverage gain is negative at every measured horizon (H = 1 / 5 / 10 / 20 / 40 / 60:
+-1.1% / -7.6% / -2.4% / -3.4% / -4.9% / -0.7%). Probability calibration fails. Directional accuracy is a
+coin toss.
 The engine's own verdict, printed on every card: *"a stress-testing and provenance instrument, not an alpha
 source."* Full detail, including per-year / per-sector / per-symbol breakdowns, worst windows and what the
 report does **not** show: `research/VALIDATION.md` and `research/LIMITATIONS.md`.
@@ -204,7 +235,8 @@ report does **not** show: `research/VALIDATION.md` and `research/LIMITATIONS.md`
 Six keyless sources, all reachable from the build machine and all measured by `npm run probe`
 (`data-cache/network-probe.json`, timestamps included):
 
-`api.stockanalysis.com` (daily OHLCV + adjusted close, 71 instruments, 10y) · `fred.stlouisfed.org`
+`api.stockanalysis.com` (daily raw OHLCV **+ adjusted close** - both bases carried per symbol, never
+mixed in one ratio, 71 instruments, 10y) · `fred.stlouisfed.org`
 (11 macro series) · `efts.sec.gov` (EDGAR full-text search: 8-K Item 2.02, and a 6-K fallback for foreign
 private issuers) · `federalreserve.gov` (92 FOMC decision dates) · `coins.llama.fi` (BTC/ETH) ·
 `api.alternative.me` (fear & greed).
@@ -230,19 +262,21 @@ which probe run the evidence comes from.
 
 ```
 server.mjs                 zero-dependency node:http API + static server
+mcp-server.mjs             the same desk as an MCP tool server (stdio JSON-RPC 2.0, zero dependencies)
 web/                       the desk UI (index.html, styles.css, app.js)
 dist/                      static deployment bundle (browser-side engine, zero fetch)
-src/data/                  sources.mjs, build-dataset.mjs, universe.mjs, bitget.mjs
+src/data/                  sources.mjs, build-dataset.mjs, universe.mjs, bitget.mjs, xstocks.mjs
 src/engine/                features, analog, distribution, stress, validation
-src/llm/                   client, config, prompt, card, narrate, template, replay, verify-numbers
+src/llm/                   client, config, prompt, card, lui, narrate, template, replay, verify-numbers
 src/desk.mjs               the facade the UI and the demo both call
 scripts/                   verify.mjs, run-demo.mjs, compile-bundle.mjs, probe-network.mjs,
-                           check-{gate,html,bundle,browser}.mjs, publish-github.mjs
+                           check-{gate,lui,html,bundle,mcp,server,browser}.mjs, publish-github.mjs
 data-cache/                dataset.json (committed), network-probe.json, build-report.md, raw/ (git)
 research/                  VALIDATION.md, THESIS.md, DATA-PROVENANCE.md, LIMITATIONS.md
 demo/                      RUN-RECORD.md, run-record.json, narrative.txt
 submission/                SUBMISSION.md (form text), PROJECT-DESCRIPTION-{EN,CN}.txt (paste-ready,
-                           generated by `npm run form:text`), YOUR-THREE-TASKS.md
+                           generated by `npm run form:text`), X-POST-*.txt (paste-ready X posts,
+                           generated and length-checked by `npm run xpost`), YOUR-THREE-TASKS.md
 ```
 
 ## 中文说明
@@ -254,8 +288,11 @@ AnalogDesk 是一台**决策压力测试台**：你用一句自然语言说出�
 
 - 零依赖、零密钥即可运行：打开 `dist/index.html`，或 `npm start` 后访问 `http://127.0.0.1:3000`。
 - 可选填 `DASHSCOPE_API_KEY` 启用 qwen-plus 实时叙述；没有密钥时自动回落到回放缓存/模板，并在卡片上标明模式。
-- 诚实结论：区间**没有**比"同名无条件分布"更窄（同覆盖率下宽 8.5%），概率校准未通过 PIT 均匀性检验，
-  方向命中率 50.6%。它是压力测试与溯源工具，**不是** alpha 来源，也不构成投资建议。
+- 诚实结论：区间**没有**比"同名无条件分布"更窄（同覆盖率下宽 7.6%），概率校准未通过 PIT 均匀性检验，
+  方向命中率 50.1%。它是压力测试与溯源工具，**不是** alpha 来源，也不构成投资建议。
+- 非法或越界请求会被规范化并**如实披露**：期限对齐到已测量档位（1/5/10/20/40/60），邻居数限制在 10..200；
+  只要不是 k = 50，卡片上方就会出现琥珀色提示条，说明冻结的共形尺度与全部样本外指标都是在 k = 50 下拟合和测量的。
+  无法回答的请求直接报错并指出怎么改，绝不返回一张空壳卡片。
 - Bitget 官方 MCP 在本构建网络下 TCP 层被重置（0/3 可达），已如实披露，产品中不含任何 Bitget 来源数字。
 
 ## Disclaimer

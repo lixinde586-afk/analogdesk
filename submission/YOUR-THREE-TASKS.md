@@ -49,10 +49,17 @@
 2. 按 `Win + G` 打开 Xbox Game Bar → 点录制（或按 `Win + Alt + R`）。
 3. 照 `submission/SUBMISSION.md` **第 G 节**的分镜表操作：输入 `英伟达 未来5天` → 状态面板 → 类比清单 →
    分布与路径风险 → 点两个压力情景 → 切到终端跑 `npm run demo` 展示 `RUN-RECORD.md` 与
-   `142/142` 数字闸门 → 展示诚实结论面板 → 结束卡。
+   `140/140` 数字闸门 → 展示诚实结论面板 → 结束卡。
 4. 上传到 YouTube（公开或"知道链接的人可看"），拿到链接。
 5. 把链接替换掉 `submission/SUBMISSION.md` 里剩下的 3 处 `<VIDEO_URL>`（Ctrl+H 全部替换），
    然后第 E 节那段就能整段粘贴进表单。
+
+> **先重录，再填链接。** 现有的 96 秒录像是修复价格口径（复权收盘价 vs 原始 OHLC 混用）**之前**录的，
+> 画面上的数字是旧的：`142/142` 闸门、81.8% 覆盖率、同覆盖率下宽 8.5%、方向命中率 50.6%。
+> `SUBMISSION.md` 第 G 节的分镜表、补充片段清单与 YouTube 文案已经换成当前实测数字
+> （`140/140`、80.8%、宽 7.6%、50.1%），所以这条视频链接必须等仓库重新发布、线上 Demo 更新之后
+> 重录一遍再填进表单。`submission/VIDEO-FACTS.json` 里的 `publishedUrl` 目前是 `null`，
+> 旧链接不会被误提交。
 
 > 录完把链接发我，我可以替你替换占位符并重新发布仓库（`npm run publish:github`），你不用碰命令行。
 
@@ -94,15 +101,20 @@ DASHSCOPE_API_KEY=sk-你复制的那串
 
 1. 打开 https://x.com/Bitget_AI/status/2100519318824055159?s=20
 2. 点 **Quote / 引用**（不要点 Repost）。用引用方式，链接不会占用你的字数。
-3. 粘贴 `submission/SUBMISSION.md` → **F2** 那段英文（273 字符，已在 280 限内）。
-   想发中文就用 **F3**（257 字符）。想再发一条开发日志用 **F4**（268 字符），对传播奖有加分。
+3. 粘贴 `submission\X-POST-MAIN-EN.txt`（英文主帖，**273/280** 加权字数，已含 Demo 链接）。
+   想发中文就改用 `submission\X-POST-MAIN-CN.txt`（**245/280**）。发完主帖，再在自己那条下面回复
+   `submission\X-POST-DEVLOG-EN.txt`（**279/280**，讲那个「负面结论」的开发日志），对传播奖有加分。
+   想发三条 thread 就用 `SUBMISSION.md` 的 **F5**（**223 / 265 / 251**）。
+   三个 txt 由 `npm run xpost` 从 `SUBMISSION.md` 的 F 节自动生成，同时按 X 的加权规则重算每条字数
+   （CJK 计 2、任何链接计 23、被引用的官方帖不计），**超 280 或缺 `#BitgetHackathon` / `@Bitget_AI`
+   就直接报错且不写文件**——所以这些数字是量出来的，不是手数出来的。
 4. 配一张图：打开 `dist/index.html`，输入 `NVDA`，截图那张研究卡的分布图部分。
    （截图只是配图，**不是**提交材料本身——运行记录是代码生成的 `demo/RUN-RECORD.md`。）
 5. 发布后：点自己那条推文 → Share → **Copy link**，这个链接就是表单里的
    「X Promotional Post Link」字段要填的内容。
 
 发之前自检（4 项，缺一即无效）：`#BitgetHackathon` ✅ / `@Bitget_AI` ✅ / 是 Quote 而不是 Repost ✅ /
-有产品介绍正文而不是只有一句话 ✅
+有产品介绍正文而不是只有一句话 ✅（前两项和字数已由 `npm run xpost` 机器校验）
 
 ---
 
@@ -116,11 +128,12 @@ GitHub README 或 X 长推都不能替代。**
 
 | 文件 | 字符数 | 什么时候用 |
 |---|---|---|
-| `submission\PROJECT-DESCRIPTION-EN.txt` | 17,345 | **推荐**：评审是国际团队，英文版信息最全 |
-| `submission\PROJECT-DESCRIPTION-CN.txt` | 7,028 | 若表单提示内容过长、或你更想用中文 |
+| `submission\PROJECT-DESCRIPTION-EN.txt` | 20,340 | **推荐**：评审是国际团队，英文版信息最全 |
+| `submission\PROJECT-DESCRIPTION-CN.txt` | 8,244 | 若表单提示内容过长、或你更想用中文 |
 
 两个文件都由 `npm run form:text` 从 `submission/SUBMISSION.md` 自动生成（不是手抄），所以改了 SUBMISSION.md
-之后重跑一次这个命令，txt 就会同步更新。其余字段（Role of the LLM、材料链接、X 帖）仍从 SUBMISSION.md 复制，
+之后重跑一次这个命令，txt 就会同步更新。X 帖文案同理：`npm run xpost` 从 F 节生成 `submission\X-POST-*.txt`，
+同时校验加权字数与标签。其余字段（Role of the LLM、材料链接）仍从 SUBMISSION.md 复制，
 那些字段较短、带 Markdown 也不影响阅读。
 
 | 表单字段 | 填什么 | 从哪复制 |
@@ -129,7 +142,7 @@ GitHub README 或 X 长推都不能替代。**
 | Are you an S1 participant/team | `No` | — |
 | Track | `AI Trading Desk` | — |
 | Sub-theme | `Decision Stress Testing` | — |
-| **Project Description** ✅必交 | 用记事本打开 `submission\PROJECT-DESCRIPTION-EN.txt`（英文，17,345 字符）**或** `submission\PROJECT-DESCRIPTION-CN.txt`（中文，7,028 字符）→ Ctrl+A 全选 → Ctrl+C → 粘进表单。**二选一，不要两份都贴** | 那两个 txt 文件 |
+| **Project Description** ✅必交 | 用记事本打开 `submission\PROJECT-DESCRIPTION-EN.txt`（英文，约 2.03 万字符）**或** `submission\PROJECT-DESCRIPTION-CN.txt`（中文，约 8.2 千字符）→ Ctrl+A 全选 → Ctrl+C → 粘进表单。**二选一，不要两份都贴** | 那两个 txt 文件 |
 | **Role of the LLM in Your Project** ✅必交 | 整段粘贴 D1；有 Qwen 额度再加上 D2 | `SUBMISSION.md` → **D** |
 | **Submission Materials Link** ✅必交 | 整段粘贴（已含 Demo/代码/运行记录/验证报告/研究文档/视频六项，替换好占位符后直接贴） | `SUBMISSION.md` → **E** |
 | **X Promotional Post Link** ✅必交 | 第二件事里复制的那条帖子链接 | — |
@@ -165,9 +178,9 @@ GitHub README 或 X 长推都不能替代。**
 ## 出问题时找我，附上这几行
 
 ```powershell
-cd "C:\Users\26973\Documents\Codex\2026-09-18\codex-mcp-add-bitgetai-hackathons2-url\outputs\analogdesk"
+cd "C:\Users\26973\Documents\ChatGPT\New project\analogdesk"
 npm run demo      # 重新生成运行记录（离线可跑，约 2 秒）
-npm run check     # 四道闸门：数字闸门 + 标记扫描 + DOM stub 整包 + 真实 headless Chrome（需本机 Chrome/Edge）
+npm run check     # 七道闸门：数字闸门 + LUI 语言理解 + 标记扫描 + DOM stub 整包 + MCP + HTTP 服务端 + 真实 headless Chrome（需本机 Chrome/Edge）
 npm run check:live # 把同一组页面断言打在已部署的线上地址上
 npm start         # 本地全功能服务：http://127.0.0.1:3000
 ```

@@ -18,6 +18,7 @@ import { chat } from "./client.mjs";
 import { renderTemplate } from "./template.mjs";
 import { buildAllowlist, verifyNumbers, retryInstruction, defaultAllowance } from "./verify-numbers.mjs";
 import { cardDigest } from "./replay.mjs";
+import { detectLang } from "./lui.mjs";
 
 export const PROMPT_VERSION = "1";
 
@@ -93,8 +94,6 @@ export async function narrate({ card, question = "", language = null, llm, store
   return finish(t.text, "TEMPLATE", null, { warnings });
 }
 
-export function detectLang(text) {
-  const s = String(text || "");
-  const cjk = (s.match(/[\u4e00-\u9fff]/g) || []).length;
-  return cjk > 0 && cjk / Math.max(1, s.length) > 0.12 ? "zh" : "en";
-}
+// Language detection lives in the shared parser, not here: the UI, this module, the HTTP API and the
+// MCP tool server must all reach the same verdict about whether a sentence is Chinese or English.
+export { detectLang };

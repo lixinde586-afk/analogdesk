@@ -84,7 +84,12 @@ export function buildCard({ result, stress = null, validation = null, provenance
     generatedAt: new Date().toISOString(),
     idea: {
       symbol: q.sym, name: q.name, sector: q.sector, asOfSession: q.date,
+      // two bases, both traceable: referenceClose drives every forward return on the card,
+      // referenceCloseRaw is the traded close the MAE/MFE excursions are measured from.
       referenceClose: q.price == null || !Number.isFinite(q.price) ? null : Number(q.price.toFixed(4)),
+      referenceCloseRaw: q.priceRaw == null || !Number.isFinite(q.priceRaw) ? null : Number(q.priceRaw.toFixed(4)),
+      returnBasis: "adjusted close, A[q+H]/A[q] - 1",
+      pathRiskBasis: "raw session OHLC, raw low/high over the raw close of the decision session",
       horizonSessions: H, horizonLabel: horizonLabel(H)
     },
     currentState: {

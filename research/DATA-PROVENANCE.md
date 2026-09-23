@@ -5,7 +5,7 @@ file came from, what each source contributed, how sparse series were aligned, an
 imperfect**. Nothing here is asserted from memory: the counts were recomputed from the dataset and the
 reachability facts from `data-cache/network-probe.json`.
 
-- Dataset: `data-cache/dataset.json`, **7.09 MB**, built `2026-09-21T04:08:36.171Z` in ~10 s
+- Dataset: `data-cache/dataset.json`, **8.03 MB** (raw + adjusted closes for every symbol), built `2026-09-22T13:56:48.697Z` in ~9 s
 - Trading calendar: **2016-09-20 .. 2026-09-18, 2513 sessions**
 - Instruments: **71** (55 single names + 16 ETFs), all 71 with prices
 - HTTP cache: `data-cache/raw/` — 225 files, 20.8 MB (regenerable, excluded from git)
@@ -21,7 +21,7 @@ cache it issues network requests only for what is missing (in the last run, only
 
 | Source | Endpoint | Contributes | Records in the dataset |
 |---|---|---|---|
-| `api.stockanalysis.com` | `/api/symbol/s/{SYM}/history?range=10Y&period=Daily` | daily OHLCV **+ adjusted close** for all 71 instruments | 2513 sessions x 71 symbols (4 names shorter, see §4) |
+| `api.stockanalysis.com` | `/api/symbol/s/{SYM}/history?range=10Y&period=Daily` | daily **raw OHLCV + adjusted close** for all 71 instruments (both bases carried per symbol) | 2513 sessions x 71 symbols (4 names shorter, see §4) |
 | `fred.stlouisfed.org` | `/graph/fredgraph.csv?id={SERIES}&cosd=...` | 11 macro series | see §3 |
 | `efts.sec.gov` (EDGAR full-text search) | `/LATEST/search-index?q="Item 2.02"&forms=8-K&ciks={CIK}` and the 6-K fallback in §2 | earnings announcement dates for 55 filers | **2680 events** |
 | `www.federalreserve.gov` | `/monetarypolicy/fomccalendars.htm` + `fomc_historical.htm` | FOMC decision dates parsed from document URLs | **92 dates**, 2012-01-25 .. 2026-09-16 |
@@ -34,6 +34,13 @@ response is cached, so a transient 500 cannot silently change the dataset.
 
 **Forward returns use the adjusted close**, never the raw close: `A[q+H] / A[q] - 1`. Splits and dividends are
 therefore inside the outcome variable, which matters for names like NVDA and TSLA over a ten-year library.
+
+**Path risk uses the raw session OHLC**, never the adjusted close: MAE / MFE / drawdown breach divide the raw
+highs and lows by the **raw close of the decision session**, and `gap20` is abs(raw open[t] / raw close[t-1]
+- 1). One price basis per ratio — the two bases never appear in the same division, because the adjusted
+series is not a price anyone traded at in a past session. `build-dataset.mjs` carries both closes for every
+symbol, `build-report.md` records the bases, and `features.mjs` refuses to build the matrix for a symbol
+whose raw close is missing (hard error) rather than silently falling back to the adjusted one.
 
 ---
 

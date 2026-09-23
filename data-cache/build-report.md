@@ -1,9 +1,10 @@
 # Dataset build report
 
-- builtAt: 2026-09-21T04:08:36.171Z  (10s)
+- builtAt: 2026-09-22T13:56:48.697Z  (9s)
 - trading calendar: 2016-09-20 .. 2026-09-18  (2513 sessions)
 - symbols with prices: 71/71
 - companies with earnings dates: 55/55
+- price bases carried per symbol: raw OHLC (o/h/l/c) for path risk and gaps + adjusted close (a) for forward returns; never mixed
 - FOMC decision dates parsed: 92
 - FRED series: VIXCLS, T10YIE, T10Y2Y, DGS10, DGS3MO, DFEDTARU, DTWEXBGS, DCOILWTICO, BAMLH0A0HYM2, CPIAUCSL, NASDAQCOM
 - crypto/sentiment: BTC, ETH, FNG

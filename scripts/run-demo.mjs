@@ -82,7 +82,7 @@ function renderMarkdown(ctx) {
   L.push(`| Track | Bitget Hackathon S2 - Track 3 AI Trading Desk - sub-theme **Decision Stress Testing** |`);
   L.push(`| Question asked | ${mdEsc(args.question)} |`);
   L.push(`| Instrument | ${mdEsc(i.name)} (${mdEsc(i.symbol)}), ${mdEsc(i.sector || "n/a")} |`);
-  L.push(`| Decision session | ${mdEsc(i.asOfSession)}, adjusted close ${n(i.referenceClose, 4)} |`);
+  L.push(`| Decision session | ${mdEsc(i.asOfSession)}, adjusted close ${n(i.referenceClose, 4)} (return basis), raw close ${n(i.referenceCloseRaw, 4)} (path-risk basis) |`);
   L.push(`| Horizon | ${mdEsc(i.horizonLabel)} |`);
   L.push(`| Narrative mode | **${narrative.mode}**${narrative.model ? ` (${narrative.model})` : ""} |`);
   L.push(`| Numeric gate | ${gate.ok ? "**PASS**" : "**FAIL**"} - ${gate.total - gate.unsupportedCount}/${gate.total} numerals traced to the research card |`);
@@ -111,6 +111,7 @@ function renderMarkdown(ctx) {
   L.push(`| Anti-clustering | <= ${n(prov.maxPerCalendarDate, 0)} analogs per calendar date; same instrument >= ${n(prov.minSameSymbolGap, 0)} sessions apart |`);
   L.push(`| Leakage embargo | candidate session j eligible only if j + ${n(r.embargoSessions, 0)} <= query session |`);
   L.push(`| Return basis | adjusted close, A[q+H]/A[q] - 1 |`);
+  L.push(`| Path-risk basis | raw session OHLC: MAE/MFE are the raw low/high over the horizon against the raw close of the decision session; gap20 is raw open[t] / raw close[t-1] - 1. No raw price is ever divided by an adjusted one |`);
   L.push(`| Conformal scale | ${n(c?.scale, 3)}, fitted on ${mdEsc(c?.fittedOn || "n/a")} and frozen |`);
   L.push(``);
   L.push(`## 3. Result - the distribution of what actually happened next`);
@@ -277,7 +278,7 @@ function renderMarkdownPart2(ctx) {
   for (const [k, v] of Object.entries(prov.sources || {})) L.push(`| ${mdEsc(k)} | ${mdEsc(typeof v === "string" ? v : JSON.stringify(v))} |`);
   L.push(``);
   L.push(`Dataset built ${mdEsc(prov.datasetBuiltAt || "n/a")}. Library ${mdEsc(prov.from)} .. ${mdEsc(prov.to)}, ${n(prov.sessions, 0)} sessions, ${n(prov.symbols, 0)} instruments.`);
-  L.push(`Returns use the adjusted close throughout; unadjusted low/high are used only for excursion.`);
+  L.push(`Two price bases are carried per symbol and never mixed: every forward return uses the adjusted close (split + dividend), while path risk (MAE/MFE) and the gap20 feature use raw session OHLC - the raw low/high against the raw close of the decision session, and the raw open against the previous raw close. The vendor supplies both bases on one row; a row missing either is dropped at fetch time.`);
   L.push(``);
   const np = prov.networkProbe;
   if (np) {

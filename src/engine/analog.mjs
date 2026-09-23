@@ -191,8 +191,15 @@ export function createEngine(ds, cfg = {}) {
   const scratch = { mu: new Float64Array(NF), sd: new Float64Array(NF) };
 
   function resolveIndex(sym, date) {
-    const sq = mx.syms.indexOf(String(sym || "").toUpperCase());
-    if (sq < 0) throw new Error(`symbol not in analog library: ${sym}`);
+    const want = String(sym || "").trim().toUpperCase();
+    const sq = mx.syms.indexOf(want);
+    // Name the fix, not just the failure: this message reaches the UI toast and the API error body,
+    // and a reviewer who typos a ticker should not have to go and read the source to recover.
+    if (sq < 0) {
+      throw new Error(want
+        ? `symbol not in analog library: ${sym}. The library covers ${mx.syms.length} instruments - pick one from the Symbol dropdown.`
+        : `no symbol given. Pick one of the ${mx.syms.length} instruments in the Symbol dropdown.`);
+    }
     const dates = mx.dates;
     let q;
     if (date == null || date === "latest") {
@@ -208,9 +215,25 @@ export function createEngine(ds, cfg = {}) {
     return { sq, q };
   }
 
+  /**
+   * Forward returns and path risk are measured on two different price bases, deliberately, and
+   * never against each other:
+   *   fwd[h]  A[j+h] / A[j] - 1 on the ADJUSTED close (split + dividend). That is the research
+   *           definition of the outcome being predicted - the total return of holding the name.
+   *   mae/mfe raw L and raw H over (j, j+H] divided by the RAW close at j. An intraday low is a
+   *           traded price, so the only entry price it may be compared with is the traded close of
+   *           the decision session. Using the adjusted close as that denominator puts a raw low over
+   *           an adjusted close: for a dividend payer the ratio carries the cumulative dividend
+   *           factor (0.47x on RTX), which inflates every excursion and reports a large favourable
+   *           excursion - and even a positive median adverse excursion - on names that actually fell.
+   *   path    adjusted closes over the adjusted entry, so the last path point equals fwd[H] exactly
+   *           and the fan drawn from it is the return path, not a second price basis.
+   */
   function forward(b, j, H) {
     const p0 = mx.priceA[b + j];
     if (!(p0 > 0)) return { fwd: {}, mae: null, mfe: null, path: [] };
+    const p0Raw = mx.priceC[b + j];
+    const rawEntry = Number.isFinite(p0Raw) && p0Raw > 0 ? p0Raw : null;
     const fwd = {};
     for (const h of C.horizons) {
       const t = j + h;
@@ -221,8 +244,10 @@ export function createEngine(ds, cfg = {}) {
     const path = [];
     for (let t = j + 1; t <= j + H && t < nDates; t++) {
       const L = mx.priceL[b + t], Hi = mx.priceH[b + t], cl = mx.priceA[b + t];
-      if (Number.isFinite(L)) lo = Math.min(lo, L / p0 - 1);
-      if (Number.isFinite(Hi)) hi = Math.max(hi, Hi / p0 - 1);
+      if (rawEntry != null) {
+        if (Number.isFinite(L)) lo = Math.min(lo, L / rawEntry - 1);
+        if (Number.isFinite(Hi)) hi = Math.max(hi, Hi / rawEntry - 1);
+      }
       if (Number.isFinite(cl)) path.push(cl / p0 - 1);
     }
     return { fwd, mae: Number.isFinite(lo) ? lo : null, mfe: Number.isFinite(hi) ? hi : null, path };
@@ -237,10 +262,22 @@ export function createEngine(ds, cfg = {}) {
     const H = opts.horizon ?? C.horizon;
     const k = opts.k ?? C.k;
     const { sq, q } = opts.sq != null && opts.q != null ? opts : resolveIndex(opts.sym, opts.date);
-    if (q < 0) throw new Error(`no session found for ${opts.sym} ${opts.date ?? ""}`);
+    if (q < 0) throw new Error(`no session found for ${mx.syms[sq]} on or before ${opts.date}: the library starts ${mx.dates[0]}`);
     const qb = sq * nDates + q;
-    if (!mx.valid[qb]) throw new Error(`no feature row for ${mx.syms[sq]} on ${mx.dates[q]}`);
-    if (q < H + C.minHistory) throw new Error(`not enough history before ${mx.dates[q]} for a ${H}-session horizon`);
+    if (!mx.valid[qb]) {
+      // resolveIndex walks backwards to the last valid row, so reaching here means there is none at
+      // or before the requested date. Walk forwards to say which session does work.
+      let first = 0;
+      while (first < nDates && !mx.valid[sq * nDates + first]) first++;
+      throw new Error(`${mx.syms[sq]} has no feature row on or before ${mx.dates[q]}`
+        + (first < nDates
+          ? ` - its first usable session is ${mx.dates[first]}, because the expanding z-scores need ${C.minHistory} sessions of history behind them`
+          : ` - it has no usable feature row anywhere in the library`));
+    }
+    if (q < H + C.minHistory) {
+      const earliest = Math.min(nDates - 1, H + C.minHistory);
+      throw new Error(`${mx.dates[q]} is too early for ${mx.syms[sq]}: a ${H}-session horizon needs ${C.minHistory} sessions of feature history behind it, so the earliest queryable session is ${mx.dates[earliest]}`);
+    }
 
     const restrict = opts.restrict || null;
     let jLo = C.minHistory, jHi = q - H;
@@ -329,7 +366,10 @@ export function createEngine(ds, cfg = {}) {
     return {
       query: {
         sym: mx.syms[sq], name: meta[mx.syms[sq]]?.n || mx.syms[sq], sector: meta[mx.syms[sq]]?.sec || null,
-        date: mx.dates[q], idx: q, price: mx.priceA[qb], features: qFeatures, z: qRawZ, zUsed: qUsedZ,
+        // price is the ADJUSTED close (the basis every forward return uses); priceRaw is the RAW
+        // session close (the basis every MAE/MFE is measured from). Both are carried so a reader can
+        // audit either number against the price series it belongs to.
+        date: mx.dates[q], idx: q, price: mx.priceA[qb], priceRaw: mx.priceC[qb], features: qFeatures, z: qRawZ, zUsed: qUsedZ,
         stats: Object.fromEntries(FEATURES.map((f) => [f, { mu: mu[FIDX[f]], sd: sd[FIDX[f]] }]))
       },
       config: { ...C, horizon: H, k, nFeatures: NF, nMetricFeatures: NA, metricFeatures: active.map((f) => FEATURES[f]),

@@ -14,6 +14,7 @@
  */
 
 import { ALIASES } from "../src/data/universe.mjs";
+import { parseIdea, mergeContext, followUpSuggestions, detectLang } from "../src/llm/lui.mjs";
 
 /* ------------------------------ tiny helpers ------------------------------ */
 
@@ -171,11 +172,9 @@ function fanSvg(fan, { height = 250, conformal = null, unit = "frac", label = "s
 function barsSvg(rows, { unit = "%", vMax = null, diverging = false } = {}) {
   const items = rows.filter((r) => isNum(r.value));
   if (!items.length) return `<div class="chart"><p class="small">Nothing to plot.</p></div>`;
-  const rowH = 22, padL = 208, padR = 62, padT = 8;
+  const rowH = 22, padL = 182, padR = 62, padT = 8;
   const W = 860, H = padT * 2 + items.length * rowH;
   const iw = W - padL - padR;
-  const CHAR_W = 6.3;
-  const maxChars = Math.floor((padL - 14) / CHAR_W);
   const mx = vMax != null ? vMax : (Math.max(...items.map((r) => Math.abs(Number(r.value)))) * 1.08 || 1);
   const zeroX = diverging ? padL + iw / 2 : padL;
   const halfW = diverging ? iw / 2 : iw;
@@ -185,20 +184,10 @@ function barsSvg(rows, { unit = "%", vMax = null, diverging = false } = {}) {
     const w = Math.max(1, (Math.abs(v) / (mx || 1)) * halfW);
     const x = diverging ? (v < 0 ? zeroX - w : zeroX) : zeroX;
     const col = r.color || (v < 0 ? "#f85149" : "#3fb950");
-    const label = r.label.length > maxChars ? r.label.slice(0, maxChars - 1) + "\u2026" : r.label;
-    const vtext = `${num(v)}${unit}`;
-    const vw = vtext.length * CHAR_W;
-    let tx, anchor;
-    if (diverging && v < 0) {
-      tx = x - 5; anchor = "end";
-      if (tx - vw < padL - 4) { tx = x + 6; anchor = "start"; }
-    } else {
-      tx = x + w + 5; anchor = "start";
-      if (tx + vw > W - 4) { tx = x + w - 6; anchor = "end"; }
-    }
-    g += `<text class="tick" x="${padL - 8}" y="${y + 13}" text-anchor="end" fill="#9fb0c0" style="font-size:10.5px">${esc(label)}<title>${esc(r.label)}</title></text>`;
+    const tx = diverging && v < 0 ? x - 5 : x + w + 5;
+    g += `<text class="tick" x="${padL - 8}" y="${y + 13}" text-anchor="end" fill="#9fb0c0" style="font-size:10.5px">${esc(r.label)}</text>`;
     g += `<rect x="${x.toFixed(1)}" y="${y + 3}" width="${w.toFixed(1)}" height="${rowH - 8}" rx="2" fill="${col}" opacity="0.72"><title>${esc(r.label)}: ${num(v)}${esc(unit)}</title></rect>`;
-    g += `<text class="tick" x="${tx.toFixed(1)}" y="${y + 13}" text-anchor="${anchor}" fill="#e6edf3" style="font-size:10.5px">${esc(vtext)}</text>`;
+    g += `<text class="tick" x="${tx.toFixed(1)}" y="${y + 13}" text-anchor="${diverging && v < 0 ? "end" : "start"}" fill="#e6edf3" style="font-size:10.5px">${num(v)}${esc(unit)}</text>`;
   });
   return `<div class="chart">${svgEl(W, H, g)}</div>`;
 }
@@ -216,68 +205,17 @@ function zBar(z, width = 92) {
 
 /* ------------------------------ NL parsing ------------------------------- */
 
-const HORIZON_PATTERNS = [
-  { h: 1, re: /(?:next|tomorrow)\s+(?:close|session|day)|overnight|1\s*(?:个)?\s*交易日|(?:明|次)\s*(?:日|天)/i },
-  { h: 5, re: /(?:one|1|a|this|the|next)\s+(?:trading\s+)?week|5\s*(?:个)?\s*(?:sessions|days|交易日)|(?:一|1|本|下|这)\s*个?\s*(?:星期|周)/i },
-  { h: 10, re: /(?:two|2|fortnight)\s*(?:trading\s+)?weeks?|10\s*(?:个)?\s*(?:sessions|days|交易日)|(?:两|二|2)\s*个?\s*(?:星期|周)/i },
-  { h: 20, re: /(?:one|1|a|this|the|next)\s+(?:trading\s+)?month|20\s*(?:个)?\s*(?:sessions|days|交易日)|(?:一|1|个)\s*月/i },
-  { h: 40, re: /(?:two|2)\s*(?:trading\s+)?months?|40\s*(?:个)?\s*(?:sessions|days|交易日)|(?:两|二|2)\s*个?\s*月/i },
-  { h: 60, re: /(?:three|3)\s*(?:trading\s+)?months?|60\s*(?:个)?\s*(?:sessions|days|交易日)|(?:三|3)\s*个?\s*月/i }
-];
-
-/** Longest-first alias list so "Meta Platforms" beats "Meta" and 阿里巴巴 beats 阿里. */
-const ALIAS_LIST = [...ALIASES.keys()].sort((a, b) => b.length - a.length);
-const TOKEN_RE = /\$?\b[A-Z][A-Z0-9.\-]{0,6}\b/g;
-
 /**
- * Parse a free-text trade idea into {symbol, horizon, date, k, matched}. Deliberately conservative:
- * a ticker is only accepted if the analog library actually contains it.
+ * The parser is NOT in this file. It lives in src/llm/lui.mjs and is shared by the browser UI, the
+ * HTTP API (server.mjs) and the MCP tool server (mcp-server.mjs), because a desk that understands a
+ * sentence differently depending on which door you came in through is not a language interface - it is
+ * three guesses wearing one label. scripts/check-lui.mjs is its contract: a table of
+ * Chinese and English sentences, each with the exact interpretation the desk promises.
+ *
+ * What this file adds is only the adaptation to the controls: a field the sentence did not mention
+ * falls back to the dropdown, and a partial follow-up inherits the previous request.
  */
-function parseQuery(text, lib) {
-  const q = String(text || "");
-  const upper = q.toUpperCase();
-  const known = new Set((lib?.symbols || []).map((s) => s.symbol));
-  let symbol = null, matched = null;
-
-  for (const tok of upper.match(TOKEN_RE) || []) {
-    const clean = tok.replace(/^\$/, "");
-    if (known.has(clean)) { symbol = clean; matched = tok; break; }
-    const via = ALIASES.get(clean);
-    if (via && known.has(via)) { symbol = via; matched = tok; break; }
-  }
-  if (!symbol) {
-    for (const a of ALIAS_LIST) {
-      if (a.length < 2) continue;
-      if (!upper.includes(a)) continue;
-      const via = ALIASES.get(a);
-      if (via && known.has(via)) { symbol = via; matched = a; break; }
-    }
-  }
-
-  let horizon = null;
-  for (const p of HORIZON_PATTERNS) { if (p.re.test(q)) { horizon = p.h; break; } }
-  const hm = q.match(/(\d{1,3})\s*(?:个)?\s*(?:交易日|sessions?|trading days?)/i);
-  if (hm) {
-    const want = Number(hm[1]);
-    const allowed = lib?.horizons || [1, 5, 10, 20, 40, 60];
-    horizon = allowed.reduce((a, b) => (Math.abs(b - want) < Math.abs(a - want) ? b : a), allowed[0]);
-  }
-
-  let date = null;
-  const dm = q.match(/\b(20\d{2})[-/.](\d{1,2})(?:[-/.](\d{1,2}))?\b/);
-  if (dm) date = `${dm[1]}-${dm[2].padStart(2, "0")}-${(dm[3] || "15").padStart(2, "0")}`;
-
-  const km = q.match(/\b(?:k|top|neighbou?rs?|邻居|类比数)\s*[=:：]?\s*(\d{1,3})\b/i);
-  const k = km ? Math.max(10, Math.min(200, Number(km[1]))) : null;
-
-  return { symbol, horizon, date, k, matched };
-}
-
-function detectLang(text) {
-  const s = String(text || "");
-  const cjk = (s.match(/[\u4e00-\u9fff]/g) || []).length;
-  return cjk > 0 && cjk / Math.max(1, s.length) > 0.12 ? "zh" : "en";
-}
+function parseQuery(text, lib) { return parseIdea(text, lib || S.lib || {}); }
 
 const SECTION_HEADINGS = [
   { key: "verdict", en: "Verdict", zh: "结论" },
@@ -314,6 +252,7 @@ function apiRuntime() {
       const q = new URLSearchParams({ symbol: p.symbol, date: p.date || "latest", horizon: String(p.horizon), k: String(p.k), language: p.language || "auto" });
       if (p.question) q.set("question", p.question);
       if (p.includeStress === false) q.set("stress", "0");
+      if (p.riskTolerancePct) q.set("risk", String(p.riskTolerancePct));
       return get(`/api/analyze?${q}`);
     },
     async bitget() { try { return (await get("/api/bitget-probe")).bitget; } catch { return null; } }
@@ -379,7 +318,8 @@ function browserRuntime(mods) {
     async analyze(p) {
       const t0 = performance.now();
       const language = p.language && p.language !== "auto" ? p.language : detectLang(p.question || "");
-      const a = desk.analyze({ symbol: p.symbol, date: p.date || "latest", horizon: p.horizon, k: p.k, includeStress: p.includeStress !== false });
+      const a = desk.analyze({ symbol: p.symbol, date: p.date || "latest", horizon: p.horizon, k: p.k,
+        includeStress: p.includeStress !== false, riskTolerancePct: p.riskTolerancePct || null });
       const prov = mods.provenance || {};
       a.card.provenance = { ...(a.card.provenance || {}), ...prov,
         bitget: prov.bitget || { reachable: false, summary: "not probed in the static build", endpoints: [], disclosure: prov.bitgetDisclosure || null },
@@ -394,7 +334,7 @@ function browserRuntime(mods) {
 
 /* --------------------------------- state --------------------------------- */
 
-const S = { rt: null, boot: null, lib: null, last: null, busy: false, tab: "brief", started: false };
+const S = { rt: null, boot: null, lib: null, last: null, lastParsed: null, busy: false, tab: "brief", started: false };
 
 /* ------------------------------- chrome ---------------------------------- */
 
@@ -490,7 +430,7 @@ function renderCardbar(card, detail) {
   $("cardbar").innerHTML = `
     <div class="headline">
       <h2>${esc(i.name)} <span class="dim mono" style="font-size:14px">${esc(i.symbol)}</span></h2>
-      <div class="meta">as of ${esc(i.asOfSession)} &middot; adj close ${f(i.referenceClose, 4)} &middot; ${esc(i.horizonLabel)} &middot; ${d?.n ?? 0} analogs &middot; retrieval ${num(detail?.timing?.retrievalMs, 0)} ms</div>
+      <div class="meta">as of ${esc(i.asOfSession)} &middot; adj close ${f(i.referenceClose, 4)} &middot; raw close ${f(i.referenceCloseRaw, 4)} &middot; ${esc(i.horizonLabel)} &middot; ${d?.n ?? 0} analogs &middot; retrieval ${num(detail?.timing?.retrievalMs, 0)} ms</div>
     </div>
     ${kpi("median fwd", `<span class="${med.cls}">${esc(med.text)}</span>`, i.horizonLabel)}
     ${kpi("middle 80%", `${esc(p10.text)} / ${esc(p90.text)}`, "raw p10 to p90")}
@@ -548,11 +488,87 @@ function renderState(card) {
     <p class="small" style="margin-top:8px">Carried for display but <b>excluded from the distance metric</b>: <code>${esc(excluded.join(", "))}</code>. Each group keeps its full weight, redistributed over that group's usable features, and features missing on either side are dropped with the distance renormalised - a candidate is never rewarded for having holes.</p>`;
 }
 
+/**
+ * Disclose every adjustment the desk made to the request before it ran.
+ *
+ * A snapped horizon or a clamped k does not make the card wrong - the numbers are exactly what the
+ * engine computed - but it does change what they describe, because the frozen conformal scale and
+ * every published out-of-sample figure belong to k=50. That has to sit on screen next to the result,
+ * not only in the JSON payload where a reviewer will never look for it.
+ */
+function renderRequestNotes(card) {
+  const box = $("request-notes");
+  const notes = card?.retrieval?.notes || [];
+  if (!notes.length) { box.hidden = true; box.innerHTML = ""; return; }
+  box.innerHTML = `<b>This request was adjusted before it ran</b><ul>${notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>`;
+  box.hidden = false;
+}
+/**
+ * The stated-constraint panel, and the only personalisation this desk does: the person asking said
+ * how much drawdown they can hold, and the card answers that question out of the same analog sample
+ * as everything else on it. Nothing is inferred about the user, nothing is remembered between
+ * requests, and the panel is absent entirely when no tolerance was stated - a default card looks
+ * exactly like it did before this existed.
+ */
+function renderPersonal(card) {
+  const box = $("personal");
+  const pz = card && card.personalization;
+  if (!pz) { box.innerHTML = ""; return; }
+  const breach = pz.breachedSharePct;
+  const cls = breach == null ? "" : breach >= 50 ? "bad" : "info";
+  box.innerHTML = `
+    <h3>Your stated constraint</h3>
+    <div class="note ${cls}" style="margin:0">
+      ${kv([
+        ["you said you can hold", `${num(pz.tolerancePct, 0)}% drawdown`],
+        ["measured on", `${num(pz.measuredOn, 0)} analog paths over ${esc(card.idea.horizonLabel)}`],
+        ["traded through that level", `${pctPlain(breach)} <span class="muted">(${num(pz.breachedCount, 0)} of ${num(pz.measuredOn, 0)})</span>`],
+        ["never went that far", pctPlain(pz.heldSharePct)]
+      ])}
+      <p class="verdict">${esc(pz.verdict)}</p>
+      <p class="small" style="margin-top:8px;margin-bottom:0">${esc(pz.caveat)}</p>
+    </div>`;
+}
+
+/**
+ * The next four questions, phrased so the shared parser understands them, offered as chips. Every
+ * suggestion this generates is asserted by scripts/check-lui.mjs to parse back into a real request,
+ * so a chip can never offer a sentence the desk would then fail on.
+ */
+function renderFollowups(card, p) {
+  const box = $("followups");
+  if (!card || !p) { box.hidden = true; box.innerHTML = ""; return; }
+  const zh = (p.language || "en") === "zh";
+  const sym = card.idea ? card.idea.symbol : null;
+  const bench = S.lib && S.lib.benchSym;
+  const sug = followUpSuggestions(
+    { symbol: sym, horizon: card.idea ? card.idea.horizonSessions : null, riskTolerancePct: p.riskTolerancePct },
+    { language: zh ? "zh" : "en", horizons: (S.lib && S.lib.horizons) || null,
+      fallbackSymbol: bench || "SPY", alternateSymbol: bench && bench !== sym ? bench : null });
+  if (!sug.length) { box.hidden = true; box.innerHTML = ""; return; }
+  box.innerHTML = `<span class="lbl">${zh ? "接着问" : "ask next"}</span>`
+    + sug.map((s, i) => `<button type="button" data-i="${i}" title="${esc(s.q)}">${esc(s.label)}</button>`).join("");
+  box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    const s = sug[Number(b.dataset.i)];
+    if (!s) return;
+    $("q").value = s.q;
+    showParsed(readParams(true));
+    run();
+  }));
+  box.hidden = false;
+}
+
+
 function renderConformal(card) {
   const c = card.conformal, d = card.distribution;
   const box = $("conformal");
   if (!c) {
-    box.innerHTML = `<div class="note">No frozen conformal scale is loaded for a ${esc(card.idea.horizonLabel)} horizon. Run <code>node scripts/verify.mjs</code> to calibrate one, or pick a horizon that appears in <code>research/validation-results.json</code>.</div>`;
+    // Two different causes, and they call for different fixes: either no scale was ever fitted for
+    // this horizon, or this particular query retrieved too few completed outcomes to spread one over.
+    const n = d?.n ?? 0;
+    box.innerHTML = n < 10
+      ? `<div class="note">Only ${num(n, 0)} completed analog outcomes behind this card, and the interval needs at least 10 to have a spread worth calibrating. Widen the neighbour count, lengthen the horizon, or move the as-of date earlier.</div>`
+      : `<div class="note">No frozen conformal scale is loaded for a ${esc(card.idea.horizonLabel)} horizon. Run <code>node scripts/verify.mjs</code> to calibrate one, or pick a horizon that appears in <code>research/validation-results.json</code>.</div>`;
     return;
   }
   const lo = Math.min(c.lowerPct, d?.p10Pct ?? c.lowerPct);
@@ -629,7 +645,7 @@ function renderDist(card, detail) {
           ["MFE p90", pcHtml(e.maxFavourableP90Pct)],
           ["reward / risk (MFE med : |MAE med|)", num(e.rewardRiskRatio, 2)]
         ])}
-        <div class="note" style="margin-bottom:0">An episode can finish near flat and still have been un-holdable. MAE is the lowest intra-path print (adjusted low against the query close) and MFE the highest, both measured over the ${esc(card.idea.horizonLabel)}.</div>
+        <div class="note" style="margin-bottom:0">An episode can finish near flat and still have been un-holdable. MAE is the lowest intra-path print and MFE the highest, both measured over the ${esc(card.idea.horizonLabel)}. Excursions are raw-basis: the raw session low/high against the raw close of the decision session, one price scale throughout. Forward returns sit on a separate basis (adjusted close) and are never divided into a raw low or high.</div>
       </div>
       <div><h3 style="margin-top:0">Share of analogs that breached a drawdown</h3>${barsSvg(breach, { unit: "%", vMax: 100 })}</div>
     </div>`;
@@ -658,7 +674,7 @@ function renderStress(card) {
       <td class="num">${pctPlain(r.probabilityBelowMinus10Pct)}</td>
       <td class="num">${pcHtml(r.maxAdverseMedianPct)}</td>
       <td class="num">${pctPlain(r.probabilityOfBreaching10PctDrawdown)}</td>
-      <td class="num">${pctPlain(r.heldWithin10PctDrawdownPct)}</td></tr>`;
+      <td class="num">${pctPlain(r.heldWithin10PctDrawdown)}</td></tr>`;
   }).join("");
   $("stresstable").innerHTML = `<div class="scroll" style="max-height:none"><table>${head}<tbody>${body}</tbody></table></div>`;
 
@@ -676,10 +692,10 @@ function renderStress(card) {
         ${r.skipped ? "" : kv([
           ["analogs used", num(r.analogsUsed, 0)],
           ["median / p10 / p90 forward", `${pcHtml(r.medianForwardPct)} / ${pcHtml(r.p10ForwardPct)} / ${pcHtml(r.p90ForwardPct)}`],
-          ["\u0394 median vs baseline", `${pcHtml(r.deltaMedianVsBaselinePct)} <span class="muted">percentage points</span>`],
+          ["&Delta; median vs baseline", `${pcHtml(r.deltaMedianVsBaselinePct)} <span class="muted">percentage points</span>`],
           ["median max adverse excursion", pcHtml(r.maxAdverseMedianPct)],
           ["P(breaching a 10% drawdown)", pctPlain(r.probabilityOfBreaching10PctDrawdown)],
-          ["share holdable within 10% drawdown", pctPlain(r.heldWithin10PctDrawdownPct)]
+          ["share holdable within 10% drawdown", pctPlain(r.heldWithin10PctDrawdown)]
         ])}
         ${r.fan && r.fan.length ? `<div style="margin-top:8px">${fanSvg(r.fan, { unit: "pct", height: 190, label: "sessions ahead" })}</div>` : ""}
         <div class="caveat"><b>Engine caveat, carried verbatim:</b> ${esc(r.caveat || "")}</div>
@@ -768,7 +784,8 @@ function renderProv(card) {
       ["dataset built at", esc(p.datasetBuiltAt || "\u2013")],
       ["prices", esc(p.priceSource || "\u2013")],
       ["earnings dates", esc(p.earningsSource || "\u2013")],
-      ["return basis", "adjusted close for every return; unadjusted low/high only for excursion"]
+      ["return basis", "adjusted close for every forward return: A[q+H]/A[q] - 1"],
+      ["path-risk basis", "raw session OHLC for MAE/MFE (raw low/high over the raw close of the decision session) and for gap20 (raw open[t] / raw close[t-1] - 1); the two bases are never divided by each other"]
     ])}
     ${(p.notes || []).map((n) => `<div class="note" style="margin-top:8px">${esc(n)}</div>`).join("")}`;
 
@@ -808,15 +825,21 @@ function renderProv(card) {
 
 /* --------------------------------- run ---------------------------------- */
 
-function readParams() {
+function readParams(inherit = false) {
   const q = $("q").value.trim();
-  const parsed = parseQuery(q, S.lib);
+  // A follow-up is usually a fragment ("那 20 天呢"). Inheriting the rest of the previous request is
+  // what makes it a conversation; only run() asks for that, and every inherited field is reported.
+  // An EMPTY question box is not a fragment: it means the dropdowns are the whole request, so nothing
+  // is inherited. Without this, clearing the question and picking a different symbol re-ran the
+  // previous symbol, because the carried-over context outranked the dropdown the user just changed.
+  const parsed = inherit && q ? mergeContext(S.lastParsed, parseQuery(q, S.lib)) : parseQuery(q, S.lib);
   return {
     question: q,
     symbol: parsed.symbol || $("symbol").value,
     horizon: parsed.horizon || Number($("horizon").value),
     date: parsed.date || $("date").value || "latest",
     k: parsed.k || Number($("k").value) || 50,
+    riskTolerancePct: parsed.riskTolerancePct || null,
     language: $("lang").value === "auto" ? detectLang(q) : $("lang").value,
     includeStress: $("stress").checked,
     parsed
@@ -824,13 +847,25 @@ function readParams() {
 }
 
 function showParsed(p) {
+  const pd = p.parsed || {};
+  const inh = (pd.inherited || []).length ? ` <span class="muted">carried over: ${esc((pd.inherited || []).join(", "))}</span>` : "";
   const bits = [];
-  bits.push(p.parsed.symbol
-    ? `symbol <b>${esc(p.symbol)}</b>${p.parsed.matched ? ` <span class="muted">from "${esc(p.parsed.matched)}"</span>` : ""}`
-    : `symbol <b>${esc(p.symbol)}</b> <span class="muted">from the dropdown</span>`);
-  bits.push(`horizon <b>${p.horizon}s</b>${p.parsed.horizon ? "" : ` <span class="muted">dropdown</span>`}`);
-  bits.push(`as of <b>${esc(p.date === "latest" ? `${p.date} (${esc(S.lib?.to || "")})` : p.date)}</b>`);
+  if (pd.symbol) {
+    const from = pd.matchedHow === "fuzzy"
+      ? ` <span class="muted">typo repaired from "${esc(pd.matched)}"</span>`
+      : pd.matched && String(pd.matched).toUpperCase() !== pd.symbol
+        ? ` <span class="muted">from "${esc(pd.matched)}"</span>` : "";
+    bits.push(`symbol <b>${esc(p.symbol)}</b>${from}${inh}`);
+  } else {
+    bits.push(`symbol <b>${esc(p.symbol)}</b> <span class="muted">from the dropdown</span>${inh}`);
+  }
+  bits.push(`horizon <b>${p.horizon}s</b>` + (pd.horizon
+    ? (pd.horizonRaw && pd.horizonRaw !== pd.horizon ? ` <span class="muted">asked for ${pd.horizonRaw}</span>` : "")
+    : ` <span class="muted">dropdown</span>`));
+  bits.push(`as of <b>${esc(p.date === "latest" ? `${p.date} (${esc(S.lib?.to || "")})` : p.date)}</b>`
+    + (pd.dateHow && pd.dateHow !== "iso" && pd.dateHow !== "latest" ? ` <span class="muted">${esc(pd.dateHow)}</span>` : ""));
   bits.push(`k=<b>${p.k}</b>`);
+  if (p.riskTolerancePct) bits.push(`drawdown tolerance <b>${num(p.riskTolerancePct, 0)}%</b>`);
   bits.push(`lang <b>${esc(p.language)}</b>`);
   if (!p.includeStress) bits.push(`<span class="muted">stress suite off</span>`);
   $("parsed").innerHTML = bits.join(" &middot; ");
@@ -838,19 +873,24 @@ function showParsed(p) {
 
 async function run() {
   if (!S.rt || S.busy) return;
-  const p = readParams();
+  const p = readParams(true);
   showParsed(p);
+  S.lastParsed = p.parsed;
   if (!p.symbol) { toast("No instrument recognised. Pick one from the Symbol dropdown, or type a ticker that is in the library.", "bad"); return; }
   S.busy = true;
   const btn = $("go"), prev = btn.innerHTML;
   btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Analysing`;
   $("empty").hidden = true; $("results").hidden = false;
+  $("request-notes").hidden = true; $("request-notes").innerHTML = "";
+  renderPersonal(null); $("followups").hidden = true;
   $("cardbar").innerHTML = `<div class="headline"><h2>${esc(p.symbol)}</h2><div class="meta">retrieving analogs${p.includeStress ? " and running the stress suite" : ""}&hellip;</div></div>`;
   try {
     const r = await S.rt.analyze(p);
     if (!r || !r.card) throw new Error(r?.error || "the engine returned no research card");
     S.last = r;
     renderCardbar(r.card, r.detail);
+    renderRequestNotes(r.card);
+    renderPersonal(r.card);
     renderNarrative(r.narrative);
     renderState(r.card);
     renderConformal(r.card);
@@ -858,9 +898,12 @@ async function run() {
     renderStress(r.card);
     renderAnalogs(r.card, r.detail);
     renderProv(r.card);
+    renderFollowups(r.card, p);
     setBadges();
   } catch (e) {
     console.error(e);
+    renderPersonal(null);
+    $("followups").hidden = true;
     toast(`Analysis failed: ${e.message || e}`, "bad", 14000);
     $("cardbar").innerHTML = `<div class="headline"><h2>${esc(p.symbol)}</h2><div class="meta" style="color:var(--neg)">failed</div></div>`;
   } finally {
@@ -883,9 +926,9 @@ async function run() {
 const REQUIRED_IDS = [
   "q", "go", "symbol", "date", "horizon", "k", "lang", "stress", "chips", "parsed",
   "status", "badge-mode", "badge-runtime", "badge-lib", "badge-bitget",
-  "main", "empty", "results", "cardbar", "tabs",
+  "main", "empty", "results", "request-notes", "cardbar", "tabs", "followups",
   "panel-brief", "panel-dist", "panel-stress", "panel-analogs", "panel-prov",
-  "narrative", "state", "conformal", "dist-sub", "hist", "diststats", "fan", "excursion",
+  "narrative", "state", "conformal", "personal", "dist-sub", "hist", "diststats", "fan", "excursion",
   "stresstable", "stressdetail", "analog-note", "analogtable",
   "validation", "sources", "network", "bitget", "llmpanel"
 ];

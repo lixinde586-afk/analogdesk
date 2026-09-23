@@ -1,80 +1,80 @@
 == AnalogDesk verification ==
-dataset: 2513 sessions 2016-09-20..2026-09-18 | 71 symbols | built 2026-09-21T04:08:36.171Z
-engine init: 614ms | matrix 71x2513 | metric features 25/28 (excluded from distance: dv20z, fng, hyChg20)
-dv20z prefix-sum check: 12360 values compared, 0 mismatches, max |diff| = 9.40e-7 | naive reference 130ms, optimised full matrix build 424ms
-retrieval latency (H=5): mean 14.7ms median 13.8ms p95 14.7ms over 108 queries
+dataset: 2513 sessions 2016-09-20..2026-09-18 | 71 symbols | built 2026-09-22T13:56:48.697Z
+engine init: 637ms | matrix 71x2513 | metric features 25/28 (excluded from distance: dv20z, fng, hyChg20)
+dv20z prefix-sum check: 12360 values compared, 0 mismatches, max |diff| = 9.15e-7 | naive reference 131ms, optimised full matrix build 421ms
+retrieval latency (H=5): mean 14.7ms median 13.7ms p95 15.4ms over 108 queries
 
 -- validating H=1 (all 71 symbols, strideCalib=40, strideTest=25)
    grid: calib 1823 -> scored 1823 | test 2698 -> scored 2698  (34s)
-   fitted scale: analog 1.377 | volHarness 1.218 | pooled 1.196
+   fitted scale: analog 1.337 | volHarness 1.218 | pooled 1.196
    predictor           cov%  +/-SE  width%   matched cov%  width%
-   analogConformal     83.4   1.85    4.83           80.0    4.43
-   analogRaw           72.5   2.39    3.77           80.0    4.47
+   analogConformal     81.8   2.04    4.67           80.0    4.50
+   analogRaw           72.1   2.44    3.77           80.0    4.48
    uncondNamePIT       79.4   2.77    4.37           80.0    4.45
    volHarness          81.6   2.37     4.7           80.0    4.52
    pooledUncond        84.6   2.03    5.02           80.0    4.28
-   pre-registered sharpness vs same-name unconditional: -10.5% | matched-coverage sharpness: 0.4%
-   PIT chi2=121.3 (df=9, 5% critical 16.92) | directional hit 51.5%
+   pre-registered sharpness vs same-name unconditional: -6.9% | matched-coverage sharpness: -1.1%
+   PIT chi2=115.7 (df=9, 5% critical 16.92) | directional hit 52.3%
 
 -- validating H=5 (all 71 symbols, strideCalib=40, strideTest=25)
    grid: calib 1823 -> scored 1823 | test 2698 -> scored 2698  (34s)
-   fitted scale: analog 1.348 | volHarness 1.120 | pooled 1.095
+   fitted scale: analog 1.310 | volHarness 1.120 | pooled 1.095
    predictor           cov%  +/-SE  width%   matched cov%  width%
-   analogConformal     81.8   1.87   10.73           80.0   10.29
-   analogRaw           72.9   2.44    8.88           80.0   10.42
+   analogConformal     80.8   1.95    10.4           80.0   10.20
+   analogRaw           73.1   2.43    8.87           80.0   10.30
    uncondNamePIT       82.4   2.21   10.12           80.0    9.48
    volHarness          77.4   2.31    9.67           80.0   10.30
    pooledUncond        83.1    1.8   10.53           80.0    9.46
-   pre-registered sharpness vs same-name unconditional: -6.0% | matched-coverage sharpness: -8.5%
-   PIT chi2=212.5 (df=9, 5% critical 16.92) | directional hit 50.6%
+   pre-registered sharpness vs same-name unconditional: -2.8% | matched-coverage sharpness: -7.6%
+   PIT chi2=208.6 (df=9, 5% critical 16.92) | directional hit 50.1%
 
 -- validating H=10 (all 71 symbols, strideCalib=40, strideTest=25)
    grid: calib 1823 -> scored 1823 | test 2627 -> scored 2627  (33s)
-   fitted scale: analog 1.499 | volHarness 1.231 | pooled 1.132
+   fitted scale: analog 1.492 | volHarness 1.231 | pooled 1.132
    predictor           cov%  +/-SE  width%   matched cov%  width%
-   analogConformal     83.9   1.35      17           80.0   15.39
-   analogRaw           70.8   2.19   12.67           80.0   15.76
+   analogConformal     83.6    1.4   16.82           80.0   15.24
+   analogRaw           70.7   2.21   12.68           80.0   15.36
    uncondNamePIT       78.8   2.05   14.51           80.0   14.88
    volHarness          78.4   2.03      15           80.0   15.61
    pooledUncond        82.8   1.62    15.6           80.0   14.36
-   pre-registered sharpness vs same-name unconditional: -17.2% | matched-coverage sharpness: -3.4%
-   PIT chi2=288.2 (df=9, 5% critical 16.92) | directional hit 50.1%
+   pre-registered sharpness vs same-name unconditional: -15.9% | matched-coverage sharpness: -2.4%
+   PIT chi2=306.6 (df=9, 5% critical 16.92) | directional hit 49.8%
 
 -- validating H=20 (all 71 symbols, strideCalib=40, strideTest=25)
-   grid: calib 1823 -> scored 1823 | test 2627 -> scored 2627  (33s)
-   fitted scale: analog 1.741 | volHarness 1.403 | pooled 1.267
+   grid: calib 1823 -> scored 1823 | test 2627 -> scored 2627  (32s)
+   fitted scale: analog 1.768 | volHarness 1.403 | pooled 1.267
    predictor           cov%  +/-SE  width%   matched cov%  width%
-   analogConformal     86.9   1.65   28.75           80.0   23.85
-   analogRaw           66.4   2.17   17.96           80.0   23.94
+   analogConformal     87.4   1.64   29.03           80.0   23.42
+   analogRaw             67    2.2   17.98           80.0   23.83
    uncondNamePIT       76.6   2.14   20.91           80.0   22.66
    volHarness            80   1.89   24.17           80.0   24.19
    pooledUncond        84.5   1.57   24.89           80.0   22.02
-   pre-registered sharpness vs same-name unconditional: -37.5% | matched-coverage sharpness: -5.3%
-   PIT chi2=381.7 (df=9, 5% critical 16.92) | directional hit 53.6%
+   pre-registered sharpness vs same-name unconditional: -38.8% | matched-coverage sharpness: -3.4%
+   PIT chi2=363.9 (df=9, 5% critical 16.92) | directional hit 54.0%
 
 -- validating H=40 (all 71 symbols, strideCalib=40, strideTest=25)
-   grid: calib 1823 -> scored 1823 | test 2556 -> scored 2556  (31s)
-   fitted scale: analog 1.639 | volHarness 1.289 | pooled 1.183
+   grid: calib 1823 -> scored 1823 | test 2556 -> scored 2556  (32s)
+   fitted scale: analog 1.616 | volHarness 1.289 | pooled 1.183
    predictor           cov%  +/-SE  width%   matched cov%  width%
-   analogConformal     86.1   1.64   40.17           80.0   33.78
-   analogRaw           70.1   2.21   26.14           80.0   33.48
+   analogConformal       86   1.64   39.76           80.0   33.59
+   analogRaw           70.1   2.25   26.25           80.0   33.31
    uncondNamePIT       77.8   2.07   30.14           80.0   32.03
    volHarness            77   2.16   31.24           80.0   33.95
    pooledUncond        83.2   1.59   32.98           80.0   29.97
-   pre-registered sharpness vs same-name unconditional: -33.3% | matched-coverage sharpness: -5.5%
-   PIT chi2=286.6 (df=9, 5% critical 16.92) | directional hit 52.7%
+   pre-registered sharpness vs same-name unconditional: -31.9% | matched-coverage sharpness: -4.9%
+   PIT chi2=300.9 (df=9, 5% critical 16.92) | directional hit 54.7%
 
 -- validating H=60 (all 71 symbols, strideCalib=40, strideTest=25)
-   grid: calib 1823 -> scored 1823 | test 2485 -> scored 2485  (231s)
-   fitted scale: analog 1.522 | volHarness 1.266 | pooled 1.120
+   grid: calib 1823 -> scored 1823 | test 2485 -> scored 2485  (30s)
+   fitted scale: analog 1.494 | volHarness 1.266 | pooled 1.120
    predictor           cov%  +/-SE  width%   matched cov%  width%
-   analogConformal     83.9   1.45    43.6           80.0   40.03
-   analogRaw           70.7   1.94   31.38           80.0   38.89
+   analogConformal     82.5   1.46   43.19           80.0   40.32
+   analogRaw           70.6   1.93   31.75           80.0   39.34
    uncondNamePIT       77.8   1.61   37.72           80.0   40.05
    volHarness          76.6   1.94    37.4           80.0   40.81
    pooledUncond        82.8   1.22   38.73           80.0   35.72
-   pre-registered sharpness vs same-name unconditional: -15.6% | matched-coverage sharpness: 0.0%
-   PIT chi2=279.3 (df=9, 5% critical 16.92) | directional hit 55.5%
+   pre-registered sharpness vs same-name unconditional: -14.5% | matched-coverage sharpness: -0.7%
+   PIT chi2=284.7 (df=9, 5% critical 16.92) | directional hit 55.2%
 
 worst realised SPY-level 20-session windows in the library:
    2018-10-01 .. 2018-10-29  -9.6%
@@ -89,4 +89,4 @@ worst realised SPY-level 20-session windows in the library:
 wrote research/validation-results.json
 wrote research/VALIDATION.md
 
-total verify time 398s
+total verify time 197s

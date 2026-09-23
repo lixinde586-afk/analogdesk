@@ -72,6 +72,50 @@ const PROBE = `
   }
   window.addEventListener("error", function (ev) { steps.push("window.onerror: " + (ev.message || ev.error)); });
   window.addEventListener("unhandledrejection", function (ev) { steps.push("unhandledrejection: " + (ev.reason && (ev.reason.message || ev.reason))); });
+  // The probe must never click Analyze while a previous run is still in flight: run() returns early
+  // on S.busy, the cleared #cardbar is then never repopulated, and the wait below can only time out.
+  // These helpers make every click wait for the desk to be idle, and make a timeout self-describing.
+  function barEl() { return document.getElementById("cardbar"); }
+  function goEl() { return document.getElementById("go"); }
+  function busyText() {
+    var bar = barEl(), go = goEl();
+    return ((bar ? bar.textContent : "") + " " + (go ? go.textContent : ""));
+  }
+  function idle() {
+    var bar = barEl(), go = goEl();
+    return !!bar && !!go && !go.disabled && !/retrieving|Analysing/.test(busyText());
+  }
+  function engineReady() {
+    var br = document.getElementById("badge-runtime");
+    var sym = document.getElementById("symbol");
+    return !!br && /in-browser engine/.test(br.textContent) && !/starting/.test(br.textContent)
+      && !!sym && sym.options.length > 0;
+  }
+  function snapshot() {
+    function txt(id) {
+      var e = document.getElementById(id);
+      return e ? e.textContent.trim().slice(0, 140) : "<missing " + id + ">";
+    }
+    var go = goEl();
+    return "go.disabled=" + (go ? go.disabled : "<no #go>")
+      + " | cardbar=" + txt("cardbar") + " | toast=" + txt("toast")
+      + " | parsed=" + txt("parsed") + " | badge-runtime=" + txt("badge-runtime");
+  }
+  function clickGo() {
+    var m = 0;
+    var t2 = setInterval(function () {
+      m++;
+      if (idle()) {
+        clearInterval(t2);
+        var bar = barEl();
+        if (bar) bar.textContent = "";
+        goEl().click();
+      } else if (m > 400) {
+        clearInterval(t2);
+        finish("FAIL", "Analyze never became idle before a click | snapshot: " + snapshot());
+      }
+    }, 50);
+  }
   function waitFor(fn, label, cb) {
     var n = 0;
     var t = setInterval(function () {
@@ -79,21 +123,32 @@ const PROBE = `
       var v = null;
       try { v = fn(); } catch (e) { v = null; }
       if (v) { clearInterval(t); steps.push(label); cb(); }
-      else if (n > 600) { clearInterval(t); finish("FAIL", "timed out waiting for " + label); }
+      else if (n > 600) { clearInterval(t); finish("FAIL", "timed out waiting for " + label + " | snapshot: " + snapshot()); }
     }, 100);
   }
-  setTimeout(function () {
+  waitFor(engineReady, "engine-ready", function () {
     try {
       var q = document.getElementById("q");
       var go = document.getElementById("go");
       if (!q || !go) { finish("FAIL", "#q or #go missing from the parsed DOM"); return; }
+      // A rerun is finished only when the button is live again AND the "retrieving..." placeholder is
+      // gone. Matching on the cardbar symbol alone resolves on the placeholder, which still names the
+      // symbol, and then reads the PREVIOUS run's panels as if they were the new ones.
+      function finished(sym) {
+        var bar = document.getElementById("cardbar");
+        return !!bar && !go.disabled
+          && new RegExp(sym).test(bar.textContent)
+          && !/retrieving|Analysing/.test(bar.textContent + " " + go.textContent);
+      }
       q.value = "BABA 未来 20 个交易日，历史上相似的状态后来怎么走？";
       q.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
       steps.push("enter-dispatched");
       waitFor(function () {
         var r = document.getElementById("results");
         var n = document.getElementById("narrative");
-        return r && !r.hidden && n && n.textContent.trim().length > 100;
+        var bar = document.getElementById("cardbar");
+        return r && !r.hidden && n && n.textContent.trim().length > 100
+          && !!bar && /BABA/.test(bar.textContent) && idle();
       }, "enter-ran-analysis", function () {
         steps.push("narrative-chars=" + document.getElementById("narrative").textContent.trim().length);
         steps.push("cardbar-has-BABA=" + /BABA/.test(document.getElementById("cardbar").textContent));
@@ -111,20 +166,44 @@ const PROBE = `
         hz.value = "1";
         hz.dispatchEvent(new Event("change", { bubbles: true }));
         steps.push("hint-says-dropdown=" + /dropdown/.test(document.getElementById("parsed").textContent || ""));
-        document.getElementById("cardbar").textContent = "";
-        go.click();
-        waitFor(function () { return /SPY/.test(document.getElementById("cardbar").textContent); },
+        clickGo();
+        waitFor(function () { return finished("SPY"); },
           "analyze-button-click-reruns", function () {
             steps.push("stress-rows=" + document.querySelectorAll("#stresstable tbody tr").length);
             steps.push("analog-rows=" + document.querySelectorAll("#analogtable tbody tr").length);
             steps.push("hist-svg=" + !!document.querySelector("#hist svg"));
-            steps.push("no-fatal-banner=" + !document.getElementById("fatal"));
-            var bad = steps.filter(function (s) { return /=false$|=0$/.test(s); });
-            finish(bad.length ? "FAIL" : "PASS", bad.length ? bad.join(", ") : "");
+            // Phase 3: ask for something the desk will not run as-is (k=999, above the validated
+            // ceiling) and require the adjustment to be disclosed on the page, next to the result.
+            var kk = document.getElementById("k");
+            kk.value = "999";
+            kk.dispatchEvent(new Event("change", { bubbles: true }));
+            clickGo();
+            waitFor(function () { return finished("SPY"); },
+              "clamped-k-reruns", function () {
+                var rn = document.getElementById("request-notes");
+                var nt = rn ? rn.textContent : "";
+                steps.push("request-notes-visible=" + (!!rn && !rn.hidden));
+                steps.push("notes-name-the-ceiling=" + /ceiling/.test(nt));
+                steps.push("notes-say-k200=" + /k=200/.test(nt));
+                steps.push("notes-say-validated-k50=" + /validated k=50/.test(nt));
+                steps.push("analog-rows-at-k200=" + document.querySelectorAll("#analogtable tbody tr").length);
+                // Phase 4: a clean request must take the strip back down again.
+                kk.value = "50";
+                kk.dispatchEvent(new Event("change", { bubbles: true }));
+                clickGo();
+                waitFor(function () { return finished("SPY"); },
+                  "clean-k-reruns", function () {
+                    var rn2 = document.getElementById("request-notes");
+                    steps.push("request-notes-hidden-when-clean=" + (!!rn2 && rn2.hidden === true));
+                    steps.push("no-fatal-banner=" + !document.getElementById("fatal"));
+                    var bad = steps.filter(function (s) { return /=false$|=0$/.test(s); });
+                    finish(bad.length ? "FAIL" : "PASS", bad.length ? bad.join(", ") : "");
+                  });
+              });
           });
       });
     } catch (e) { finish("FAIL", String((e && e.message) || e)); }
-  }, 300);
+  });
 })();
 </script>`;
 
@@ -276,7 +355,7 @@ async function checkPage(name, url, expect) {
 }
 
 async function checkInteraction(url) {
-  console.log("\n=== interaction probe: type, Enter, tab click, Analyze click ===\n  " + url);
+  console.log("\n=== interaction probe: type, Enter, tab click, Analyze click, clamped k, clean k ===\n  " + url);
   const { code, out, err } = await chromeDumpDom(url);
   console.log("  chrome exit=" + code + ", dom " + out.length + " bytes");
   if (!out.length) { fail("chrome produced no DOM"); console.log(err.split("\n").slice(0, 10).join("\n")); return; }

@@ -203,8 +203,8 @@ td.sym { font-family: var(--mono); font-weight: 600; color: var(--accent); }
 
 /* ------------------------------- charts -------------------------------- */
 
-.chart { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 10px; overflow-x: auto; }
-.chart svg { display: block; width: 100%; height: auto; min-width: 620px; }
+.chart { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 10px; }
+.chart svg { display: block; width: 100%; height: auto; }
 .chart .cap { font-size: 11px; color: var(--fg-faint); font-family: var(--mono); margin-top: 6px; text-align: center; }
 .bar-pos { fill: rgba(63, 185, 80, 0.55); stroke: #3fb950; stroke-width: 0.6; }
 .bar-neg { fill: rgba(248, 81, 73, 0.5); stroke: #f85149; stroke-width: 0.6; }
@@ -236,6 +236,26 @@ td.sym { font-family: var(--mono); font-weight: 600; color: var(--accent); }
 }
 .note.info { border-left-color: var(--accent); background: var(--accent-soft); color: #bcd8f6; }
 .note.bad { border-left-color: var(--neg); background: rgba(248, 81, 73, 0.1); color: #f2b9b5; }
+
+/* Request-adjustment strip: what the desk changed about the request before it ran. */
+#request-notes { margin: 0 0 12px; }
+#request-notes b { color: #f2e3ba; letter-spacing: .01em; }
+#request-notes ul { margin: 6px 0 0; padding-left: 18px; }
+#request-notes li { margin: 4px 0; }
+
+/* Stated-constraint panel: the one piece of personalisation the desk accepts. */
+#personal { margin-top: 14px; }
+#personal .note { margin: 0; }
+#personal h3 { margin: 0 0 6px; }
+#personal .verdict { font-size: 13px; line-height: 1.55; margin: 7px 0 0; }
+
+/* Follow-up chips: the next four questions, phrased so the parser understands them. */
+.followups { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin: 16px 0 4px;
+  padding-top: 12px; border-top: 1px solid var(--line); }
+.followups .lbl { font-size: 11.5px; color: var(--fg-faint); font-family: var(--mono); margin-right: 2px; }
+.followups button { font: 12px/1 var(--mono); color: #cfe3ff; background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px; cursor: pointer; }
+.followups button:hover { border-color: var(--accent); color: #fff; }
 
 .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--line); border-top-color: var(--accent);
   border-radius: 50%; animation: sp 0.7s linear infinite; vertical-align: -2px; margin-right: 7px; }

@@ -10,10 +10,10 @@ Ordered roughly by how much they should change your mind.
 
 ## 1. The interval is NOT sharper than a naive same-name band
 
-At matched 80.0% out-of-sample coverage, the analog interval is **10.29%** wide against **9.48%** for a
-band that only knows the instrument's own point-in-time history: the analog engine is **8.5% wider**. The
-matched-coverage gain is negative at four of six horizons — H = 5 **-8.5%**, H = 10 **-3.4%**, H = 20
-**-5.3%**, H = 40 **-5.5%** — and only marginally positive at H = 1 (**+0.4%**), flat at H = 60 (0.0%).
+At matched 80.0% out-of-sample coverage, the analog interval is **10.20%** wide against **9.48%** for a
+band that only knows the instrument's own point-in-time history: the analog engine is **7.6% wider**. The
+matched-coverage gain is negative at **all six** horizons — H = 1 **-1.1%**, H = 5 **-7.6%**, H = 10
+**-2.4%**, H = 20 **-3.4%**, H = 40 **-4.9%**, H = 60 **-0.7%**.
 
 Worse for the ego: if you rank predictors by matched-coverage width **on the calibration era alone** (the
 honest way to pick, since it never touches the test era), the rule selects the *pooled unconditional* band,
@@ -21,25 +21,25 @@ whose test-era matched width is **9.46%**. Analog retrieval would not have been 
 pre-registered selection rule.
 
 What retrieval does buy: coverage discipline as the horizon lengthens (at H = 20 the analog band covers
-**86.9%** while the same-name band collapses to **76.6%**), regime adaptivity (width scales 1.94x from the
-calm to the stressed volatility tercile, corr(width, own 20-session vol) = **0.955**), and an auditable list
+**87.4%** while the same-name band collapses to **76.6%**), regime adaptivity (width scales 2.06x from the
+calm to the stressed volatility tercile, corr(width, own 20-session vol) = **0.960**), and an auditable list
 of the 50 historical episodes behind every figure. Sharpness is not on that list.
 
 ## 2. Probability calibration fails
 
-PIT chi-square **212.5** on 9 df against a 5% critical value of **16.92**: the uniformity null is rejected.
+PIT chi-square **208.6** on 9 df against a 5% critical value of **16.92**: the uniformity null is rejected.
 Median PIT is **0.580**, not 0.500. The top three deciles hold 1072 observations against 809 expected.
 
 The direction is diagnosable: realised outcomes land systematically **above** the analog median, because
 equities have a positive unconditional drift that a state-similarity metric does not model, and because
 matching on a stressed-looking state preferentially retrieves episodes that were followed by more stress.
 Consequence: **the analog median is a conservative anchor, not an expectation**, which is also why the fitted
-conformal multiplier is 1.348 rather than the Gaussian 80% value of 1.282. Any UI copy that reads the median
+conformal multiplier is 1.310 rather than the Gaussian 80% value of 1.282. Any UI copy that reads the median
 as "the expected outcome" is wrong.
 
 ## 3. There is no alpha here
 
-Directional hit rate of the analog median: **50.6%**. A coin toss. This is the expected result for
+Directional hit rate of the analog median: **50.1%**. A coin toss. This is the expected result for
 daily-feature equity prediction and it is printed on the card rather than buried. AnalogDesk answers "what
 happened next in episodes that looked like this, and how bad did the path get" — never "which way will it go".
 
@@ -49,10 +49,10 @@ Interval reliability (fraction of realised outcomes inside a band shrunk to a fr
 
 | Band fraction | Nominal | Empirical |
 |---|---|---|
-| 0.50 | 50.0% | 51.9% |
-| 0.70 | 70.0% | 65.9% |
-| 0.80 | 80.0% | 72.3% |
-| 0.90 | 90.0% | **77.8%** |
+| 0.50 | 50.0% | 50.0% |
+| 0.70 | 70.0% | 64.5% |
+| 0.80 | 80.0% | 70.4% |
+| 0.90 | 90.0% | **76.5%** |
 
 Only the full calibrated interval is trustworthy at its nominal level. A trader who narrows it to get a
 "likely range" gets a materially overconfident one, and the over-confidence grows monotonically toward the
@@ -60,11 +60,11 @@ centre. The UI shows the full p10-p90 sample range and the conformal band separa
 
 ## 5. Per-name coverage is uneven, and worst exactly where it matters most
 
-Per-symbol coverage standard deviation **8.7 pp** (53 of 71 symbols within +/-10 pp of target), against
+Per-symbol coverage standard deviation **8.5 pp** (57 of 71 symbols within +/-10 pp of target), against
 **7.2 pp** for the same-name band and **6.5 pp** for the volatility harness. Worst-covered symbols:
-**BIDU 63.2%**, MU 65.8%, NVDA 68.4%, INTC 68.4%, PLTR 68.4%. Best: DIA 100.0%, UUP/XLI/XLV 97.4%.
+**PLTR 60.5%**, MU 63.2%, INTC 65.8%, AAPL 68.4%, NVDA 68.4%. Best: DIA 100.0%, UUP 97.4%.
 
-The names with the most idiosyncratic dispersion — semis, China ADRs, recent IPOs — are covered worst, and
+The names with the most idiosyncratic dispersion — semis, high-beta tech, recent IPOs — are covered worst, and
 those are precisely the names a trader bothers to stress-test. The name-level baselines condition on
 instrument identity directly, which is the single strongest available predictor of return dispersion;
 cross-name retrieval gives some of that up in exchange for regime conditioning. No predictor in this study is
@@ -72,8 +72,8 @@ good enough to size a position from on its own.
 
 ## 6. Exchangeability is assumed and markets are not exchangeable
 
-Coverage drifts from **+6.2 pp** above target in the calm volatility tercile to **-2.7 pp** in the stressed
-tercile, and by year: 2023 **77.2%**, 2024 79.5%, 2025 **87.2%**, 2026 84.1%. Conformal guarantees hold under
+Coverage drifts from **+4.4 pp** above target in the calm volatility tercile to **-2.6 pp** in the stressed
+tercile, and by year: 2023 **75.2%**, 2024 78.5%, 2025 **87.0%**, 2026 83.3%. Conformal guarantees hold under
 exchangeability of calibration and test scores; regime breaks violate it. The practical failure mode is the
 one that matters: **in a genuinely unprecedented regime there are no analogs**, the retrieved set is a poor
 match, and the interval is wrong in the direction you cannot afford. Marginal 80% coverage still fails one
@@ -107,7 +107,9 @@ Weekend and overnight gap risk, continuous weekend repricing of a tokenised wrap
 microstructure and spread, funding and borrow costs, and depeg risk between token and underlying are **out of
 scope**. The thesis argues that a 7x24 market makes pre-trade stress testing *more* necessary; the evidence
 here is built on the 5x24 daily record that market would be layered on top of. Nothing in this repo measures
-a weekend.
+a weekend. The overnight-gap feature (`gap20`) is no exception: it is measured as raw open[t] / raw
+close[t-1] on the daily-session tape, so it quantifies 5x24 overnight gaps, not continuous weekend
+repricing of a tokenised wrapper.
 
 ## 10. No costs, no execution, no P&L
 
@@ -148,7 +150,7 @@ failure, it falls back to the persisted classified probe and labels which run th
 ## 13. The LLM layer verifies numbers, not interpretation
 
 The numeric gate traces every numeral in the generated narrative back to the engine payload (last demo run
-**142/142**; gate smoke **144/144** renders). It cannot verify an adjective. A live `qwen-plus` generation can
+**140/140**; gate smoke **144/144** renders). It cannot verify an adjective. A live `qwen-plus` generation can
 still frame a conservative median as an expectation or call a 26-analog scenario "robust" while every number
 in the sentence is correct. Mitigations: the template renderer is deterministic and is the reference copy;
 the card always states which mode produced the text; the verdict and caveats panels are engine-rendered, not
@@ -164,10 +166,12 @@ without a key or a network — reproducible and complete — but it is not a liv
 
 ## 15. Latency depends on the harness
 
-Mean **8.4 ms** per query measured across the 2698-query validation sweep (warm, amortised); **14.7 ms** mean
-/ 13.8 ms median / 14.7 ms p95 in the dedicated 108-query latency harness; **33 ms** for the single retrieval
-in the demo run record on a cold desk. Full engine build 614-626 ms, full 13-scenario stress report ~191 ms,
-peak RSS 346 MB. The honest summary is "tens of milliseconds per retrieval, sub-second for a full card".
+Mean **8.5 ms** per query measured across the 2698-query validation sweep (warm, amortised); **14.7 ms** mean
+/ 13.7 ms median / 15.4 ms p95 in the dedicated 108-query latency harness; **31 ms** for the single cold
+retrieval in the demo run record (a single cold call on a loaded laptop moves by tens of milliseconds, which
+is exactly why the amortised sweep figure is the one worth quoting). Full engine build 613-637 ms across runs
+on this machine, full research card 163 ms, full 13-scenario stress report ~191 ms, peak RSS 364 MB. The
+honest summary is "tens of milliseconds per retrieval, sub-second for a full card".
 Retrieval is an exact scan over ~178k library rows x 25 features with no ANN index; at this size an exact
 scan beats building an index. That stops being true past roughly 10^6 rows.
 
@@ -176,6 +180,40 @@ scan beats building an index. That stops being true past roughly 10^6 rows.
 Multi-name portfolios and correlation between simultaneous positions, position sizing, intraday horizons,
 non-US listings, single-name credit events, options and volatility-surface state, crypto-native instruments
 beyond BTC/ETH used as *state features*, and any form of order execution.
+
+## 17. The published validation describes one configuration: k = 50
+
+Every number in `research/VALIDATION.md` — the frozen conformal multiplier **1.310**, out-of-sample coverage
+**80.8%**, the matched-coverage comparison against the same-name band — comes from the 2698-query sweep run at
+**k = 50**. Nothing was swept over k, so this desk has no measured basis for claiming the same coverage at
+k = 10 or k = 200, and it does not claim it. k moves the answer materially. On the 2026-09-18 NVDA query at
+H = 5:
+
+| k | analogs | distinct sessions | distinct symbols | median 5-session | conformal interval | interval width |
+|---|---|---|---|---|---|---|
+| 10 | 10 | 7 | 9 | +1.47% | -2.60% .. +5.55% | 8.14% |
+| **50 (validated)** | **50** | **31** | **33** | **+0.86%** | **-4.12% .. +5.83%** | **9.95%** |
+| 200 | 200 | 126 | 53 of 71 | +0.55% | -5.67% .. +6.78% | 12.46% |
+
+The k = 10 card is seven episodes wearing a distribution's clothes. The k = 200 card draws on 53 of the 71
+instruments in the library and its median has decayed to +0.55% — it has stopped being a statement about this
+state and become a statement about the market. Both are internally consistent and neither is the thing that was
+validated.
+
+What the desk does about it, rather than leaving the reader to notice:
+
+- Horizons are snapped to the measured set (1/5/10/20/40/60); forward returns are precomputed for those only,
+  so an off-grid horizon used to return a card whose distribution was `null` and whose panels were en-dashes.
+- k is clamped to **10..200** — below 10 a spread is not meaningful and the conformal interval refuses to build
+  on fewer than 10 outcomes; above 200 retrieval stops being conditional.
+- **Any card not run at k = 50 carries an on-page disclosure** that the frozen scale and the validation panel
+  describe k = 50. The notes are in `card.retrieval.notes`, rendered as an amber strip above the card, and
+  asserted in real headless Chrome by `npm run check:browser` (k = 999 shows the strip; k = 50 hides it).
+- A request that cannot be answered at all fails with a message naming the fix (unknown symbol, session before
+  the library, insufficient history, no completed outcome at that horizon) instead of returning a hollow card.
+
+The honest fix is a per-k calibration sweep, which is a compute question, not a design one; it is listed as
+falsification criterion 5 below.
 
 ---
 
@@ -193,3 +231,6 @@ Falsification criteria, stated in advance so this is not a moving target:
    in this repo is optimistic by an unknown amount.
 4. Obtain any working tokenised-equity feed. Until then §9 stands: the 7x24 part of the thesis is argued, not
    measured.
+5. Re-fit the conformal scale per neighbour count and re-run the sweep at k = 10 / 100 / 200. Until then the
+   correct reading of a card produced at k != 50 is the one printed on it: retrieval, distribution and stress
+   are live at that k, while the interval's coverage guarantee is inherited from k = 50 (§17).

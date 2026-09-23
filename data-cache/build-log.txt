@@ -1,3 +1,7 @@
+
+> analogdesk@1.0.0 build:data
+> node src/data/build-dataset.mjs
+
 == AnalogDesk dataset build ==
 [1/5] FOMC calendar (federalreserve.gov)
       fomc dates: 92 (2012-01-25 .. 2026-09-16)
@@ -6,7 +10,6 @@
       T10YIE: 2827 obs 2015-06-01..2026-09-18
       T10Y2Y: 2827 obs 2015-06-01..2026-09-18
       DGS10: 2826 obs 2015-06-01..2026-09-17
-  [ok] fred DGS3MO
       DGS3MO: 2826 obs 2015-06-01..2026-09-17
       DFEDTARU: 4128 obs 2015-06-01..2026-09-18
       DTWEXBGS: 2815 obs 2015-06-01..2026-09-11
@@ -24,5 +27,5 @@
       ok=55 fail=0 | per co: min=24 med=46 max=92
       6-K fallback fired for 6/55: BABA, PDD, JD, BIDU, NIO, LI
 
-wrote data-cache/dataset.json (7.26 MB)
+wrote data-cache/dataset.json (8.42 MB)
 wrote data-cache/build-report.md

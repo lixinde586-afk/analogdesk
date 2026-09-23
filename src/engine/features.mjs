@@ -1,6 +1,18 @@
 /**
  * AnalogDesk feature engine - isomorphic (Node + browser), zero dependencies.
  * All features are computed from information available at the close of session i (no lookahead).
+ *
+ * TWO PRICE BASES, NEVER MIXED (see meta.priceBases in the dataset):
+ *   adjusted close  prices[sym].a - split AND dividend adjusted, the total-return basis. Every
+ *                   return-derived feature lives here: ret5/ret20/ret60, vol20, volRatio, dd60,
+ *                   relBench20, and the forward returns the engine scores analogs on.
+ *   raw session OHLC prices[sym].o/h/l/c - traded prices, split-adjusted only, all four on one
+ *                   scale. Every feature that compares a traded price with a traded price lives
+ *                   here: dist52 (raw close vs raw window high), gap20 (raw open[t]/raw close[t-1]),
+ *                   dv20z (volume x raw close) and the MAE/MFE path risk in analog.mjs.
+ * Dividing one basis by the other is a category error: the adjusted close sits below the raw close by
+ * the cumulative dividend factor (0.47x for RTX), so a mixed ratio invents a level shift that never
+ * traded. priceC carries the raw close through to the engine so path risk has an entry price.
  */
 
 export const GROUPS = [
@@ -51,8 +63,9 @@ const retK = (a, i, k) => (i - k >= 0 && a[i] != null && a[i - k] != null && a[i
 /* ---------------- matrix build ---------------- */
 /**
  * @returns {{syms:string[],dates:string[],nSym:number,nDates:number,F:Float32Array,valid:Uint8Array,
- *            priceA:Float64Array,priceO:Float64Array,priceH:Float64Array,priceL:Float64Array,
+ *            priceA:Float64Array,priceO:Float64Array,priceH:Float64Array,priceL:Float64Array,priceC:Float64Array,
  *            symOf:Uint16Array,benchIdx:number}}
+ * priceA is the adjusted close (forward returns); priceO/H/L/C are raw session OHLC (path risk, gaps).
  * F is flat: F[(symIdx*nDates + i)*NF + f]
  */
 export function buildMatrix(ds, { minHistory = 60 } = {}) {
@@ -66,6 +79,7 @@ export function buildMatrix(ds, { minHistory = 60 } = {}) {
   const priceO = new Float64Array(nSym * nDates).fill(NaN);
   const priceH = new Float64Array(nSym * nDates).fill(NaN);
   const priceL = new Float64Array(nSym * nDates).fill(NaN);
+  const priceC = new Float64Array(nSym * nDates).fill(NaN); // raw close: the entry price for path risk
   const symOf = new Uint16Array(nSym * nDates);
 
   // shared (date-level) series
@@ -95,6 +109,7 @@ export function buildMatrix(ds, { minHistory = 60 } = {}) {
   const growthSym = ds.prices.QQQ ? "QQQ" : benchSym;
   const growthIdx = syms.indexOf(growthSym);
   const bA = ds.prices[benchSym].a, gA = ds.prices[growthSym].a;
+  const bC = ds.prices[benchSym].c;
   const benchRet20 = new Float64Array(nDates).fill(NaN);
   const benchVol20 = new Float64Array(nDates).fill(NaN);
   const benchDist52 = new Float64Array(nDates).fill(NaN);
@@ -106,7 +121,8 @@ export function buildMatrix(ds, { minHistory = 60 } = {}) {
     if (i >= 20) benchVol20[i] = stdev(Array.from(bLog.subarray(i - 19, i + 1))) * Math.SQRT2 * Math.sqrt(126);
     let hh = -Infinity;
     for (let j = Math.max(0, i - 251); j <= i; j++) if (ds.prices[benchSym].h[j] != null) hh = Math.max(hh, ds.prices[benchSym].h[j]);
-    benchDist52[i] = hh > 0 && bA[i] != null ? bA[i] / hh - 1 : NaN;
+    // raw close against the raw window high: one basis, no dividend factor inside the ratio
+    benchDist52[i] = hh > 0 && bC[i] != null ? bC[i] / hh - 1 : NaN;
     growthRel20[i] = (retK(gA, i, 20) || NaN) - (benchRet20[i] || NaN);
     if (!Number.isFinite(growthRel20[i])) growthRel20[i] = NaN;
   }
@@ -116,12 +132,14 @@ export function buildMatrix(ds, { minHistory = 60 } = {}) {
   for (let si = 0; si < nSym; si++) {
     const sym = syms[si];
     const P = ds.prices[sym];
-    const a = P.a, o = P.o, h = P.h, l = P.l, v = P.v;
+    const a = P.a, o = P.o, h = P.h, l = P.l, c = P.c, v = P.v;
+    if (!c) throw new Error(`${sym}: dataset carries no raw close (prices.${sym}.c) - path risk and gap20 need the raw basis; rebuild with npm run build:data`);
     const base = si * nDates;
     const log = new Float64Array(nDates).fill(NaN);
     for (let i = 0; i < nDates; i++) {
       priceA[base + i] = a[i] ?? NaN; priceO[base + i] = o[i] ?? NaN;
       priceH[base + i] = h[i] ?? NaN; priceL[base + i] = l[i] ?? NaN;
+      priceC[base + i] = c[i] ?? NaN;
       symOf[base + i] = si;
       if (i > 0 && a[i] != null && a[i - 1] != null && a[i - 1] > 0) log[i] = Math.log(a[i] / a[i - 1]);
     }
@@ -133,7 +151,7 @@ export function buildMatrix(ds, { minHistory = 60 } = {}) {
     const dvCS = new Float64Array(nDates + 1); // cumulative dollar volume
     const dvCN = new Float64Array(nDates + 1); // cumulative count of usable sessions
     for (let i = 0; i < nDates; i++) {
-      const x = (v[i] != null && a[i] != null) ? v[i] * a[i] : NaN;
+      const x = (v[i] != null && c[i] != null) ? v[i] * c[i] : NaN; // dollar volume = shares x the price actually traded
       dvCS[i + 1] = dvCS[i] + (Number.isFinite(x) ? x : 0);
       dvCN[i + 1] = dvCN[i] + (Number.isFinite(x) ? 1 : 0);
     }
@@ -163,7 +181,8 @@ export function buildMatrix(ds, { minHistory = 60 } = {}) {
       F[row + FIDX.ret60] = retK(a, i, 60);
       let hh = -Infinity;
       for (let j = Math.max(0, i - 251); j <= i; j++) if (h[j] != null) hh = Math.max(hh, h[j]);
-      F[row + FIDX.dist52] = hh > 0 ? a[i] / hh - 1 : NaN;
+      // raw close vs the raw window high - the distance a chart reader sees, on one price basis
+      F[row + FIDX.dist52] = hh > 0 && c[i] != null ? c[i] / hh - 1 : NaN;
       if (i >= 20) F[row + FIDX.vol20] = stdev(Array.from(log.subarray(i - 19, i + 1))) * Math.sqrt(252);
       const v5 = i >= 5 ? stdev(Array.from(log.subarray(i - 4, i + 1))) * Math.sqrt(252) : NaN;
       const v20 = F[row + FIDX.vol20];
@@ -172,9 +191,12 @@ export function buildMatrix(ds, { minHistory = 60 } = {}) {
       for (let j = Math.max(0, i - 59); j <= i; j++) if (a[j] != null) pk = Math.max(pk, a[j]);
       F[row + FIDX.dd60] = pk > 0 ? a[i] / pk - 1 : NaN;
       F[row + FIDX.relBench20] = Number.isFinite(F[row + FIDX.ret20]) && Number.isFinite(benchRet20[i]) ? F[row + FIDX.ret20] - benchRet20[i] : NaN;
-      // overnight/weekend gap behaviour: proxy for 7x24 wrapper gap risk
+      // overnight/weekend gap behaviour: proxy for 7x24 wrapper gap risk.
+      // gap[t] = raw open[t] / raw close[t-1] - 1. Both sides are traded prices on one scale. Using
+      // the dividend-adjusted close as the denominator folds the cumulative dividend factor into
+      // every gap and turns a ~0.6% mean overnight gap into a ~40% artefact on a heavy payer.
       let gs = 0, gn = 0;
-      for (let j = Math.max(1, i - 19); j <= i; j++) if (o[j] != null && a[j - 1] != null && a[j - 1] > 0) { gs += Math.abs(o[j] / a[j - 1] - 1); gn++; }
+      for (let j = Math.max(1, i - 19); j <= i; j++) if (o[j] != null && c[j - 1] != null && c[j - 1] > 0) { gs += Math.abs(o[j] / c[j - 1] - 1); gn++; }
       F[row + FIDX.gap20] = gn ? gs / gn : NaN;
       F[row + FIDX.dv20z] = dvSd[i] > 0 ? (dv20[i] - dvMu[i]) / dvSd[i] : NaN;
       // ---- market group ----
@@ -208,7 +230,7 @@ export function buildMatrix(ds, { minHistory = 60 } = {}) {
       if (ok && Number.isFinite(F[row + FIDX.ret20]) && Number.isFinite(F[row + FIDX.vol20])) valid[base + i] = 1;
     }
   }
-  return { syms, dates, nSym, nDates, NF, F, valid, priceA, priceO, priceH, priceL, symOf, benchIdx, growthIdx, benchSym };
+  return { syms, dates, nSym, nDates, NF, F, valid, priceA, priceO, priceH, priceL, priceC, symOf, benchIdx, growthIdx, benchSym };
 }
 
 /* ---------------- standardisation ---------------- */
