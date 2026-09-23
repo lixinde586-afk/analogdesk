@@ -1,5 +1,0 @@
-AnalogDesk — my #BitgetHackathon entry for the AI Trading Desk track. @Bitget_AI
-
-Type a trade idea. It pulls the 50 closest historical market states and shows what actually happened next — tails and path risk, not a price target.
-
-Try it, no login: https://lixinde586-afk.github.io/analogdesk/

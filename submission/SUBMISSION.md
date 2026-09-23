@@ -613,7 +613,8 @@ https://x.com/Bitget_AI/status/2100519318824055159?s=20, substantive product int
 4. Post. Then copy your post's URL (Share -> Copy link) into the form field **X Promotional Post Link**.
 5. Optional, and it helps the Best Spread Award: reply to your own post with **F4**, then with **F5**.
 
-Those `.txt` files are generated from the blocks below by `npm run xpost`, which also recomputes the weighted
+Those `.txt` files are generated from the blocks below by `npm run xpost` (they are gitignored - run it once
+before posting), which also recomputes the weighted
 length of every block and **aborts if any of them exceeds 280 or drops the tag or the handle** — so the counts
 in the headings are measured, not hand-entered. Counting follows X's own rule: U+0000–U+10FF, U+2000–U+200F,
 U+2010–U+201F and U+2032–U+2037 weigh 1, everything else (CJK, full-width punctuation, emoji) weighs 2, and

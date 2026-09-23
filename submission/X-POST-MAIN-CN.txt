@@ -1,5 +1,0 @@
-为 #BitgetHackathon AI Trading Desk 赛道做的 AnalogDesk @Bitget_AI
-
-开仓前的决策压力测试台：输入一句交易想法，检索历史上最相似的 50 个市场状态，告诉你之后真实发生了什么——含左尾与路径风险，数字全部引擎可回溯。
-
-免登录试用：https://lixinde586-afk.github.io/analogdesk/

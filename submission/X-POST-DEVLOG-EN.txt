@@ -1,5 +1,0 @@
-AnalogDesk's proudest feature is a negative result. #BitgetHackathon @Bitget_AI
-
-2698 out-of-sample queries: coverage 80.8% vs an 80% target. But at matched coverage the interval is 7.6% WIDER than one that only knows the stock's own history.
-
-Every card admits it in plain text.
