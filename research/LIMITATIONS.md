@@ -100,16 +100,67 @@ the library are 2020-02-21..2020-03-20 (**-31%**), 2018-12-03..2019-01-03 (-12%)
 (-12%), 2025-03-07..2025-04-04 (-12%). A desk that cannot retrieve the global financial crisis will
 understate worst-case paths for any instrument whose tail behaviour is shaped by credit contagion.
 
-## 9. The 7x24 thesis is not tested by this evidence
+## 9. The 7x24 thesis: the wrapper layer is now measured; the outcome distribution is still 5x24
 
-This is the biggest gap between the story and the data, stated plainly: all prices are **US daily sessions**.
-Weekend and overnight gap risk, continuous weekend repricing of a tokenised wrapper, the wrapper's own
-microstructure and spread, funding and borrow costs, and depeg risk between token and underlying are **out of
-scope**. The thesis argues that a 7x24 market makes pre-trade stress testing *more* necessary; the evidence
-here is built on the 5x24 daily record that market would be layered on top of. Nothing in this repo measures
-a weekend. The overnight-gap feature (`gap20`) is no exception: it is measured as raw open[t] / raw
-close[t-1] on the daily-session tape, so it quantifies 5x24 overnight gaps, not continuous weekend
-repricing of a tokenised wrapper.
+**What used to be true here, and is now fixed.** This section said, correctly, that nothing in the repo
+measured a weekend: every price was a US daily session, so "trades 7x24" was the one headline claim with no
+number behind it. `scripts/measure-wrapper.mjs` now measures it, `data-cache/wrapper-probe.json` commits the
+result, `npm run check:wrapper` gates it, every research card carries it as `card.wrapper`, and the UI has a
+`7x24 wrapper` tab. Measured on Gate.io spot v4 (public, keyless — reachable from this network, unlike the
+Bitget MCP), snapshot `2026-09-23T10:51:11Z`:
+
+- **The reference cash market is closed for 81.4% of the week** — 136.67 of 168 hours. Derived from the
+  library's own 2513-session calendar (4.819 sessions/week x 6.5h = 31.33h open), so it needs no venue.
+- **A median 60.9% of a wrapper's own realised hourly price movement happens in those closed hours**
+  (range 46.2% – 79.9% across 33 pairs, 720 hourly candles each). This is the number the thesis needed.
+- **33 tokenised-equity wrappers verified** against 33 of the 71 library instruments (46.5% coverage) out of
+  256 candidates. **192 candidates were refused and every refusal is recorded with its reason.**
+- Tracking: median daily-return correlation **0.9561**, median tracking error **47 bp/day**, tiers
+  **14 tight / 14 fair / 5 loose** — and the tier is printed next to every figure, because a loose tracker
+  must never be read as the underlying.
+- Premium over the raw close: median **0.08%**, but a p90 as wide as **4.09%** on the worst name.
+- Liquidity at the snapshot: median spread **33.13 bp** (best 5 bp, worst 327 bp), median **44,765 USDT**
+  resting within 50 bp of the touch, median 24h quote volume **739,971 USDT**.
+
+Verification is **two independent tests, not one**: price within +/-7% of the underlying's **raw** session
+close (never the dividend-adjusted close, which sits below it by the cumulative dividend factor), *and*
+daily-return correlation >= 0.5 over >= 20 overlapping sessions. The price test alone is not enough and was
+caught being not enough — **LINK (Chainlink) trades near LI Auto's share price**, passes the price test, and
+is refused by the correlation test at 0.227. `npm run check:wrapper` asserts that specific rejection by
+name, so quietly loosening the floor fails the build.
+
+**What is still not measured — and this is the part that matters.**
+
+- **The outcome distribution is unchanged and still 5x24.** Every forward return, the frozen conformal scale
+  and every validation figure are computed from daily primary-market sessions. The wrapper block describes
+  the *instrument*; it never enters retrieval, calibration or stress. Adding a venue must not be able to
+  move a published number, so by construction it cannot.
+- **No weekend-only return distribution.** That needs a longer hourly wrapper history than the 720-hour
+  window used here. What is measured is the *share* of movement outside cash hours, not its weekend-only
+  distribution, so weekend gap risk in the wrapper is still inferred rather than observed.
+- **The closed-hours convention is deliberately conservative.** US cash hours are 13:30–20:00 UTC in daylight
+  time and 14:30–21:00 UTC in standard time; the measurement counts every Mon–Fri hourly bucket from 13:00 to
+  20:59 UTC as open — 40h/week against the real 32.5h. Any bias in the 60.9% is therefore **downward**: it
+  understates the closed-hours share rather than flattering the thesis.
+- **One venue, and not Bitget's.** The Bitget official MCP is still unreachable (§12), so these figures
+  describe Gate.io's tokenised equities. Issuer, custody and redemption design differ between venues, and a
+  Bitget-listed wrapper on the same ticker would not necessarily reproduce them. Three issuer suffix families
+  were found (`G` 27, `ON` 20, `X` 17 candidates); the canonical wrapper reported per underlying is the
+  verified one with the highest 24h quote volume, and the others are recorded as `duplicate` rejections.
+- **38 of 71 instruments have no verified wrapper** — including META, KWEB, PDD, NIO, JD, BIDU and every
+  sector ETF except SPY / QQQ / GLD / TLT. For those the desk reports the calendar figure only and states
+  that no wrapper was verified. It never borrows a sibling instrument's numbers.
+- **A snapshot is a snapshot.** Order books change every second and this one was taken in calm conditions.
+  Spreads widen precisely in the liquidity-air-pocket state the stress suite describes, so the measured
+  33 bp median is a floor for that scenario, not an estimate inside it.
+- **Premium is measured against the same calendar date's raw close**, not against the underlying at the hour
+  the wrapper traded — a daily-basis comparison, not a point-in-time intraday one.
+- Funding cost, borrow cost and a depeg event study remain **out of scope**.
+
+The overnight-gap feature (`gap20`) is unchanged: it is raw open[t] / raw close[t-1] on the daily-session
+tape, so it quantifies 5x24 overnight gaps, not continuous weekend repricing. What *is* new is that the
+scenario which always cited that as a limitation — `liquidity-air-pocket` — now carries the measured
+closed-hours figures inside its own caveat instead of only confessing to the gap.
 
 ## 10. No costs, no execution, no P&L
 
@@ -136,16 +187,38 @@ horizon.
   breaks the build; the raw HTTP cache and the committed `dataset.json` make the shipped artefacts
   reproducible offline regardless.
 
-## 12. Bitget official MCP was unreachable for this build
+## 12. Bitget: two integrations, opposite results, both disclosed
 
-**0 of 3** endpoints reachable; every attempt fails at the TCP layer (`connection-reset: TCP connection reset
-by peer before any HTTP response`, probed 2026-09-21T06:00:38.530Z). Consequences: no Bitget-sourced figure
-anywhere in the product, no live verification of tokenised-instrument quotes or spreads, and no evidence for
-the 7x24 microstructure claims in §9. The connector (`src/data/bitget.mjs`) is implemented, probes at
-start-up, classifies transport errors precisely, and renders the degradation in the provenance panel of every
-card and in `demo/RUN-RECORD.md` §8. Where a run has no direct network egress and can only report a generic
-failure, it falls back to the persisted classified probe and labels which run the evidence came from
+Bitget appears in this project in two separate places, and the honest summary is neither "0 endpoints" nor
+"Bitget connected" — it is one of each. `probeAllBitget()` reports the two groups separately and `reachable`
+deliberately keeps meaning *the market-data toolkit is reachable*, so no panel can start claiming a Bitget
+data integration that does not exist. The header badge reads `bitget: data unreachable · gateway reachable`
+for exactly that reason.
+
+**Market data — 0 of 3 reachable.** `agent.bitget.com/mcp` (JSON-RPC `tools/list`), `www.bitget.com` and
+`api.bitget.com` each fail at the TCP layer: `connection-reset — TCP connection reset by peer before any HTTP
+response`. Re-probed `2026-09-23T11:39Z`, and the same result reproduced from a second independent network,
+so it is not one machine's egress. Consequences, stated plainly: AnalogDesk ships **no Bitget-sourced market
+figure**; every number comes from the keyless sources in `DATA-PROVENANCE.md`; there is no live verification
+of tokenised-instrument quotes or spreads from Bitget; and the §9 wrapper measurement had to be taken on a
+different venue. The connector (`src/data/bitget.mjs`) is implemented, probes at start-up, classifies
+transport errors precisely by walking the `cause` chain, and renders the degradation in the provenance panel
+of every card and in `demo/RUN-RECORD.md` §8. Where a run has no direct network egress and can only report a
+generic failure, it falls back to the persisted classified probe and labels which run the evidence came from
 (`bitgetProbeSource`) instead of printing a vaguer error.
+
+**Narrative — reachable, and on the critical path.** The Bitget-operated hackathon LLM gateway
+`https://hackathon.bitgetops.com/v1` (OpenAI-compatible `/chat/completions`) answers an unauthenticated probe
+with HTTP 401, i.e. reachable at the application layer, and it is the endpoint `src/llm/client.mjs` actually
+calls. Every LIVE-mode sentence AnalogDesk has produced, and **every generation in the committed replay cache
+that a keyless reviewer reads, came through it** — model `qwen3.8-max` with `enable_thinking:false`, the only
+model this key admits (`qwen-plus` and `qwen3-max` return 403 `Model.AccessDenied`). It supplies prose and
+never a figure: `src/llm/verify-numbers.mjs` rejects any numeral that is not present in the research card,
+and a rejected draft falls back to the deterministic template with the rejection recorded on the card.
+
+The gateway probe is sent **without a key** and with a deliberately empty message list, so reachability is
+measured without a credential ever leaving the probe, and `data-cache/network-probe.json` records only
+`keyPresent: true|false`.
 
 ## 13. The LLM layer verifies numbers, not interpretation
 

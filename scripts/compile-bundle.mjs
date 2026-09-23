@@ -238,7 +238,8 @@ function shimPayloadAssignments() {
     `globalThis.AnalogDesk.dataset = `,
     `globalThis.AnalogDesk.validationResults = `,
     `globalThis.AnalogDesk.replaySeed = `,
-    `globalThis.AnalogDesk.provenance = `
+    `globalThis.AnalogDesk.provenance = `,
+    `globalThis.AnalogDesk.wrapper = `
   ];
 }
 
@@ -271,6 +272,14 @@ function build() {
   const validationFull = readJsonOrNull(join(ROOT, "research", "validation-results.json"));
   const validation = trimmedValidation(validationFull);
   const netProbe = readJsonOrNull(join(ROOT, "data-cache", "network-probe.json"));
+  // The committed 7x24 wrapper measurement. Baked in rather than fetched: the static package makes no
+  // network call after load, and a card whose wrapper numbers came from a live order book could never
+  // match a warmed replay record. `pairs` is dropped because `bySymbol` holds the same objects -
+  // every field desk.mjs actually reads is kept, so the browser card hashes identically to the server one.
+  const wrapperFull = readJsonOrNull(join(ROOT, "data-cache", "wrapper-probe.json"));
+  const wrapper = wrapperFull ? (({ pairs, ...rest }) => rest)(wrapperFull) : null;
+  if (!wrapper) log("WARNING no data-cache/wrapper-probe.json - the static build ships no 7x24 wrapper block.");
+  else log(`wrapper: ${Object.keys(wrapper.bySymbol || {}).length} verified wrapper(s), reference market closed ${wrapper.referenceMarket?.closedSharePct}% of the week, median closed-hours move ${wrapper.summary?.medianReferenceClosedMoveSharePct}%`);
 
   // Replay cache: any generation already stored for an exact card ships with the package, so a
   // judge can see a real model-written narrative without needing a key. The template still renders
@@ -315,11 +324,22 @@ function build() {
     bitget: netProbe?.bitget || { reachable: false, summary: "not probed in the static build", endpoints: [], disclosure: null },
     llm: {
       mode: Object.keys(replaySeed).length ? "REPLAY/TEMPLATE" : "TEMPLATE", model: null, keyPresent: false,
-      baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      // The endpoint the narrative layer is configured against. It is the Bitget-operated hackathon
+      // gateway, not DashScope: the static build used to name a host this project never called, which
+      // is a small inaccuracy in exactly the panel whose job is to be accurate.
+      baseUrl: "https://hackathon.bitgetops.com/v1",
       note: "The static package ships no API key and makes no model call. The narrative is a stored generation for the exact research card if one is bundled, otherwise the deterministic template. Both pass the same numeric gate."
     },
     validationGeneratedAt: validationFull?.generatedAt || null,
-    staticBuild: { generatedAt: new Date().toISOString(), node: process.version }
+    staticBuild: { generatedAt: new Date().toISOString(), node: process.version },
+    // Same shape desk.wrapper() returns on the server, so the provenance panel renders identically in
+    // both runtimes without having to know which one it is in.
+    wrapper: wrapper ? {
+      available: Boolean(wrapper.summary && !wrapper.degradation), degraded: Boolean(wrapper.degradation),
+      measuredAt: wrapper.generatedAt || null, venueName: wrapper.venue?.name || null,
+      summary: wrapper.summary || null, referenceMarket: wrapper.referenceMarket || null,
+      verified: Object.keys(wrapper.bySymbol || {}).length
+    } : null
   };
 
   // Walking the shim's dependency list is what pulls the whole browser graph into MODULES/ORDER and
@@ -332,7 +352,7 @@ function build() {
     return transformModule(key, mod.src);
   });
 
-  return { dataset, validation, replaySeed, provenance, promptVersion, transformed, ms: Date.now() - t0, validationFull, netProbe };
+  return { dataset, validation, replaySeed, provenance, promptVersion, transformed, ms: Date.now() - t0, validationFull, netProbe, wrapper, wrapperFull };
 }
 
 /* -------------------------------- assemble -------------------------------- */
@@ -362,6 +382,7 @@ function emit() {
     `${A[1]}${JSON.stringify(b.validation)};`,
     `${A[2]}${JSON.stringify(b.replaySeed)};`,
     `${A[3]}${JSON.stringify(b.provenance)};`,
+    `${A[4]}${JSON.stringify(b.wrapper)};`,
     ``,
     `// app.js is required LAST and synchronously: it calls boot() at module scope and reads`,
     `// window.AnalogDesk there, so every field above must already be assigned. Requiring it earlier`,
@@ -411,12 +432,15 @@ function emit() {
   // figures the UI quotes without opening a 20MB file.
   writeFileSync(join(DIST, "validation-summary.json"), JSON.stringify(b.validation, null, 2), "utf8");
   if (b.netProbe) writeFileSync(join(DIST, "network-probe.json"), JSON.stringify(b.netProbe, null, 2), "utf8");
+  // The full measurement, rejections included, next to the trimmed copy inside the bundle: a reviewer
+  // reading the static site should be able to audit why a candidate was refused without cloning.
+  if (b.wrapperFull) writeFileSync(join(DIST, "wrapper-probe.json"), JSON.stringify(b.wrapperFull, null, 2), "utf8");
 
   const size = (f) => statSync(join(DIST, f)).size;
   const mb = (n) => `${(n / 1048576).toFixed(2)} MB`;
   const gz = gzipSync(Buffer.from(bundle, "utf8")).length;
   log(`bundle: ${b.transformed.length} modules, ${mb(size("app.bundle.js"))} raw, ${mb(gz)} gzipped (build ${b.ms} ms)`);
-  for (const f of ["index.html", "styles.css", "app.bundle.js", "validation-summary.json", "network-probe.json"]) {
+  for (const f of ["index.html", "styles.css", "app.bundle.js", "validation-summary.json", "network-probe.json", "wrapper-probe.json"]) {
     if (existsSync(join(DIST, f))) log(`  dist/${f.padEnd(26)} ${mb(size(f))}`);
   }
   log(`payload: library ${b.provenance.sessions} sessions x ${b.provenance.symbols} instruments (${b.provenance.from} .. ${b.provenance.to});`

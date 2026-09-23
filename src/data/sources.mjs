@@ -9,7 +9,9 @@ export const CACHE = join(ROOT, "data-cache");
 export const RAW = join(CACHE, "raw");
 mkdirSync(RAW, { recursive: true });
 
-const UA_BROWSER = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
+// Exported because two other modules need the identical string: scripts/probe-network.mjs (so the
+// reachability table is measured with the same UA the pipeline uses) and src/data/xstocks.mjs.
+export const UA_BROWSER = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
 export const UA_SEC = "AnalogDesk research-desk analogdesk@example.com"; // SEC asks for a contact UA
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

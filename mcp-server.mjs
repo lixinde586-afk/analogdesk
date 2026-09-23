@@ -62,6 +62,10 @@ const dataset = readJson(datasetPath);
 const validationResults = readJson(join(RESEARCH, "validation-results.json"))
   || readJson(join(HERE, "dist", "validation-summary.json"));
 const networkProbe = readJson(join(CACHE, "network-probe.json"));
+// The committed 7x24 wrapper measurement, so an MCP client gets the same card the UI and the HTTP
+// API produce. Loaded from disk, never fetched: the card has to hash identically everywhere or the
+// replay cache misses.
+const wrapperProbe = readJson(join(CACHE, "wrapper-probe.json"));
 
 const provenanceBase = {
   datasetBuiltAt: (dataset.meta && dataset.meta.builtAt) || null,
@@ -75,7 +79,7 @@ const provenanceBase = {
   servedOver: "mcp-stdio"
 };
 
-const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg });
+const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe });
 const luiLib = (() => {
   const l = desk.library();
   return { symbols: l.symbols, dates: l.dates, from: l.from, to: l.to, horizons: l.horizons };

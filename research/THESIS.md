@@ -138,9 +138,16 @@ without keys or connectivity still gets the complete artefact.
 The connector for the official Bitget MCP (`agent.bitget.com/mcp`, JSON-RPC `tools/list`) is implemented in
 `src/data/bitget.mjs` with timeouts and precise transport-error classification. On the network this build ran
 on, all three Bitget hosts reset at the TCP layer, so **no Bitget-sourced figure ships** and the degradation is
-disclosed on every card. If reachable, the natural additions are: the live tokenised-instrument quote and
-spread (turning the §9 limitation in `research/LIMITATIONS.md` — that the 7x24 wrapper's own microstructure is
-unmeasured — into a measurement), current funding and premium/discount to the underlying, and order-book depth
-for the size-at-which-it-breaks question that a daily-bar library cannot answer. The thesis is about the
+disclosed on every card.
+
+The §9 limitation that used to follow from this — that the 7x24 wrapper's own microstructure was unmeasured —
+has since been closed **from a venue that is reachable**: `scripts/measure-wrapper.mjs` measures tokenised US
+equities on Gate.io spot v4 (public, keyless) and commits the result to `data-cache/wrapper-probe.json`. It
+supplies exactly the quantities the list below asks for, for 33 verified wrappers: live quote and spread,
+premium/discount to the underlying, and order-book depth for the size-at-which-it-breaks question a daily-bar
+library cannot answer. What it cannot substitute for is Bitget's own instrument design — issuer, custody and
+redemption differ between venues — so if the official MCP becomes reachable, the natural addition is to
+re-run the same measurement against Bitget's listings and report both, rather than to treat one venue's
+microstructure as the market's. The thesis is about the
 market structure those instruments create; the evidence in this repo is deliberately built on sources a judge
 can reach without an account.

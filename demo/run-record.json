@@ -1,6 +1,6 @@
 {
   "schema": "analogdesk.run-record/1",
-  "generatedAt": "2026-09-23T09:29:18.122Z",
+  "generatedAt": "2026-09-23T12:17:03.647Z",
   "generatedBy": "scripts/run-demo.mjs",
   "track": {
     "hackathon": "Bitget AI Base Camp Hackathon S2",
@@ -166,33 +166,33 @@
   "narrative": {
     "mode": "LIVE",
     "model": "qwen3.8-max",
-    "promptVersion": "2",
-    "cardId": "c349657d",
-    "latencyMs": 42182,
+    "promptVersion": "3",
+    "cardId": "951f683f",
+    "latencyMs": 46548,
     "usage": {
-      "completion_tokens": 2242,
-      "prompt_tokens": 12751,
+      "completion_tokens": 2353,
+      "prompt_tokens": 15014,
       "prompt_tokens_details": {
         "cached_tokens": 0,
-        "text_tokens": 12751
+        "text_tokens": 15014
       },
-      "total_tokens": 14993
+      "total_tokens": 17367
     },
     "warnings": [],
     "numericGate": {
       "ok": true,
-      "total": 168,
+      "total": 157,
       "unsupportedCount": 0,
       "relTol": 0.005,
-      "structuralPasses": 2
+      "structuralPasses": 1
     },
     "sections": {
-      "verdict": "In the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the median realised return over the next 5 sessions was 0.86%, with a mean of 0.65% and a standard deviation of 3.8%. The distribution is slightly right-skewed (skew 0.214), but 44% of those analogs finished below zero, so the single number to anchor on is that median 0.86% gain rather than the upside outliers.",
-      "state": "The engine pulled these 50 analogs from 31 distinct sessions across 33 symbols because the current state has a specific fingerprint. NVDA is sitting -6.03% from its 52-week high (z-score 0.564) after a 60-session run of 11.82% (z-score 0.39). Its own 20-session realised volatility is elevated at 45.77% (z-score 0.824), yet the benchmark 20-session volatility is unusually quiet at 9.16% (z-score -0.574). Mean absolute overnight and weekend gaps over 20 sessions are 1.28% (z-score 0.718). WTI crude oil surged 19.24% over 20 days (z-score 1.124), the most extreme macro feature in the vector. Dollar volume is running below average with a 20-session regime z-score of -0.785 (used as -0.62). There are 45 calendar days to the next earnings release (z-score 0.663) and 0 scheduled events in the next 5 sessions (z-score -0.496). This combination of a high-volatility name near its highs against a low-volatility market, paired with an oil shock and thin dollar volume, defines the neighborhood. Only 3 of the 50 retrieved analogs are NVDA itself; the rest span Technology (9 total), Energy (4), Health Care (5), Financials (5), and various ETF sleeves.",
-      "history": "Over the 5-session horizon, the 50 analogs produced a median return of 0.86% and a mean of 0.65%. The spread is wide: the 10th percentile is -4.04%, the 25th percentile is -2.03%, the 75th percentile is 3.07%, and the 90th percentile is 4.68%. The extremes range from -7.34% to 10.25%. In 56% of the episodes the return was above zero, and in 44% it was below. Six out of the 50 episodes (12%) fell below -5%, and none fell below -10% or -20%. The histogram shows the most populated bin is around -0.38% (10% share), with a secondary cluster near 1.82% (12% share) and 3.29% (10% share). The bad tail is dominated by two specific episodes. The closest analog overall is NVDA itself on 2026-09-08 (distance 0.2999), which returned -5.9% over the next 5 sessions. Another heavy hitter is XLK on 2026-08-13 (distance 0.4178), which returned -4.02%. On the upside, NVDA on 2025-06-20 (distance 0.4317) returned 9.66%, pulling the maximum up to 10.25% across the set. The conformal prediction interval, scaled at 1.31 and fitted on 2019-2022 data, spans from -4.12% to 5.83% (width 9.95%), achieving 80.8% coverage on 2698 out-of-sample test queries from 2023 onward.",
-      "tails": "A position can end the week near flat while being un-holdable intraweek. Across the 50 analogs, the median max adverse excursion was -2.01%. At the 25th percentile, the path dipped -3.77% before recovering, and at the 10th percentile, the worst intra-horizon drawdown was -4.38%. Conversely, the median max favourable excursion was 2.55%, reaching 4.39% at the 75th percentile and 6.71% at the 90th percentile. The reward-to-risk ratio based on these excursions is 1.27. Looking at specific breach probabilities during the 5-session path: 8% of the analogs breached a 5% drawdown at some point. None of the 50 episodes breached a 10%, 15%, or 20% drawdown threshold. This means that while the endpoint distribution has a 12% chance of finishing worse than -4.04%, the intra-week path risk beyond -4.38% (the 10th percentile adverse excursion) was historically absent in this specific conditional set.",
-      "stress": "When the engine forces the analog set into known stress regimes, the picture changes materially compared to the baseline median of 0.65%. The 2020-02/03 liquidity crash scenario (48 analogs used) produces a median forward return of -5.4%, a delta of -6.26% versus baseline. The 10th percentile there is -14.14%, and 58.3% of paths breached a 10% drawdown. Caveat: central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns; it is a sample of one regime, not a forecast of the next one. The 2018-Q4 tightening scare (50 analogs) yields a median of -3.02% (delta -3.88%), with a 10th percentile of -6.18% and only 4% breaching a 10% drawdown. Caveat: it ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs. The 2022 inflation/rate bear (50 analogs) gives a median of -2.42% (delta -3.28%), a 10th percentile of -8.44%, and 16% breaching a 10% drawdown. Caveat: a nine-month window means the per-date cap of 2 analogs samples it repeatedly; treat it as a regime description, not 50 independent events. The 2024-08-05 carry unwind (36 analogs) shows a median of -2.11% (delta -2.97%) and a 10th percentile of -8.61%, with 16.7% breaching a 10% drawdown. Caveat: reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not. The 2025-04 tariff shock (26 analogs) produces a median of -2.7% (delta -3.56%) and a 10th percentile of -8.21%. Caveat: policy reversals inside the window make the tail of the distribution asymmetric in a way that is specific to that episode. A +2 sigma VIX spike (50 analogs) results in a median of -0.18% (delta -1.04%) and a 10th percentile of -7.47%. Caveat: VIX shocks mean-revert quickly, so this stresses entry timing more than terminal value. Scenarios that did not materially worsen the baseline include the 2023-03 regional bank stress (median 1.51%, delta 0.65%), the liquidity air pocket (median 0.83%, delta -0.03%), earnings day (median 1.61%, delta 0.75%), FOMC day (median 0.07%, delta -0.79%), crypto contagion (median 0.8%, delta -0.06%), China ADR de-rating (median -0.06%, delta -0.92%), policy-rate re-pricing (median -0.39%, delta -1.25%), and rates-up shock. No scenarios were skipped by the engine.",
-      "limits": "This analysis describes a historical conditional distribution, not a probability of the future. The engine's own validation states explicitly: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" Specifically, the analog conformal width is 10.4% versus 10.2% for the unconditional name-in-time band at matched coverage, and the directional hit rate is only 50.1%. The PIT chi-square statistic is 208.6, far exceeding the 16.92 critical value at the 5% level, meaning the probability integral transform is not uniform. Only 3 of the 50 retrieved analogs are NVDA itself; the rest are cross-sectional matches from other names and sectors, so idiosyncratic NVDA risks are underrepresented. The distance metric excludes dv20z, fng, and hyChg20, clipping z-scores at 3. Earnings dates for foreign private issuers come from 6-K full-text search and are noisier than domestic 8-K Item 2.02 dates. Bitget endpoints were unreachable (TCP connection reset), so no Bitget-sourced figures are present. Stress scenarios carry their own caveats regarding sample size, regime overlap, and embedded rebounds, which must be read alongside the numbers."
+      "verdict": "In the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the median realised return over the next 5 sessions was 0.86%. The distribution is wide, with a standard deviation of 3.8%, meaning that while the central tendency is mildly positive, the path routinely swings several percent in either direction before the week is out.",
+      "state": "The engine pulled these 50 analogs from 31 distinct sessions and 33 distinct symbols because the current feature vector has a specific shape. NVDA is sitting -6.03% from its 52-week high (z-score 0.564) after a 60-session return of 11.82%. Its 20-session realised volatility is elevated at 45.77% (z-score 0.824), and mean absolute overnight/weekend gaps over 20 sessions are 1.28% (z-score 0.718). Simultaneously, WTI crude oil surged 19.24% over 20 days (z-score 1.124), which is the single most extreme macro feature in the state. Dollar volume is below average, with a 20-session dollar-volume regime z-score of -0.785 (used as -0.62), while benchmark 20-session volatility is quiet at 9.16% (z-score -0.574). There are 45 calendar days to the next earnings release and 0 scheduled events in the next 5 sessions. The retrieval weighted name-specific features at 30%, market context at 20%, macro at 20%, crypto at 10%, and event timing at 20%.",
+      "history": "Over the 5-session horizon, the 50 analogs produced a mean return of 0.65% and a median of 0.86%. The spread is substantial: the 10th percentile is -4.04%, the 25th percentile is -2.03%, the 75th percentile is 3.07%, and the 90th percentile is 4.68%. The extremes range from -7.34% to 10.25%, with a slight positive skew of 0.214. In 56% of the episodes the 5-session return was above zero; in 44% it was below. Six of the 50 episodes finished below -5%, and none fell below -10% or -20%.\n\nThe closest match is NVDA itself on 2026-09-08 (distance 0.2999), which returned -5.9% over the next 5 sessions. That episode dominates the bad tail. Other NVDA matches include 2025-06-20 (distance 0.4317), which returned 9.66%, showing how widely outcomes vary even for the same ticker. The negative tail is also populated by XLK on 2026-08-13 (distance 0.4178, forward return -4.02%). The upside tail includes LLY on 2026-08-13 (distance 0.4066, forward return 3.08%) and MU on 2024-01-16 (distance 0.4111, forward return 3.45%). Energy names like CVX and XOM from late August and early September 2026 cluster near the median, reflecting the heavy oil-change feature pulling energy sector history into the neighborhood.",
+      "tails": "A position can end the week near flat but still be un-holdable through the middle. Across the 50 analogs, the median maximum adverse excursion was -2.01%. At the 25th percentile, the worst intra-week drawdown reached -3.77%, and at the 10th percentile it hit -4.38%. On the upside, the median maximum favourable excursion was 2.55%, reaching 4.39% at the 75th percentile and 6.71% at the 90th percentile. The reward-to-risk ratio based on these excursions is 1.27.\n\nLooking at specific drawdown thresholds during the 5-session path: 8 of the 50 episodes breached a 5% drawdown at some point. None breached a 10%, 15%, or 20% drawdown threshold intra-horizon. This means that while a 4% to 5% adverse swing is historically common in this state, double-digit intra-week drawdowns did not materialise in the retrieved set.",
+      "stress": "The stress scenarios isolate specific regimes to show how the baseline distribution shifts when conditions deteriorate.\n\nThe 2020-02/03 liquidity crash scenario produces the largest degradation. Across 48 analogs, the median 5-session return falls to -5.4%, which is -6.26% worse than the baseline. The 10th percentile drops to -14.14%, and 58.3% of episodes breached a 10% drawdown intra-horizon. Caveat: Central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns. It is a sample of one regime, not a forecast of the next one.\n\nThe 2018-Q4 tightening scare yields a median return of -3.02% across 50 analogs, a delta of -3.88% versus baseline. The 10th percentile is -6.18%, and only 4% breached a 10% drawdown. Caveat: Ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs.\n\nThe 2022 inflation / rate bear scenario shows a median return of -2.42% (delta -3.28%), with a 10th percentile of -8.44% and a 16% probability of breaching a 10% drawdown. Caveat: A nine-month window means the per-date cap of 2 analogs samples it repeatedly; treat it as a regime description, not 50 independent events.\n\nThe 2024-08-05 carry unwind produces a median of -2.11% (delta -2.97%) and a 10th percentile of -8.61%, with 16.7% breaching a 10% drawdown. Caveat: Reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not.\n\nThe 2025-04 tariff shock gives a median of -2.7% (delta -3.56%) and a 10th percentile of -8.21%, with 19.2% breaching a 10% drawdown. Caveat: Policy reversals inside the window make the tail of the distribution asymmetric in a way that is specific to that episode.\n\nThe Volatility spike (+2 sigma VIX) shock results in a median of -0.18% (delta -1.04%) and a 10th percentile of -7.47%. Caveat: VIX shocks mean-revert quickly, so this stresses entry timing more than terminal value.\n\nThe Liquidity air pocket shock yields a median of 0.83% (delta -0.03%) but a 10th percentile of -6.64%. Caveat: gap20 is measured on the underlying exchange session, not on a 7x24 venue. Measured on the wrapper itself (NVDAG_USDT, Gate.io spot v4): the reference market is closed for 81.4% of the week and 54.31% of the wrapper's realised hourly movement happened in those closed hours, so the gap risk this scenario describes is not hypothetical for the instrument a trader would hold.\n\nScenarios that were less severe include the 2023-03 regional bank stress (median 1.51%, delta 0.65%), Earnings release day (median 1.61%, delta 0.75%), FOMC decision day (median 0.07%, delta -0.79%), Crypto drawdown contagion (median 0.8%, delta -0.06%), China ADR de-rating (median -0.06%, delta -0.92%), and Policy-rate path re-pricing (median -0.39%, delta -1.25%). No scenarios were skipped by the engine.",
+      "limits": "This analysis has concrete limits. The engine's own validation states explicitly: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" Out of sample, the conformal interval achieved 80.8% coverage against an 80% target, but its directional hit rate is only 50.1%, and the matched coverage sharpness versus the same-name unconditional benchmark is -7.6%. The PIT chi-square statistic is 208.6 against a 5% critical value of 16.92, confirming the calibration failure.\n\nProvenance relies on keyless endpoints. Earnings dates for foreign private issuers come from 6-K full-text search and are noisier than domestic 8-K Item 2.02 filings. Bitget market-data endpoints were entirely unreachable from this network (TCP connection reset), so no Bitget-sourced market figures exist here.\n\nIf you trade this via the tokenised wrapper NVDAG_USDT on Gate.io spot v4, you are not trading the underlying. The wrapper status is measured. The reference cash market is shut for 81.4% of the week, and 54.31% of the wrapper's own realised hourly price movement occurred during those closed hours. It is classified as a fair tracker with a return correlation of 0.8971 and a tracking error of 114 bp/day over 55 overlapping sessions. The premium band over the raw close ranges from -0.44% to 0.65% (10th to 90th percentile), and the observed spread is 13.54 bps. As the card notes, a fair tracker is not the underlying, and the premium band means your exit price can differ from the reference close the analog distribution is built on."
     },
     "order": [
       "verdict",
@@ -202,11 +202,11 @@
       "stress",
       "limits"
     ],
-    "text": "[verdict]\nIn the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the median realised return over the next 5 sessions was 0.86%, with a mean of 0.65% and a standard deviation of 3.8%. The distribution is slightly right-skewed (skew 0.214), but 44% of those analogs finished below zero, so the single number to anchor on is that median 0.86% gain rather than the upside outliers.\n\n[state]\nThe engine pulled these 50 analogs from 31 distinct sessions across 33 symbols because the current state has a specific fingerprint. NVDA is sitting -6.03% from its 52-week high (z-score 0.564) after a 60-session run of 11.82% (z-score 0.39). Its own 20-session realised volatility is elevated at 45.77% (z-score 0.824), yet the benchmark 20-session volatility is unusually quiet at 9.16% (z-score -0.574). Mean absolute overnight and weekend gaps over 20 sessions are 1.28% (z-score 0.718). WTI crude oil surged 19.24% over 20 days (z-score 1.124), the most extreme macro feature in the vector. Dollar volume is running below average with a 20-session regime z-score of -0.785 (used as -0.62). There are 45 calendar days to the next earnings release (z-score 0.663) and 0 scheduled events in the next 5 sessions (z-score -0.496). This combination of a high-volatility name near its highs against a low-volatility market, paired with an oil shock and thin dollar volume, defines the neighborhood. Only 3 of the 50 retrieved analogs are NVDA itself; the rest span Technology (9 total), Energy (4), Health Care (5), Financials (5), and various ETF sleeves.\n\n[history]\nOver the 5-session horizon, the 50 analogs produced a median return of 0.86% and a mean of 0.65%. The spread is wide: the 10th percentile is -4.04%, the 25th percentile is -2.03%, the 75th percentile is 3.07%, and the 90th percentile is 4.68%. The extremes range from -7.34% to 10.25%. In 56% of the episodes the return was above zero, and in 44% it was below. Six out of the 50 episodes (12%) fell below -5%, and none fell below -10% or -20%. The histogram shows the most populated bin is around -0.38% (10% share), with a secondary cluster near 1.82% (12% share) and 3.29% (10% share). The bad tail is dominated by two specific episodes. The closest analog overall is NVDA itself on 2026-09-08 (distance 0.2999), which returned -5.9% over the next 5 sessions. Another heavy hitter is XLK on 2026-08-13 (distance 0.4178), which returned -4.02%. On the upside, NVDA on 2025-06-20 (distance 0.4317) returned 9.66%, pulling the maximum up to 10.25% across the set. The conformal prediction interval, scaled at 1.31 and fitted on 2019-2022 data, spans from -4.12% to 5.83% (width 9.95%), achieving 80.8% coverage on 2698 out-of-sample test queries from 2023 onward.\n\n[tails]\nA position can end the week near flat while being un-holdable intraweek. Across the 50 analogs, the median max adverse excursion was -2.01%. At the 25th percentile, the path dipped -3.77% before recovering, and at the 10th percentile, the worst intra-horizon drawdown was -4.38%. Conversely, the median max favourable excursion was 2.55%, reaching 4.39% at the 75th percentile and 6.71% at the 90th percentile. The reward-to-risk ratio based on these excursions is 1.27. Looking at specific breach probabilities during the 5-session path: 8% of the analogs breached a 5% drawdown at some point. None of the 50 episodes breached a 10%, 15%, or 20% drawdown threshold. This means that while the endpoint distribution has a 12% chance of finishing worse than -4.04%, the intra-week path risk beyond -4.38% (the 10th percentile adverse excursion) was historically absent in this specific conditional set.\n\n[stress]\nWhen the engine forces the analog set into known stress regimes, the picture changes materially compared to the baseline median of 0.65%. The 2020-02/03 liquidity crash scenario (48 analogs used) produces a median forward return of -5.4%, a delta of -6.26% versus baseline. The 10th percentile there is -14.14%, and 58.3% of paths breached a 10% drawdown. Caveat: central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns; it is a sample of one regime, not a forecast of the next one. The 2018-Q4 tightening scare (50 analogs) yields a median of -3.02% (delta -3.88%), with a 10th percentile of -6.18% and only 4% breaching a 10% drawdown. Caveat: it ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs. The 2022 inflation/rate bear (50 analogs) gives a median of -2.42% (delta -3.28%), a 10th percentile of -8.44%, and 16% breaching a 10% drawdown. Caveat: a nine-month window means the per-date cap of 2 analogs samples it repeatedly; treat it as a regime description, not 50 independent events. The 2024-08-05 carry unwind (36 analogs) shows a median of -2.11% (delta -2.97%) and a 10th percentile of -8.61%, with 16.7% breaching a 10% drawdown. Caveat: reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not. The 2025-04 tariff shock (26 analogs) produces a median of -2.7% (delta -3.56%) and a 10th percentile of -8.21%. Caveat: policy reversals inside the window make the tail of the distribution asymmetric in a way that is specific to that episode. A +2 sigma VIX spike (50 analogs) results in a median of -0.18% (delta -1.04%) and a 10th percentile of -7.47%. Caveat: VIX shocks mean-revert quickly, so this stresses entry timing more than terminal value. Scenarios that did not materially worsen the baseline include the 2023-03 regional bank stress (median 1.51%, delta 0.65%), the liquidity air pocket (median 0.83%, delta -0.03%), earnings day (median 1.61%, delta 0.75%), FOMC day (median 0.07%, delta -0.79%), crypto contagion (median 0.8%, delta -0.06%), China ADR de-rating (median -0.06%, delta -0.92%), policy-rate re-pricing (median -0.39%, delta -1.25%), and rates-up shock. No scenarios were skipped by the engine.\n\n[limits]\nThis analysis describes a historical conditional distribution, not a probability of the future. The engine's own validation states explicitly: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" Specifically, the analog conformal width is 10.4% versus 10.2% for the unconditional name-in-time band at matched coverage, and the directional hit rate is only 50.1%. The PIT chi-square statistic is 208.6, far exceeding the 16.92 critical value at the 5% level, meaning the probability integral transform is not uniform. Only 3 of the 50 retrieved analogs are NVDA itself; the rest are cross-sectional matches from other names and sectors, so idiosyncratic NVDA risks are underrepresented. The distance metric excludes dv20z, fng, and hyChg20, clipping z-scores at 3. Earnings dates for foreign private issuers come from 6-K full-text search and are noisier than domestic 8-K Item 2.02 dates. Bitget endpoints were unreachable (TCP connection reset), so no Bitget-sourced figures are present. Stress scenarios carry their own caveats regarding sample size, regime overlap, and embedded rebounds, which must be read alongside the numbers."
+    "text": "[verdict]\nIn the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the median realised return over the next 5 sessions was 0.86%. The distribution is wide, with a standard deviation of 3.8%, meaning that while the central tendency is mildly positive, the path routinely swings several percent in either direction before the week is out.\n\n[state]\nThe engine pulled these 50 analogs from 31 distinct sessions and 33 distinct symbols because the current feature vector has a specific shape. NVDA is sitting -6.03% from its 52-week high (z-score 0.564) after a 60-session return of 11.82%. Its 20-session realised volatility is elevated at 45.77% (z-score 0.824), and mean absolute overnight/weekend gaps over 20 sessions are 1.28% (z-score 0.718). Simultaneously, WTI crude oil surged 19.24% over 20 days (z-score 1.124), which is the single most extreme macro feature in the state. Dollar volume is below average, with a 20-session dollar-volume regime z-score of -0.785 (used as -0.62), while benchmark 20-session volatility is quiet at 9.16% (z-score -0.574). There are 45 calendar days to the next earnings release and 0 scheduled events in the next 5 sessions. The retrieval weighted name-specific features at 30%, market context at 20%, macro at 20%, crypto at 10%, and event timing at 20%.\n\n[history]\nOver the 5-session horizon, the 50 analogs produced a mean return of 0.65% and a median of 0.86%. The spread is substantial: the 10th percentile is -4.04%, the 25th percentile is -2.03%, the 75th percentile is 3.07%, and the 90th percentile is 4.68%. The extremes range from -7.34% to 10.25%, with a slight positive skew of 0.214. In 56% of the episodes the 5-session return was above zero; in 44% it was below. Six of the 50 episodes finished below -5%, and none fell below -10% or -20%.\n\nThe closest match is NVDA itself on 2026-09-08 (distance 0.2999), which returned -5.9% over the next 5 sessions. That episode dominates the bad tail. Other NVDA matches include 2025-06-20 (distance 0.4317), which returned 9.66%, showing how widely outcomes vary even for the same ticker. The negative tail is also populated by XLK on 2026-08-13 (distance 0.4178, forward return -4.02%). The upside tail includes LLY on 2026-08-13 (distance 0.4066, forward return 3.08%) and MU on 2024-01-16 (distance 0.4111, forward return 3.45%). Energy names like CVX and XOM from late August and early September 2026 cluster near the median, reflecting the heavy oil-change feature pulling energy sector history into the neighborhood.\n\n[tails]\nA position can end the week near flat but still be un-holdable through the middle. Across the 50 analogs, the median maximum adverse excursion was -2.01%. At the 25th percentile, the worst intra-week drawdown reached -3.77%, and at the 10th percentile it hit -4.38%. On the upside, the median maximum favourable excursion was 2.55%, reaching 4.39% at the 75th percentile and 6.71% at the 90th percentile. The reward-to-risk ratio based on these excursions is 1.27.\n\nLooking at specific drawdown thresholds during the 5-session path: 8 of the 50 episodes breached a 5% drawdown at some point. None breached a 10%, 15%, or 20% drawdown threshold intra-horizon. This means that while a 4% to 5% adverse swing is historically common in this state, double-digit intra-week drawdowns did not materialise in the retrieved set.\n\n[stress]\nThe stress scenarios isolate specific regimes to show how the baseline distribution shifts when conditions deteriorate.\n\nThe 2020-02/03 liquidity crash scenario produces the largest degradation. Across 48 analogs, the median 5-session return falls to -5.4%, which is -6.26% worse than the baseline. The 10th percentile drops to -14.14%, and 58.3% of episodes breached a 10% drawdown intra-horizon. Caveat: Central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns. It is a sample of one regime, not a forecast of the next one.\n\nThe 2018-Q4 tightening scare yields a median return of -3.02% across 50 analogs, a delta of -3.88% versus baseline. The 10th percentile is -6.18%, and only 4% breached a 10% drawdown. Caveat: Ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs.\n\nThe 2022 inflation / rate bear scenario shows a median return of -2.42% (delta -3.28%), with a 10th percentile of -8.44% and a 16% probability of breaching a 10% drawdown. Caveat: A nine-month window means the per-date cap of 2 analogs samples it repeatedly; treat it as a regime description, not 50 independent events.\n\nThe 2024-08-05 carry unwind produces a median of -2.11% (delta -2.97%) and a 10th percentile of -8.61%, with 16.7% breaching a 10% drawdown. Caveat: Reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not.\n\nThe 2025-04 tariff shock gives a median of -2.7% (delta -3.56%) and a 10th percentile of -8.21%, with 19.2% breaching a 10% drawdown. Caveat: Policy reversals inside the window make the tail of the distribution asymmetric in a way that is specific to that episode.\n\nThe Volatility spike (+2 sigma VIX) shock results in a median of -0.18% (delta -1.04%) and a 10th percentile of -7.47%. Caveat: VIX shocks mean-revert quickly, so this stresses entry timing more than terminal value.\n\nThe Liquidity air pocket shock yields a median of 0.83% (delta -0.03%) but a 10th percentile of -6.64%. Caveat: gap20 is measured on the underlying exchange session, not on a 7x24 venue. Measured on the wrapper itself (NVDAG_USDT, Gate.io spot v4): the reference market is closed for 81.4% of the week and 54.31% of the wrapper's realised hourly movement happened in those closed hours, so the gap risk this scenario describes is not hypothetical for the instrument a trader would hold.\n\nScenarios that were less severe include the 2023-03 regional bank stress (median 1.51%, delta 0.65%), Earnings release day (median 1.61%, delta 0.75%), FOMC decision day (median 0.07%, delta -0.79%), Crypto drawdown contagion (median 0.8%, delta -0.06%), China ADR de-rating (median -0.06%, delta -0.92%), and Policy-rate path re-pricing (median -0.39%, delta -1.25%). No scenarios were skipped by the engine.\n\n[limits]\nThis analysis has concrete limits. The engine's own validation states explicitly: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" Out of sample, the conformal interval achieved 80.8% coverage against an 80% target, but its directional hit rate is only 50.1%, and the matched coverage sharpness versus the same-name unconditional benchmark is -7.6%. The PIT chi-square statistic is 208.6 against a 5% critical value of 16.92, confirming the calibration failure.\n\nProvenance relies on keyless endpoints. Earnings dates for foreign private issuers come from 6-K full-text search and are noisier than domestic 8-K Item 2.02 filings. Bitget market-data endpoints were entirely unreachable from this network (TCP connection reset), so no Bitget-sourced market figures exist here.\n\nIf you trade this via the tokenised wrapper NVDAG_USDT on Gate.io spot v4, you are not trading the underlying. The wrapper status is measured. The reference cash market is shut for 81.4% of the week, and 54.31% of the wrapper's own realised hourly price movement occurred during those closed hours. It is classified as a fair tracker with a return correlation of 0.8971 and a tracking error of 114 bp/day over 55 overlapping sessions. The premium band over the raw close ranges from -0.44% to 0.65% (10th to 90th percentile), and the observed spread is 13.54 bps. As the card notes, a fair tracker is not the underlying, and the premium band means your exit price can differ from the reference close the analog distribution is built on."
   },
   "card": {
     "schema": "analogdesk.research-card/1",
-    "generatedAt": "2026-09-23T09:29:20.597Z",
+    "generatedAt": "2026-09-23T12:17:09.567Z",
     "idea": {
       "symbol": "NVDA",
       "name": "NVIDIA",
@@ -1302,7 +1302,7 @@
           "7x24"
         ],
         "why": "Wide realised gaps plus a falling, more volatile tape: the state in which a tokenized-stock wrapper is hardest to exit, because the underlying reference market is closed while the wrapper still trades.",
-        "caveat": "gap20 is measured on the underlying exchange session, not on a 7x24 venue. It bounds the reference-market gap risk only.",
+        "caveat": "gap20 is measured on the underlying exchange session, not on a 7x24 venue. It bounds the reference-market gap risk only. The wrapper layer is measured separately: when a tokenised wrapper for this instrument was verified, the desk appends the measured closed-hours figures to this caveat rather than leaving the gap merely confessed to. Measured on the wrapper itself (NVDAG_USDT, Gate.io spot v4 (public, keyless)): the reference market is closed for 81.4% of the week and 54.31% of the wrapper's realised hourly movement happened in those closed hours, so the gap risk this scenario describes is not hypothetical for the instrument a trader would hold.",
         "skipped": null,
         "analogsUsed": 50,
         "medianForwardPct": 0.83,
@@ -1618,8 +1618,8 @@
       },
       "notes": [],
       "networkProbe": {
-        "generatedAt": "2026-09-21T05:59:50.191Z",
-        "summary": "6 used sources reachable; 5 candidate sources not used (3 of them unreachable from this machine); Bitget unreachable.",
+        "generatedAt": "2026-09-23T11:30:15.792Z",
+        "summary": "8 used sources reachable; 5 candidate sources not used (3 of them unreachable from this machine); Bitget market-data toolkit unreachable (0/3); Bitget narrative gateway reachable.",
         "host": "win32",
         "node": "v24.21.0",
         "usedSources": [
@@ -1628,7 +1628,9 @@
           "efts.sec.gov",
           "www.federalreserve.gov",
           "coins.llama.fi",
-          "api.alternative.me"
+          "api.alternative.me",
+          "hackathon.bitgetops.com",
+          "api.gateio.ws"
         ],
         "unusedSources": [
           {
@@ -1643,33 +1645,33 @@
             "name": "stooq.com",
             "role": "NOT USED - reachable but kept out of the pipeline so every source is a single keyless endpoint with a stable contract",
             "reachable": true,
-            "status": 200,
-            "kind": "ok",
-            "detail": null
+            "status": 403,
+            "kind": "http-403",
+            "detail": "reachable, responded 403"
           },
           {
             "name": "api.coingecko.com",
             "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
             "reachable": false,
             "status": null,
-            "kind": "connect-timeout",
-            "detail": "undici connect timeout"
+            "kind": "timeout",
+            "detail": "no TCP or TLS response within the probe timeout"
           },
           {
             "name": "api.kraken.com",
             "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
             "reachable": false,
             "status": null,
-            "kind": "connect-timeout",
-            "detail": "undici connect timeout"
+            "kind": "timeout",
+            "detail": "no TCP or TLS response within the probe timeout"
           },
           {
             "name": "en.wikipedia.org",
             "role": "NOT USED - unreachable from this network (connect timeout); no narrative depends on it",
             "reachable": false,
             "status": null,
-            "kind": "connect-timeout",
-            "detail": "undici connect timeout"
+            "kind": "timeout",
+            "detail": "no TCP or TLS response within the probe timeout"
           }
         ],
         "rejectedSources": [
@@ -1678,24 +1680,24 @@
             "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
             "reachable": false,
             "status": null,
-            "kind": "connect-timeout",
-            "detail": "undici connect timeout"
+            "kind": "timeout",
+            "detail": "no TCP or TLS response within the probe timeout"
           },
           {
             "name": "api.kraken.com",
             "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
             "reachable": false,
             "status": null,
-            "kind": "connect-timeout",
-            "detail": "undici connect timeout"
+            "kind": "timeout",
+            "detail": "no TCP or TLS response within the probe timeout"
           },
           {
             "name": "en.wikipedia.org",
             "role": "NOT USED - unreachable from this network (connect timeout); no narrative depends on it",
             "reachable": false,
             "status": null,
-            "kind": "connect-timeout",
-            "detail": "undici connect timeout"
+            "kind": "timeout",
+            "detail": "no TCP or TLS response within the probe timeout"
           }
         ],
         "targets": [
@@ -1706,7 +1708,7 @@
             "status": 200,
             "kind": "ok",
             "detail": null,
-            "latencyMs": 971
+            "latencyMs": 1086
           },
           {
             "name": "fred.stlouisfed.org",
@@ -1715,7 +1717,7 @@
             "status": 200,
             "kind": "ok",
             "detail": null,
-            "latencyMs": 1234
+            "latencyMs": 1122
           },
           {
             "name": "efts.sec.gov",
@@ -1724,7 +1726,7 @@
             "status": 200,
             "kind": "ok",
             "detail": null,
-            "latencyMs": 3640
+            "latencyMs": 5162
           },
           {
             "name": "www.federalreserve.gov",
@@ -1733,7 +1735,7 @@
             "status": 200,
             "kind": "ok",
             "detail": null,
-            "latencyMs": 1544
+            "latencyMs": 1379
           },
           {
             "name": "coins.llama.fi",
@@ -1742,7 +1744,7 @@
             "status": 200,
             "kind": "ok",
             "detail": null,
-            "latencyMs": 853
+            "latencyMs": 1928
           },
           {
             "name": "api.alternative.me",
@@ -1751,7 +1753,7 @@
             "status": 200,
             "kind": "ok",
             "detail": null,
-            "latencyMs": 1285
+            "latencyMs": 1164
           },
           {
             "name": "api.github.com",
@@ -1760,7 +1762,7 @@
             "status": 200,
             "kind": "ok",
             "detail": null,
-            "latencyMs": 568
+            "latencyMs": 536
           },
           {
             "name": "registry.npmjs.org",
@@ -1769,16 +1771,25 @@
             "status": 200,
             "kind": "ok",
             "detail": null,
-            "latencyMs": 1806
+            "latencyMs": 1336
           },
           {
-            "name": "dashscope.aliyuncs.com",
-            "role": "OPTIONAL - Qwen (qwen-plus) OpenAI-compatible endpoint for the narrative layer; the app runs without it",
+            "name": "hackathon.bitgetops.com",
+            "role": "USED - the Bitget-operated hackathon LLM gateway the narrative layer calls (OpenAI-compatible). Probed unauthenticated, so a 401/404 is a successful reachability result and no key leaves this script.",
             "ok": true,
-            "status": 401,
-            "kind": "http-401",
-            "detail": "reachable, responded 401",
-            "latencyMs": 363
+            "status": 404,
+            "kind": "http-404",
+            "detail": "reachable, responded 404",
+            "latencyMs": 5066
+          },
+          {
+            "name": "api.gateio.ws",
+            "role": "USED - tokenised-equity wrapper layer for scripts/measure-wrapper.mjs (7x24 measurement: tracking, premium, spread, closed-hours movement). NOT a price source for the analog library.",
+            "ok": true,
+            "status": 200,
+            "kind": "ok",
+            "detail": null,
+            "latencyMs": 1191
           },
           {
             "name": "query1.finance.yahoo.com",
@@ -1787,43 +1798,43 @@
             "status": 403,
             "kind": "http-403",
             "detail": "reachable, responded 403",
-            "latencyMs": 1512
+            "latencyMs": 1410
           },
           {
             "name": "stooq.com",
             "role": "NOT USED - reachable but kept out of the pipeline so every source is a single keyless endpoint with a stable contract",
             "ok": true,
-            "status": 200,
-            "kind": "ok",
-            "detail": null,
-            "latencyMs": 1165
+            "status": 403,
+            "kind": "http-403",
+            "detail": "reachable, responded 403",
+            "latencyMs": 1178
           },
           {
             "name": "api.coingecko.com",
             "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
             "ok": false,
             "status": null,
-            "kind": "connect-timeout",
-            "detail": "undici connect timeout",
-            "latencyMs": 10488
+            "kind": "timeout",
+            "detail": "no TCP or TLS response within the probe timeout",
+            "latencyMs": 10713
           },
           {
             "name": "api.kraken.com",
             "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
             "ok": false,
             "status": null,
-            "kind": "connect-timeout",
-            "detail": "undici connect timeout",
-            "latencyMs": 10490
+            "kind": "timeout",
+            "detail": "no TCP or TLS response within the probe timeout",
+            "latencyMs": 10732
           },
           {
             "name": "en.wikipedia.org",
             "role": "NOT USED - unreachable from this network (connect timeout); no narrative depends on it",
             "ok": false,
             "status": null,
-            "kind": "connect-timeout",
-            "detail": "undici connect timeout",
-            "latencyMs": 10493
+            "kind": "timeout",
+            "detail": "no TCP or TLS response within the probe timeout",
+            "latencyMs": 10685
           }
         ]
       },
@@ -1874,7 +1885,7 @@
       "earningsSource": "efts.sec.gov full-text search (keyless, contact UA): forms=8-K q=\"Item 2.02\" for domestic filers; forms=6-K q=\"unaudited\" / q=\"financial results\" fallback for foreign private issuers; filing dates clustered at 6 calendar days",
       "horizonLabel": "5 sessions (one trading week)",
       "bitget": {
-        "probedAt": "2026-09-23T09:29:20.413Z",
+        "probedAt": "2026-09-23T12:17:09.403Z",
         "reachable": false,
         "reachableCount": 0,
         "total": 3,
@@ -1882,37 +1893,103 @@
           {
             "url": "https://agent.bitget.com/mcp",
             "name": "Bitget official MCP (US stocks / ETF, read-only)",
-            "probedAt": "2026-09-23T09:29:18.949Z",
-            "latencyMs": 433,
+            "probedAt": "2026-09-23T12:17:04.385Z",
+            "latencyMs": 1278,
             "ok": false,
             "status": null,
             "kind": "connection-reset",
             "detail": "TCP connection reset by peer before any HTTP response",
-            "transport": "jsonrpc-2.0 / tools/list"
+            "transport": "jsonrpc-2.0 / tools/list",
+            "group": "market-data"
           },
           {
             "url": "https://www.bitget.com",
             "name": "Bitget web (www)",
-            "probedAt": "2026-09-23T09:29:19.382Z",
-            "latencyMs": 630,
+            "probedAt": "2026-09-23T12:17:05.663Z",
+            "latencyMs": 641,
             "ok": false,
             "status": null,
             "kind": "connection-reset",
-            "detail": "TCP connection reset by peer before any HTTP response"
+            "detail": "TCP connection reset by peer before any HTTP response",
+            "group": "market-data"
           },
           {
             "url": "https://api.bitget.com",
             "name": "Bitget public REST (api)",
-            "probedAt": "2026-09-23T09:29:20.012Z",
-            "latencyMs": 401,
+            "probedAt": "2026-09-23T12:17:06.304Z",
+            "latencyMs": 640,
             "ok": false,
             "status": null,
             "kind": "connection-reset",
-            "detail": "TCP connection reset by peer before any HTTP response"
+            "detail": "TCP connection reset by peer before any HTTP response",
+            "group": "market-data"
           }
         ],
-        "summary": "0/3 Bitget endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response",
-        "disclosure": "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+        "marketData": {
+          "reachable": false,
+          "reachableCount": 0,
+          "total": 3,
+          "endpoints": [
+            {
+              "url": "https://agent.bitget.com/mcp",
+              "name": "Bitget official MCP (US stocks / ETF, read-only)",
+              "probedAt": "2026-09-23T12:17:04.385Z",
+              "latencyMs": 1278,
+              "ok": false,
+              "status": null,
+              "kind": "connection-reset",
+              "detail": "TCP connection reset by peer before any HTTP response",
+              "transport": "jsonrpc-2.0 / tools/list",
+              "group": "market-data"
+            },
+            {
+              "url": "https://www.bitget.com",
+              "name": "Bitget web (www)",
+              "probedAt": "2026-09-23T12:17:05.663Z",
+              "latencyMs": 641,
+              "ok": false,
+              "status": null,
+              "kind": "connection-reset",
+              "detail": "TCP connection reset by peer before any HTTP response",
+              "group": "market-data"
+            },
+            {
+              "url": "https://api.bitget.com",
+              "name": "Bitget public REST (api)",
+              "probedAt": "2026-09-23T12:17:06.304Z",
+              "latencyMs": 640,
+              "ok": false,
+              "status": null,
+              "kind": "connection-reset",
+              "detail": "TCP connection reset by peer before any HTTP response",
+              "group": "market-data"
+            }
+          ],
+          "summary": "0/3 Bitget market-data endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response",
+          "disclosure": "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced MARKET figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+        },
+        "narrative": {
+          "reachable": true,
+          "endpoint": {
+            "url": "https://hackathon.bitgetops.com/v1/chat/completions",
+            "name": "Bitget hackathon LLM gateway (OpenAI-compatible /v1/chat/completions)",
+            "probedAt": "2026-09-23T12:17:06.944Z",
+            "latencyMs": 2459,
+            "ok": true,
+            "status": 401,
+            "kind": "http-401",
+            "detail": "reachable, responded 401",
+            "transport": "openai-compatible chat/completions",
+            "group": "narrative",
+            "model": "qwen3.8-max",
+            "role": "the narrative layer calls this endpoint; the generations baked into the replay cache were produced here with model qwen3.8-max"
+          },
+          "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 2459ms) - this is the endpoint the narrative layer calls",
+          "model": "qwen3.8-max",
+          "transport": "openai-compatible chat/completions"
+        },
+        "summary": "0/3 Bitget market-data endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response; Bitget hackathon LLM gateway reachable (HTTP 401, 2459ms) - this is the endpoint the narrative layer calls",
+        "disclosure": "Two separate Bitget integrations, two separate results. MARKET DATA: the official Bitget MCP server for US stocks/ETFs and both Bitget web/API hosts are unreachable from this network (connection-reset: TCP connection reset by peer before any HTTP response), so AnalogDesk ships no Bitget-sourced market figure; every number comes from the keyless sources in research/DATA-PROVENANCE.md. NARRATIVE: the Bitget-operated hackathon LLM gateway at https://hackathon.bitgetops.com/v1 IS reachable (HTTP 401 on an unauthenticated probe), and it is the endpoint the narrative layer calls with model qwen3.8-max - the prose a reviewer reads was generated there. This distinction is reported rather than collapsed into a single badge, because either collapse would overstate or understate the integration."
       },
       "bitgetMcp": {
         "status": "degraded",
@@ -1923,8 +2000,71 @@
         "model": "qwen3.8-max",
         "baseUrl": "https://hackathon.bitgetops.com/v1",
         "keyPresent": true,
-        "promptVersion": "2"
+        "promptVersion": "3"
       }
+    },
+    "wrapper": {
+      "status": "measured",
+      "symbol": "NVDA",
+      "venueName": "Gate.io spot v4 (public, keyless)",
+      "measuredAt": "2026-09-23T10:51:11.555Z",
+      "referenceMarket": {
+        "closedSharePct": 81.4,
+        "closedHoursPerWeek": 136.67,
+        "cashOpenHoursPerWeek": 31.33,
+        "weekHours": 168,
+        "sessionsPerWeek": 4.819,
+        "sessions": 2513,
+        "from": "2016-09-20",
+        "to": "2026-09-18",
+        "note": "Computed from the library's own session calendar: 6.5 cash hours on every listed session, against 168 hours in a week. This is the share of the week in which the reference market for a tokenised US equity is shut while the wrapper keeps trading."
+      },
+      "instrument": "NVDAG_USDT",
+      "issuerSuffix": "G",
+      "tracking": {
+        "returnCorrelation": 0.8971,
+        "trackingErrorBpPerDay": 114,
+        "tier": "fair",
+        "tierLabel": "fair tracker",
+        "overlapSessions": 55,
+        "from": "2026-07-02",
+        "to": "2026-09-18",
+        "note": "Daily returns of NVDAG_USDT against NVDA raw session closes over 55 overlapping sessions (2026-07-02 to 2026-09-18). Tracking error is the standard deviation of the daily return difference, in basis points per day."
+      },
+      "premium": {
+        "medianPct": 0.02,
+        "p10Pct": -0.44,
+        "p90Pct": 0.65,
+        "priceDeviationPct": 3,
+        "wrapperLast": 228.93,
+        "lastRawClose": 222.27,
+        "lastRawCloseDate": "2026-09-18",
+        "note": "Premium of the wrapper over the underlying's RAW session close - the traded price against a traded price, never against the dividend-adjusted close, which sits below it by the cumulative dividend factor."
+      },
+      "liquidity": {
+        "spreadBps": 13.54,
+        "bestBid": 228.84,
+        "bestAsk": 229.15,
+        "topOfBookUsdt": 172,
+        "depthWithin50BpsUsdt": 196823,
+        "depthWithin200BpsUsdt": 262032,
+        "levels": 100,
+        "quoteVolume24hUsdt": 1161004,
+        "medianDailyQuoteVolumeUsdt": 881635,
+        "note": "Order-book snapshot at measuredAt. Resting depth is notional USDT within 50 bp and within 200 bp of the touch, both sides combined. It changes every second; this is the state at that timestamp, not a standing figure."
+      },
+      "sevenByTwentyFour": {
+        "referenceClosedSharePct": 81.4,
+        "referenceClosedHoursPerWeek": 136.67,
+        "closedMoveSharePct": 54.31,
+        "closedHoursSharePct": 75.52,
+        "tradedOutsideSessionPct": 99.26,
+        "hoursObserved": 720,
+        "conventionNote": "Mon-Fri hourly buckets 13:00-20:59 UTC counted as reference-session OPEN (conservative: the real US cash session is 32.5h/week, this counts 40h). The reference-market closed share is derived from the library's own session calendar and needs no venue.",
+        "note": "The measured core of the 7x24 claim. The reference cash market is shut for 81.4% of the week, and 54.31% of this wrapper's own realised hourly price movement over 720 observed hours landed in those shut hours. It traded in 99.26% of them."
+      },
+      "interpretation": "NVDAG_USDT is a fair tracker for NVDA: daily returns correlate at 0.8971 with a tracking error of 114 bp/day, and it prices within 3% of the underlying's last raw close. It is the instrument a trader would actually hold outside cash hours - and outside those hours is where 54.31% of its own movement happens.",
+      "caveat": "Measured on Gate.io spot v4 (public, keyless), not on a Bitget market-data feed: the Bitget official MCP is unreachable from this network and contributes nothing. A fair tracker is not the underlying - at 114 bp/day of tracking error the wrapper carries its own idiosyncratic risk, and a premium band of -0.44% to 0.65% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure."
     }
   },
   "detail": {
@@ -9524,7 +9664,7 @@
           "7x24"
         ],
         "why": "Wide realised gaps plus a falling, more volatile tape: the state in which a tokenized-stock wrapper is hardest to exit, because the underlying reference market is closed while the wrapper still trades.",
-        "caveat": "gap20 is measured on the underlying exchange session, not on a 7x24 venue. It bounds the reference-market gap risk only.",
+        "caveat": "gap20 is measured on the underlying exchange session, not on a 7x24 venue. It bounds the reference-market gap risk only. The wrapper layer is measured separately: when a tokenised wrapper for this instrument was verified, the desk appends the measured closed-hours figures to this caveat rather than leaving the gap merely confessed to.",
         "skipped": null,
         "n": 50,
         "medianPct": 0.83,
@@ -11286,9 +11426,9 @@
       }
     ],
     "timing": {
-      "analyzeMs": 184,
-      "retrievalMs": 34,
-      "engineInitMs": 680
+      "analyzeMs": 165,
+      "retrievalMs": 32,
+      "engineInitMs": 608
     }
   },
   "validation": {
@@ -11348,8 +11488,8 @@
     },
     "notes": [],
     "networkProbe": {
-      "generatedAt": "2026-09-21T05:59:50.191Z",
-      "summary": "6 used sources reachable; 5 candidate sources not used (3 of them unreachable from this machine); Bitget unreachable.",
+      "generatedAt": "2026-09-23T11:30:15.792Z",
+      "summary": "8 used sources reachable; 5 candidate sources not used (3 of them unreachable from this machine); Bitget market-data toolkit unreachable (0/3); Bitget narrative gateway reachable.",
       "host": "win32",
       "node": "v24.21.0",
       "usedSources": [
@@ -11358,7 +11498,9 @@
         "efts.sec.gov",
         "www.federalreserve.gov",
         "coins.llama.fi",
-        "api.alternative.me"
+        "api.alternative.me",
+        "hackathon.bitgetops.com",
+        "api.gateio.ws"
       ],
       "unusedSources": [
         {
@@ -11373,33 +11515,33 @@
           "name": "stooq.com",
           "role": "NOT USED - reachable but kept out of the pipeline so every source is a single keyless endpoint with a stable contract",
           "reachable": true,
-          "status": 200,
-          "kind": "ok",
-          "detail": null
+          "status": 403,
+          "kind": "http-403",
+          "detail": "reachable, responded 403"
         },
         {
           "name": "api.coingecko.com",
           "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
           "reachable": false,
           "status": null,
-          "kind": "connect-timeout",
-          "detail": "undici connect timeout"
+          "kind": "timeout",
+          "detail": "no TCP or TLS response within the probe timeout"
         },
         {
           "name": "api.kraken.com",
           "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
           "reachable": false,
           "status": null,
-          "kind": "connect-timeout",
-          "detail": "undici connect timeout"
+          "kind": "timeout",
+          "detail": "no TCP or TLS response within the probe timeout"
         },
         {
           "name": "en.wikipedia.org",
           "role": "NOT USED - unreachable from this network (connect timeout); no narrative depends on it",
           "reachable": false,
           "status": null,
-          "kind": "connect-timeout",
-          "detail": "undici connect timeout"
+          "kind": "timeout",
+          "detail": "no TCP or TLS response within the probe timeout"
         }
       ],
       "rejectedSources": [
@@ -11408,24 +11550,24 @@
           "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
           "reachable": false,
           "status": null,
-          "kind": "connect-timeout",
-          "detail": "undici connect timeout"
+          "kind": "timeout",
+          "detail": "no TCP or TLS response within the probe timeout"
         },
         {
           "name": "api.kraken.com",
           "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
           "reachable": false,
           "status": null,
-          "kind": "connect-timeout",
-          "detail": "undici connect timeout"
+          "kind": "timeout",
+          "detail": "no TCP or TLS response within the probe timeout"
         },
         {
           "name": "en.wikipedia.org",
           "role": "NOT USED - unreachable from this network (connect timeout); no narrative depends on it",
           "reachable": false,
           "status": null,
-          "kind": "connect-timeout",
-          "detail": "undici connect timeout"
+          "kind": "timeout",
+          "detail": "no TCP or TLS response within the probe timeout"
         }
       ],
       "targets": [
@@ -11436,7 +11578,7 @@
           "status": 200,
           "kind": "ok",
           "detail": null,
-          "latencyMs": 971
+          "latencyMs": 1086
         },
         {
           "name": "fred.stlouisfed.org",
@@ -11445,7 +11587,7 @@
           "status": 200,
           "kind": "ok",
           "detail": null,
-          "latencyMs": 1234
+          "latencyMs": 1122
         },
         {
           "name": "efts.sec.gov",
@@ -11454,7 +11596,7 @@
           "status": 200,
           "kind": "ok",
           "detail": null,
-          "latencyMs": 3640
+          "latencyMs": 5162
         },
         {
           "name": "www.federalreserve.gov",
@@ -11463,7 +11605,7 @@
           "status": 200,
           "kind": "ok",
           "detail": null,
-          "latencyMs": 1544
+          "latencyMs": 1379
         },
         {
           "name": "coins.llama.fi",
@@ -11472,7 +11614,7 @@
           "status": 200,
           "kind": "ok",
           "detail": null,
-          "latencyMs": 853
+          "latencyMs": 1928
         },
         {
           "name": "api.alternative.me",
@@ -11481,7 +11623,7 @@
           "status": 200,
           "kind": "ok",
           "detail": null,
-          "latencyMs": 1285
+          "latencyMs": 1164
         },
         {
           "name": "api.github.com",
@@ -11490,7 +11632,7 @@
           "status": 200,
           "kind": "ok",
           "detail": null,
-          "latencyMs": 568
+          "latencyMs": 536
         },
         {
           "name": "registry.npmjs.org",
@@ -11499,16 +11641,25 @@
           "status": 200,
           "kind": "ok",
           "detail": null,
-          "latencyMs": 1806
+          "latencyMs": 1336
         },
         {
-          "name": "dashscope.aliyuncs.com",
-          "role": "OPTIONAL - Qwen (qwen-plus) OpenAI-compatible endpoint for the narrative layer; the app runs without it",
+          "name": "hackathon.bitgetops.com",
+          "role": "USED - the Bitget-operated hackathon LLM gateway the narrative layer calls (OpenAI-compatible). Probed unauthenticated, so a 401/404 is a successful reachability result and no key leaves this script.",
           "ok": true,
-          "status": 401,
-          "kind": "http-401",
-          "detail": "reachable, responded 401",
-          "latencyMs": 363
+          "status": 404,
+          "kind": "http-404",
+          "detail": "reachable, responded 404",
+          "latencyMs": 5066
+        },
+        {
+          "name": "api.gateio.ws",
+          "role": "USED - tokenised-equity wrapper layer for scripts/measure-wrapper.mjs (7x24 measurement: tracking, premium, spread, closed-hours movement). NOT a price source for the analog library.",
+          "ok": true,
+          "status": 200,
+          "kind": "ok",
+          "detail": null,
+          "latencyMs": 1191
         },
         {
           "name": "query1.finance.yahoo.com",
@@ -11517,43 +11668,43 @@
           "status": 403,
           "kind": "http-403",
           "detail": "reachable, responded 403",
-          "latencyMs": 1512
+          "latencyMs": 1410
         },
         {
           "name": "stooq.com",
           "role": "NOT USED - reachable but kept out of the pipeline so every source is a single keyless endpoint with a stable contract",
           "ok": true,
-          "status": 200,
-          "kind": "ok",
-          "detail": null,
-          "latencyMs": 1165
+          "status": 403,
+          "kind": "http-403",
+          "detail": "reachable, responded 403",
+          "latencyMs": 1178
         },
         {
           "name": "api.coingecko.com",
           "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
           "ok": false,
           "status": null,
-          "kind": "connect-timeout",
-          "detail": "undici connect timeout",
-          "latencyMs": 10488
+          "kind": "timeout",
+          "detail": "no TCP or TLS response within the probe timeout",
+          "latencyMs": 10713
         },
         {
           "name": "api.kraken.com",
           "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
           "ok": false,
           "status": null,
-          "kind": "connect-timeout",
-          "detail": "undici connect timeout",
-          "latencyMs": 10490
+          "kind": "timeout",
+          "detail": "no TCP or TLS response within the probe timeout",
+          "latencyMs": 10732
         },
         {
           "name": "en.wikipedia.org",
           "role": "NOT USED - unreachable from this network (connect timeout); no narrative depends on it",
           "ok": false,
           "status": null,
-          "kind": "connect-timeout",
-          "detail": "undici connect timeout",
-          "latencyMs": 10493
+          "kind": "timeout",
+          "detail": "no TCP or TLS response within the probe timeout",
+          "latencyMs": 10685
         }
       ]
     },
@@ -11604,7 +11755,7 @@
     "earningsSource": "efts.sec.gov full-text search (keyless, contact UA): forms=8-K q=\"Item 2.02\" for domestic filers; forms=6-K q=\"unaudited\" / q=\"financial results\" fallback for foreign private issuers; filing dates clustered at 6 calendar days",
     "horizonLabel": "5 sessions (one trading week)",
     "bitget": {
-      "probedAt": "2026-09-23T09:29:20.413Z",
+      "probedAt": "2026-09-23T12:17:09.403Z",
       "reachable": false,
       "reachableCount": 0,
       "total": 3,
@@ -11612,37 +11763,103 @@
         {
           "url": "https://agent.bitget.com/mcp",
           "name": "Bitget official MCP (US stocks / ETF, read-only)",
-          "probedAt": "2026-09-23T09:29:18.949Z",
-          "latencyMs": 433,
+          "probedAt": "2026-09-23T12:17:04.385Z",
+          "latencyMs": 1278,
           "ok": false,
           "status": null,
           "kind": "connection-reset",
           "detail": "TCP connection reset by peer before any HTTP response",
-          "transport": "jsonrpc-2.0 / tools/list"
+          "transport": "jsonrpc-2.0 / tools/list",
+          "group": "market-data"
         },
         {
           "url": "https://www.bitget.com",
           "name": "Bitget web (www)",
-          "probedAt": "2026-09-23T09:29:19.382Z",
-          "latencyMs": 630,
+          "probedAt": "2026-09-23T12:17:05.663Z",
+          "latencyMs": 641,
           "ok": false,
           "status": null,
           "kind": "connection-reset",
-          "detail": "TCP connection reset by peer before any HTTP response"
+          "detail": "TCP connection reset by peer before any HTTP response",
+          "group": "market-data"
         },
         {
           "url": "https://api.bitget.com",
           "name": "Bitget public REST (api)",
-          "probedAt": "2026-09-23T09:29:20.012Z",
-          "latencyMs": 401,
+          "probedAt": "2026-09-23T12:17:06.304Z",
+          "latencyMs": 640,
           "ok": false,
           "status": null,
           "kind": "connection-reset",
-          "detail": "TCP connection reset by peer before any HTTP response"
+          "detail": "TCP connection reset by peer before any HTTP response",
+          "group": "market-data"
         }
       ],
-      "summary": "0/3 Bitget endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response",
-      "disclosure": "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+      "marketData": {
+        "reachable": false,
+        "reachableCount": 0,
+        "total": 3,
+        "endpoints": [
+          {
+            "url": "https://agent.bitget.com/mcp",
+            "name": "Bitget official MCP (US stocks / ETF, read-only)",
+            "probedAt": "2026-09-23T12:17:04.385Z",
+            "latencyMs": 1278,
+            "ok": false,
+            "status": null,
+            "kind": "connection-reset",
+            "detail": "TCP connection reset by peer before any HTTP response",
+            "transport": "jsonrpc-2.0 / tools/list",
+            "group": "market-data"
+          },
+          {
+            "url": "https://www.bitget.com",
+            "name": "Bitget web (www)",
+            "probedAt": "2026-09-23T12:17:05.663Z",
+            "latencyMs": 641,
+            "ok": false,
+            "status": null,
+            "kind": "connection-reset",
+            "detail": "TCP connection reset by peer before any HTTP response",
+            "group": "market-data"
+          },
+          {
+            "url": "https://api.bitget.com",
+            "name": "Bitget public REST (api)",
+            "probedAt": "2026-09-23T12:17:06.304Z",
+            "latencyMs": 640,
+            "ok": false,
+            "status": null,
+            "kind": "connection-reset",
+            "detail": "TCP connection reset by peer before any HTTP response",
+            "group": "market-data"
+          }
+        ],
+        "summary": "0/3 Bitget market-data endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response",
+        "disclosure": "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced MARKET figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+      },
+      "narrative": {
+        "reachable": true,
+        "endpoint": {
+          "url": "https://hackathon.bitgetops.com/v1/chat/completions",
+          "name": "Bitget hackathon LLM gateway (OpenAI-compatible /v1/chat/completions)",
+          "probedAt": "2026-09-23T12:17:06.944Z",
+          "latencyMs": 2459,
+          "ok": true,
+          "status": 401,
+          "kind": "http-401",
+          "detail": "reachable, responded 401",
+          "transport": "openai-compatible chat/completions",
+          "group": "narrative",
+          "model": "qwen3.8-max",
+          "role": "the narrative layer calls this endpoint; the generations baked into the replay cache were produced here with model qwen3.8-max"
+        },
+        "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 2459ms) - this is the endpoint the narrative layer calls",
+        "model": "qwen3.8-max",
+        "transport": "openai-compatible chat/completions"
+      },
+      "summary": "0/3 Bitget market-data endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response; Bitget hackathon LLM gateway reachable (HTTP 401, 2459ms) - this is the endpoint the narrative layer calls",
+      "disclosure": "Two separate Bitget integrations, two separate results. MARKET DATA: the official Bitget MCP server for US stocks/ETFs and both Bitget web/API hosts are unreachable from this network (connection-reset: TCP connection reset by peer before any HTTP response), so AnalogDesk ships no Bitget-sourced market figure; every number comes from the keyless sources in research/DATA-PROVENANCE.md. NARRATIVE: the Bitget-operated hackathon LLM gateway at https://hackathon.bitgetops.com/v1 IS reachable (HTTP 401 on an unauthenticated probe), and it is the endpoint the narrative layer calls with model qwen3.8-max - the prose a reviewer reads was generated there. This distinction is reported rather than collapsed into a single badge, because either collapse would overstate or understate the integration."
     },
     "bitgetMcp": {
       "status": "degraded",
@@ -11653,11 +11870,11 @@
       "model": "qwen3.8-max",
       "baseUrl": "https://hackathon.bitgetops.com/v1",
       "keyPresent": true,
-      "promptVersion": "2"
+      "promptVersion": "3"
     }
   },
   "bitget": {
-    "probedAt": "2026-09-23T09:29:20.413Z",
+    "probedAt": "2026-09-23T12:17:09.403Z",
     "reachable": false,
     "reachableCount": 0,
     "total": 3,
@@ -11665,43 +11882,109 @@
       {
         "url": "https://agent.bitget.com/mcp",
         "name": "Bitget official MCP (US stocks / ETF, read-only)",
-        "probedAt": "2026-09-23T09:29:18.949Z",
-        "latencyMs": 433,
+        "probedAt": "2026-09-23T12:17:04.385Z",
+        "latencyMs": 1278,
         "ok": false,
         "status": null,
         "kind": "connection-reset",
         "detail": "TCP connection reset by peer before any HTTP response",
-        "transport": "jsonrpc-2.0 / tools/list"
+        "transport": "jsonrpc-2.0 / tools/list",
+        "group": "market-data"
       },
       {
         "url": "https://www.bitget.com",
         "name": "Bitget web (www)",
-        "probedAt": "2026-09-23T09:29:19.382Z",
-        "latencyMs": 630,
+        "probedAt": "2026-09-23T12:17:05.663Z",
+        "latencyMs": 641,
         "ok": false,
         "status": null,
         "kind": "connection-reset",
-        "detail": "TCP connection reset by peer before any HTTP response"
+        "detail": "TCP connection reset by peer before any HTTP response",
+        "group": "market-data"
       },
       {
         "url": "https://api.bitget.com",
         "name": "Bitget public REST (api)",
-        "probedAt": "2026-09-23T09:29:20.012Z",
-        "latencyMs": 401,
+        "probedAt": "2026-09-23T12:17:06.304Z",
+        "latencyMs": 640,
         "ok": false,
         "status": null,
         "kind": "connection-reset",
-        "detail": "TCP connection reset by peer before any HTTP response"
+        "detail": "TCP connection reset by peer before any HTTP response",
+        "group": "market-data"
       }
     ],
-    "summary": "0/3 Bitget endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response",
-    "disclosure": "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+    "marketData": {
+      "reachable": false,
+      "reachableCount": 0,
+      "total": 3,
+      "endpoints": [
+        {
+          "url": "https://agent.bitget.com/mcp",
+          "name": "Bitget official MCP (US stocks / ETF, read-only)",
+          "probedAt": "2026-09-23T12:17:04.385Z",
+          "latencyMs": 1278,
+          "ok": false,
+          "status": null,
+          "kind": "connection-reset",
+          "detail": "TCP connection reset by peer before any HTTP response",
+          "transport": "jsonrpc-2.0 / tools/list",
+          "group": "market-data"
+        },
+        {
+          "url": "https://www.bitget.com",
+          "name": "Bitget web (www)",
+          "probedAt": "2026-09-23T12:17:05.663Z",
+          "latencyMs": 641,
+          "ok": false,
+          "status": null,
+          "kind": "connection-reset",
+          "detail": "TCP connection reset by peer before any HTTP response",
+          "group": "market-data"
+        },
+        {
+          "url": "https://api.bitget.com",
+          "name": "Bitget public REST (api)",
+          "probedAt": "2026-09-23T12:17:06.304Z",
+          "latencyMs": 640,
+          "ok": false,
+          "status": null,
+          "kind": "connection-reset",
+          "detail": "TCP connection reset by peer before any HTTP response",
+          "group": "market-data"
+        }
+      ],
+      "summary": "0/3 Bitget market-data endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response",
+      "disclosure": "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced MARKET figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+    },
+    "narrative": {
+      "reachable": true,
+      "endpoint": {
+        "url": "https://hackathon.bitgetops.com/v1/chat/completions",
+        "name": "Bitget hackathon LLM gateway (OpenAI-compatible /v1/chat/completions)",
+        "probedAt": "2026-09-23T12:17:06.944Z",
+        "latencyMs": 2459,
+        "ok": true,
+        "status": 401,
+        "kind": "http-401",
+        "detail": "reachable, responded 401",
+        "transport": "openai-compatible chat/completions",
+        "group": "narrative",
+        "model": "qwen3.8-max",
+        "role": "the narrative layer calls this endpoint; the generations baked into the replay cache were produced here with model qwen3.8-max"
+      },
+      "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 2459ms) - this is the endpoint the narrative layer calls",
+      "model": "qwen3.8-max",
+      "transport": "openai-compatible chat/completions"
+    },
+    "summary": "0/3 Bitget market-data endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response; Bitget hackathon LLM gateway reachable (HTTP 401, 2459ms) - this is the endpoint the narrative layer calls",
+    "disclosure": "Two separate Bitget integrations, two separate results. MARKET DATA: the official Bitget MCP server for US stocks/ETFs and both Bitget web/API hosts are unreachable from this network (connection-reset: TCP connection reset by peer before any HTTP response), so AnalogDesk ships no Bitget-sourced market figure; every number comes from the keyless sources in research/DATA-PROVENANCE.md. NARRATIVE: the Bitget-operated hackathon LLM gateway at https://hackathon.bitgetops.com/v1 IS reachable (HTTP 401 on an unauthenticated probe), and it is the endpoint the narrative layer calls with model qwen3.8-max - the prose a reviewer reads was generated there. This distinction is reported rather than collapsed into a single badge, because either collapse would overstate or understate the integration."
   },
-  "bitgetProbeSource": "live probe 2026-09-23T09:29:20.413Z",
+  "bitgetProbeSource": "live probe 2026-09-23T12:17:09.403Z",
   "timing": {
-    "engineInitMs": 681,
-    "analyzeMs": 184,
-    "retrievalMs": 34,
-    "totalMs": 44530
+    "engineInitMs": 608,
+    "analyzeMs": 165,
+    "retrievalMs": 32,
+    "totalMs": 52356
   }
 }

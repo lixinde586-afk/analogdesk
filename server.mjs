@@ -66,6 +66,11 @@ const validationSummary = readJson(join(HERE, "dist", "validation-summary.json")
 const validationResults = validationFull || validationSummary;
 const validationSource = validationFull ? "research/validation-results.json" : (validationSummary ? "dist/validation-summary.json" : null);
 const networkProbe = readJson(join(CACHE, "network-probe.json"));
+// data-cache/wrapper-probe.json is the committed 7x24 wrapper-layer measurement written by
+// scripts/measure-wrapper.mjs. It is read from disk, not fetched per request: a live order book
+// changes every second, and a card whose numbers move between runs cannot be matched against the
+// replay cache. Absent file -> wrapper block reports "not measured", and no figure is invented.
+const wrapperProbe = readJson(join(CACHE, "wrapper-probe.json"));
 const buildReport = fs.existsSync(join(CACHE, "build-report.md")) ? fs.readFileSync(join(CACHE, "build-report.md"), "utf8") : null;
 
 const provenanceBase = {
@@ -84,7 +89,17 @@ const provenanceBase = {
   buildReportPresent: Boolean(buildReport)
 };
 
-const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg });
+// The wrapper audit block. Deliberately NOT in provenanceBase: provenanceBase is spread into the
+// research card, and the card is the payload the model is billed to read. The card already carries
+// its own per-symbol wrapper block, so the audit detail belongs on /api/provenance and /api/wrapper.
+const wrapperAudit = wrapperProbe ? {
+  generatedAt: wrapperProbe.generatedAt, venue: wrapperProbe.venue?.name || null, role: wrapperProbe.venue?.role || null,
+  reachable: Boolean(wrapperProbe.probe?.ok), degraded: wrapperProbe.degradation || null,
+  summary: wrapperProbe.summary, referenceMarket: wrapperProbe.referenceMarket, thresholds: wrapperProbe.thresholds,
+  verifiedWrappers: Object.keys(wrapperProbe.bySymbol || {}).length, rejectedCandidates: (wrapperProbe.rejected || []).length
+} : null;
+
+const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe });
 
 // The library view handed to the shared parser: symbols, the session calendar (so "10 个交易日前"
 // resolves to a real session rather than an approximate calendar day) and the measured horizon grid.
@@ -95,6 +110,14 @@ const luiLib = (() => {
 log(`engine ready in ${Date.now() - t0}ms - ${desk.engine.mx.nSym} instruments x ${desk.engine.mx.nDates} sessions (${dataset.meta?.from} .. ${dataset.meta?.to})`);
 log(`narrative mode: ${cfg.llm.enabled ? `LIVE (${cfg.llm.model} @ ${cfg.llm.baseUrl})` : "TEMPLATE (no LLM_API_KEY set - engine numbers are unaffected)"}`);
 log(`validation loaded for horizons: ${Object.keys(desk.allValidation()).join(", ") || "none - run node scripts/verify.mjs"}${validationSource ? ` (from ${validationSource})` : ""}`);
+{
+  const w = desk.wrapper();
+  log(w.degraded
+    ? `7x24 wrapper layer: NOT MEASURED on this build (${w.venueName}) - the card says so and no wrapper figure is estimated`
+    : w.available
+      ? `7x24 wrapper layer: ${w.verified} verified wrapper(s) on ${w.venueName}, measured ${w.measuredAt}; reference market closed ${w.referenceMarket?.closedSharePct}% of the week`
+      : `7x24 wrapper layer: no data-cache/wrapper-probe.json - run node scripts/measure-wrapper.mjs`);
+}
 
 // Seed from the persisted probe so the very first request already carries an accurate Bitget
 // disclosure instead of "pending": the live probe is asynchronous and can take several seconds,
@@ -102,7 +125,7 @@ log(`validation loaded for horizons: ${Object.keys(desk.allValidation()).join(",
 let bitget = networkProbe?.bitget
   ? { ...networkProbe.bitget, fromCache: true, cachedAt: networkProbe.generatedAt }
   : { reachable: false, summary: "probe pending", endpoints: [], disclosure: null, probedAt: null, pending: true };
-probeAllBitget({ timeoutMs: Number(cfg.bitget.probeTimeoutMs) }).then((r) => {
+probeAllBitget({ timeoutMs: Number(cfg.bitget.probeTimeoutMs), model: cfg.llm.model }).then((r) => {
   bitget = r;
   log(`Bitget toolkit probe: ${r.summary}`);
 }).catch((e) => { bitget = { reachable: false, summary: `probe failed: ${e.message}`, endpoints: [], disclosure: null, probedAt: new Date().toISOString() }; });
@@ -183,7 +206,15 @@ function serveStatic(res, urlPath) {
 function provenance() {
   return {
     ...provenanceBase,
-    bitget: bitget ? { status: bitget.reachable ? "connected" : "degraded", summary: bitget.summary, disclosure: bitget.disclosure, endpoints: bitget.endpoints, probedAt: bitget.probedAt, configuredUrl: cfg.bitget.mcpUrl } : null,
+    bitget: bitget ? {
+      status: bitget.reachable ? "connected" : "degraded", summary: bitget.summary, disclosure: bitget.disclosure,
+      endpoints: bitget.endpoints, probedAt: bitget.probedAt, configuredUrl: cfg.bitget.mcpUrl,
+      // Reported separately, because the two Bitget integrations have opposite results on this
+      // network and one badge for both would be wrong whichever way it pointed.
+      marketData: bitget.marketData || null, narrative: bitget.narrative || null
+    } : null,
+    wrapper: desk.wrapper(),
+    wrapperMeasurement: wrapperAudit,
     llm: {
       mode: cfg.llm.enabled ? "LIVE" : "TEMPLATE", model: cfg.llm.model, baseUrl: cfg.llm.baseUrl,
       keyPresent: cfg.llm.enabled, probe: llmProbe, promptVersion: PROMPT_VERSION,
@@ -257,7 +288,9 @@ const server = http.createServer(async (req, res) => {
           ok: true, uptimeS: Math.round(process.uptime()), engineInitMs: desk.initMs,
           rssMb: Math.round(process.memoryUsage().rss / 1e6), node: process.version,
           llm: { mode: cfg.llm.enabled ? "LIVE" : "TEMPLATE", model: cfg.llm.model, keyPresent: cfg.llm.enabled, probe: llmProbe },
-          bitget: { status: bitget?.reachable ? "connected" : "degraded", summary: bitget?.summary || null },
+          bitget: { status: bitget?.reachable ? "connected" : "degraded", summary: bitget?.summary || null,
+            marketData: bitget?.marketData?.summary || null, narrative: bitget?.narrative?.summary || null },
+          wrapper: desk.wrapper(),
           library: { symbols: desk.engine.mx.nSym, sessions: desk.engine.mx.nDates, from: desk.engine.mx.dates[0], to: desk.engine.mx.dates.at(-1) },
           validationHorizons: Object.keys(desk.allValidation()).map(Number)
         });
@@ -265,6 +298,12 @@ const server = http.createServer(async (req, res) => {
       if (path === "/api/library") return sendJson(res, { ok: true, library: desk.library() });
       if (path === "/api/scenarios") return sendJson(res, { ok: true, scenarios: desk.scenarios });
       if (path === "/api/provenance") return sendJson(res, { ok: true, provenance: provenance() });
+      // The whole committed wrapper measurement, including every rejected candidate and the reason
+      // it was rejected. A reviewer should be able to audit the verification rather than trust it.
+      if (path === "/api/wrapper") {
+        if (!wrapperProbe) return notFound(res, "no wrapper measurement on record - run: node scripts/measure-wrapper.mjs");
+        return sendJson(res, { ok: true, summary: desk.wrapper(), measurement: wrapperProbe });
+      }
       if (path === "/api/build-report") return buildReport ? sendText(res, 200, buildReport, "text/markdown; charset=utf-8") : notFound(res, "no build report");
       if (path === "/api/validation") {
         const H = Number(u.searchParams.get("horizon") || 0);
@@ -299,5 +338,6 @@ server.listen(port, host, () => {
   log(`  GET /api/analyze?symbol=NVDA&horizon=5&k=50       explicit parameters win over the sentence`);
   log(`  GET /api/validation    frozen out-of-sample summary`);
   log(`  GET /api/provenance    data sources, network probe, Bitget status, LLM mode`);
+  log(`  GET /api/wrapper       the committed 7x24 wrapper-layer measurement, rejections included`);
   if (!cfg.llm.enabled) log(`  no LLM_API_KEY: narrative runs in TEMPLATE mode. Copy .env.example to .env and set LLM_API_KEY to enable ${cfg.llm.model}.`);
 });

@@ -28,7 +28,14 @@ import { buildAllowlist, verifyNumbers, retryInstruction, defaultAllowance } fro
 import { cardDigest } from "./replay.mjs";
 import { detectLang } from "./lui.mjs";
 
-export const PROMPT_VERSION = "2";
+/**
+ * Part of the replay-cache key, so bumping it deliberately invalidates every stored generation.
+ *   1 -> 2  the card stopped carrying raw doubles and the prompt gained the precision rule.
+ *   2 -> 3  the card gained the measured 7x24 wrapper block and the prompt tells the model to cite it.
+ * A bump is the honest way to retire prose that was written against a different payload: leaving the
+ * version alone would keep serving a cached narrative that never saw the new figures.
+ */
+export const PROMPT_VERSION = "3";
 
 function allowFor(card) {
   return buildAllowlist(card, defaultAllowance(card));

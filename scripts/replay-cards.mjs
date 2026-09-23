@@ -97,7 +97,13 @@ export function buildCanonicalEntries() {
   }
   const dataset = readJson(datasetPath);
   const validationResults = readJson(join(ROOT, "research", "validation-results.json"));
-  const desk = createDesk({ dataset, validationResults, provenance: {} });
+  // The committed 7x24 wrapper measurement MUST be loaded here. card.wrapper is part of the card and
+  // therefore part of the digest, so a canonical card built without it hashes to an id no runtime will
+  // ever compute - the exact failure mode scripts/check-replay.mjs was written to catch, arriving from
+  // a new direction. server.mjs and the compiled bundle both read the same file.
+  const wrapper = readJson(join(ROOT, "data-cache", "wrapper-probe.json"));
+  if (!wrapper) console.warn("  warn  data-cache/wrapper-probe.json is missing - canonical cards will carry no wrapper block and will not match a card built where it exists. Run: node scripts/measure-wrapper.mjs");
+  const desk = createDesk({ dataset, validationResults, provenance: {}, wrapper });
 
   const entries = [];
   for (const spec of CANONICAL_REQUESTS) {

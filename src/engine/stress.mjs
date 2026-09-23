@@ -75,7 +75,7 @@ export const SCENARIOS = [
     id: "liquidity-air-pocket", label: "Liquidity air pocket", kind: "shock",
     shock: { z: { vix: 1.5, mktVol20: 1.5, mktRet20: -1.5, gap20: 1 } }, tags: ["liquidity", "vol", "7x24"],
     why: "Wide realised gaps plus a falling, more volatile tape: the state in which a tokenized-stock wrapper is hardest to exit, because the underlying reference market is closed while the wrapper still trades.",
-    caveat: "gap20 is measured on the underlying exchange session, not on a 7x24 venue. It bounds the reference-market gap risk only."
+    caveat: "gap20 is measured on the underlying exchange session, not on a 7x24 venue. It bounds the reference-market gap risk only. The wrapper layer is measured separately: when a tokenised wrapper for this instrument was verified, the desk appends the measured closed-hours figures to this caveat rather than leaving the gap merely confessed to."
   },
   {
     id: "earnings-day", label: "Earnings release day", kind: "shock",

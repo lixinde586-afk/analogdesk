@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-21T05:59:50.191Z",
+  "generatedAt": "2026-09-23T11:30:15.792Z",
   "host": "win32",
   "node": "v24.21.0",
   "targets": [
@@ -11,7 +11,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 971
+      "latencyMs": 1086
     },
     {
       "name": "fred.stlouisfed.org",
@@ -21,7 +21,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 1234
+      "latencyMs": 1122
     },
     {
       "name": "efts.sec.gov",
@@ -31,7 +31,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 3640
+      "latencyMs": 5162
     },
     {
       "name": "www.federalreserve.gov",
@@ -41,7 +41,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 1544
+      "latencyMs": 1379
     },
     {
       "name": "coins.llama.fi",
@@ -51,7 +51,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 853
+      "latencyMs": 1928
     },
     {
       "name": "api.alternative.me",
@@ -61,7 +61,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 1285
+      "latencyMs": 1164
     },
     {
       "name": "api.github.com",
@@ -71,7 +71,7 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 568
+      "latencyMs": 536
     },
     {
       "name": "registry.npmjs.org",
@@ -81,17 +81,27 @@
       "status": 200,
       "kind": "ok",
       "detail": null,
-      "latencyMs": 1806
+      "latencyMs": 1336
     },
     {
-      "name": "dashscope.aliyuncs.com",
-      "role": "OPTIONAL - Qwen (qwen-plus) OpenAI-compatible endpoint for the narrative layer; the app runs without it",
-      "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/models",
+      "name": "hackathon.bitgetops.com",
+      "role": "USED - the Bitget-operated hackathon LLM gateway the narrative layer calls (OpenAI-compatible). Probed unauthenticated, so a 401/404 is a successful reachability result and no key leaves this script.",
+      "url": "https://hackathon.bitgetops.com/v1/chat/completions",
       "ok": true,
-      "status": 401,
-      "kind": "http-401",
-      "detail": "reachable, responded 401",
-      "latencyMs": 363
+      "status": 404,
+      "kind": "http-404",
+      "detail": "reachable, responded 404",
+      "latencyMs": 5066
+    },
+    {
+      "name": "api.gateio.ws",
+      "role": "USED - tokenised-equity wrapper layer for scripts/measure-wrapper.mjs (7x24 measurement: tracking, premium, spread, closed-hours movement). NOT a price source for the analog library.",
+      "url": "https://api.gateio.ws/api/v4/spot/time",
+      "ok": true,
+      "status": 200,
+      "kind": "ok",
+      "detail": null,
+      "latencyMs": 1191
     },
     {
       "name": "query1.finance.yahoo.com",
@@ -101,17 +111,17 @@
       "status": 403,
       "kind": "http-403",
       "detail": "reachable, responded 403",
-      "latencyMs": 1512
+      "latencyMs": 1410
     },
     {
       "name": "stooq.com",
       "role": "NOT USED - reachable but kept out of the pipeline so every source is a single keyless endpoint with a stable contract",
       "url": "https://stooq.com/q/d/l/?s=spy.us&i=d",
       "ok": true,
-      "status": 200,
-      "kind": "ok",
-      "detail": null,
-      "latencyMs": 1165
+      "status": 403,
+      "kind": "http-403",
+      "detail": "reachable, responded 403",
+      "latencyMs": 1178
     },
     {
       "name": "api.coingecko.com",
@@ -119,9 +129,9 @@
       "url": "https://api.coingecko.com/api/v3/ping",
       "ok": false,
       "status": null,
-      "kind": "connect-timeout",
-      "detail": "undici connect timeout",
-      "latencyMs": 10488
+      "kind": "timeout",
+      "detail": "no TCP or TLS response within the probe timeout",
+      "latencyMs": 10713
     },
     {
       "name": "api.kraken.com",
@@ -129,9 +139,9 @@
       "url": "https://api.kraken.com/0/public/Time",
       "ok": false,
       "status": null,
-      "kind": "connect-timeout",
-      "detail": "undici connect timeout",
-      "latencyMs": 10490
+      "kind": "timeout",
+      "detail": "no TCP or TLS response within the probe timeout",
+      "latencyMs": 10732
     },
     {
       "name": "en.wikipedia.org",
@@ -139,13 +149,13 @@
       "url": "https://en.wikipedia.org/api/rest_v1/page/summary/Apple_Inc.",
       "ok": false,
       "status": null,
-      "kind": "connect-timeout",
-      "detail": "undici connect timeout",
-      "latencyMs": 10493
+      "kind": "timeout",
+      "detail": "no TCP or TLS response within the probe timeout",
+      "latencyMs": 10685
     }
   ],
   "bitget": {
-    "probedAt": "2026-09-21T06:00:38.530Z",
+    "probedAt": "2026-09-23T11:31:15.159Z",
     "reachable": false,
     "reachableCount": 0,
     "total": 3,
@@ -153,37 +163,110 @@
       {
         "url": "https://agent.bitget.com/mcp",
         "name": "Bitget official MCP (US stocks / ETF, read-only)",
-        "probedAt": "2026-09-21T06:00:36.606Z",
-        "latencyMs": 1038,
+        "probedAt": "2026-09-23T11:31:10.483Z",
+        "latencyMs": 384,
         "ok": false,
         "status": null,
         "kind": "connection-reset",
         "detail": "TCP connection reset by peer before any HTTP response",
-        "transport": "jsonrpc-2.0 / tools/list"
+        "transport": "jsonrpc-2.0 / tools/list",
+        "group": "market-data"
       },
       {
         "url": "https://www.bitget.com",
         "name": "Bitget web (www)",
-        "probedAt": "2026-09-21T06:00:37.644Z",
-        "latencyMs": 230,
+        "probedAt": "2026-09-23T11:31:10.867Z",
+        "latencyMs": 348,
         "ok": false,
         "status": null,
         "kind": "connection-reset",
-        "detail": "TCP connection reset by peer before any HTTP response"
+        "detail": "TCP connection reset by peer before any HTTP response",
+        "group": "market-data"
       },
       {
         "url": "https://api.bitget.com",
         "name": "Bitget public REST (api)",
-        "probedAt": "2026-09-21T06:00:37.874Z",
-        "latencyMs": 656,
+        "probedAt": "2026-09-23T11:31:11.215Z",
+        "latencyMs": 425,
         "ok": false,
         "status": null,
         "kind": "connection-reset",
-        "detail": "TCP connection reset by peer before any HTTP response"
+        "detail": "TCP connection reset by peer before any HTTP response",
+        "group": "market-data"
       }
     ],
-    "summary": "0/3 Bitget endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response",
-    "disclosure": "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+    "marketData": {
+      "reachable": false,
+      "reachableCount": 0,
+      "total": 3,
+      "endpoints": [
+        {
+          "url": "https://agent.bitget.com/mcp",
+          "name": "Bitget official MCP (US stocks / ETF, read-only)",
+          "probedAt": "2026-09-23T11:31:10.483Z",
+          "latencyMs": 384,
+          "ok": false,
+          "status": null,
+          "kind": "connection-reset",
+          "detail": "TCP connection reset by peer before any HTTP response",
+          "transport": "jsonrpc-2.0 / tools/list",
+          "group": "market-data"
+        },
+        {
+          "url": "https://www.bitget.com",
+          "name": "Bitget web (www)",
+          "probedAt": "2026-09-23T11:31:10.867Z",
+          "latencyMs": 348,
+          "ok": false,
+          "status": null,
+          "kind": "connection-reset",
+          "detail": "TCP connection reset by peer before any HTTP response",
+          "group": "market-data"
+        },
+        {
+          "url": "https://api.bitget.com",
+          "name": "Bitget public REST (api)",
+          "probedAt": "2026-09-23T11:31:11.215Z",
+          "latencyMs": 425,
+          "ok": false,
+          "status": null,
+          "kind": "connection-reset",
+          "detail": "TCP connection reset by peer before any HTTP response",
+          "group": "market-data"
+        }
+      ],
+      "summary": "0/3 Bitget market-data endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response",
+      "disclosure": "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced MARKET figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+    },
+    "narrative": {
+      "reachable": true,
+      "endpoint": {
+        "url": "https://hackathon.bitgetops.com/v1/chat/completions",
+        "name": "Bitget hackathon LLM gateway (OpenAI-compatible /v1/chat/completions)",
+        "probedAt": "2026-09-23T11:31:11.640Z",
+        "latencyMs": 3519,
+        "ok": true,
+        "status": 401,
+        "kind": "http-401",
+        "detail": "reachable, responded 401",
+        "transport": "openai-compatible chat/completions",
+        "group": "narrative",
+        "model": "qwen3.8-max",
+        "role": "the narrative layer calls this endpoint; the generations baked into the replay cache were produced here with model qwen3.8-max"
+      },
+      "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 3519ms) - this is the endpoint the narrative layer calls",
+      "model": "qwen3.8-max",
+      "transport": "openai-compatible chat/completions"
+    },
+    "summary": "0/3 Bitget market-data endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response; Bitget hackathon LLM gateway reachable (HTTP 401, 3519ms) - this is the endpoint the narrative layer calls",
+    "disclosure": "Two separate Bitget integrations, two separate results. MARKET DATA: the official Bitget MCP server for US stocks/ETFs and both Bitget web/API hosts are unreachable from this network (connection-reset: TCP connection reset by peer before any HTTP response), so AnalogDesk ships no Bitget-sourced market figure; every number comes from the keyless sources in research/DATA-PROVENANCE.md. NARRATIVE: the Bitget-operated hackathon LLM gateway at https://hackathon.bitgetops.com/v1 IS reachable (HTTP 401 on an unauthenticated probe), and it is the endpoint the narrative layer calls with model qwen3.8-max - the prose a reviewer reads was generated there. This distinction is reported rather than collapsed into a single badge, because either collapse would overstate or understate the integration."
+  },
+  "llm": {
+    "mode": "LIVE",
+    "model": "qwen3.8-max",
+    "baseUrl": "https://hackathon.bitgetops.com/v1",
+    "keyPresent": true,
+    "promptVersion": "3"
   },
   "usedSources": [
     "api.stockanalysis.com",
@@ -191,7 +274,9 @@
     "efts.sec.gov",
     "www.federalreserve.gov",
     "coins.llama.fi",
-    "api.alternative.me"
+    "api.alternative.me",
+    "hackathon.bitgetops.com",
+    "api.gateio.ws"
   ],
   "unusedSources": [
     {
@@ -206,33 +291,33 @@
       "name": "stooq.com",
       "role": "NOT USED - reachable but kept out of the pipeline so every source is a single keyless endpoint with a stable contract",
       "reachable": true,
-      "status": 200,
-      "kind": "ok",
-      "detail": null
+      "status": 403,
+      "kind": "http-403",
+      "detail": "reachable, responded 403"
     },
     {
       "name": "api.coingecko.com",
       "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
       "reachable": false,
       "status": null,
-      "kind": "connect-timeout",
-      "detail": "undici connect timeout"
+      "kind": "timeout",
+      "detail": "no TCP or TLS response within the probe timeout"
     },
     {
       "name": "api.kraken.com",
       "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
       "reachable": false,
       "status": null,
-      "kind": "connect-timeout",
-      "detail": "undici connect timeout"
+      "kind": "timeout",
+      "detail": "no TCP or TLS response within the probe timeout"
     },
     {
       "name": "en.wikipedia.org",
       "role": "NOT USED - unreachable from this network (connect timeout); no narrative depends on it",
       "reachable": false,
       "status": null,
-      "kind": "connect-timeout",
-      "detail": "undici connect timeout"
+      "kind": "timeout",
+      "detail": "no TCP or TLS response within the probe timeout"
     }
   ],
   "rejectedSources": [
@@ -241,25 +326,33 @@
       "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
       "reachable": false,
       "status": null,
-      "kind": "connect-timeout",
-      "detail": "undici connect timeout"
+      "kind": "timeout",
+      "detail": "no TCP or TLS response within the probe timeout"
     },
     {
       "name": "api.kraken.com",
       "role": "NOT USED - unreachable from this network (connect timeout); coins.llama.fi is used instead",
       "reachable": false,
       "status": null,
-      "kind": "connect-timeout",
-      "detail": "undici connect timeout"
+      "kind": "timeout",
+      "detail": "no TCP or TLS response within the probe timeout"
     },
     {
       "name": "en.wikipedia.org",
       "role": "NOT USED - unreachable from this network (connect timeout); no narrative depends on it",
       "reachable": false,
       "status": null,
-      "kind": "connect-timeout",
-      "detail": "undici connect timeout"
+      "kind": "timeout",
+      "detail": "no TCP or TLS response within the probe timeout"
     }
   ],
-  "summary": "6 used sources reachable; 5 candidate sources not used (3 of them unreachable from this machine); Bitget unreachable."
+  "summary": "8 used sources reachable; 5 candidate sources not used (3 of them unreachable from this machine); Bitget market-data toolkit unreachable (0/3); Bitget narrative gateway reachable.",
+  "wrapperMeasurement": {
+    "generatedAt": "2026-09-23T10:51:11.555Z",
+    "venue": "Gate.io spot v4 (public, keyless)",
+    "degraded": false,
+    "verifiedWrappers": 33,
+    "referenceClosedSharePct": 81.4,
+    "medianClosedMoveSharePct": 60.9
+  }
 }

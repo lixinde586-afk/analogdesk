@@ -246,7 +246,7 @@ function apiRuntime() {
         get("/api/provenance").catch(() => null), get("/api/scenarios").catch(() => null)
       ]);
       const l = { ...lib.library, horizons: lib.library.horizons || [1, 5, 10, 20, 40, 60], scenarios: scen?.scenarios || lib.library.scenarios || null };
-      return { library: l, health, provenance: prov?.provenance || null, bitget: prov?.provenance?.bitget || null };
+      return { library: l, health, provenance: prov?.provenance || null, bitget: prov?.provenance?.bitget || null, wrapper: prov?.provenance?.wrapper || null };
     },
     async analyze(p) {
       const q = new URLSearchParams({ symbol: p.symbol, date: p.date || "latest", horizon: String(p.horizon), k: String(p.k), language: p.language || "auto" });
@@ -301,7 +301,11 @@ function browserRuntime(mods) {
       store = new MemoryStore(mods.replaySeed || {});
       desk = createDesk({
         dataset: mods.dataset, validationResults: mods.validationResults || null,
-        provenance: mods.provenance || {}, config: mods.config || {}
+        provenance: mods.provenance || {}, config: mods.config || {},
+        // Same committed measurement server.mjs loads from data-cache/wrapper-probe.json. If the two
+        // runtimes disagreed here, the card would hash differently in the browser and every warmed
+        // replay record would miss - the exact bug class scripts/check-replay.mjs exists to catch.
+        wrapper: mods.wrapper || null
       });
       const lib = desk.library();
       const full = { ...lib, horizons: desk.horizons, scenarios: desk.scenarios };
@@ -314,7 +318,8 @@ function browserRuntime(mods) {
           validationHorizons: Object.keys(desk.allValidation() || {}).map(Number)
         },
         provenance: mods.provenance || null,
-        bitget: (mods.provenance || {}).bitget || null
+        bitget: (mods.provenance || {}).bitget || null,
+        wrapper: desk.wrapper()
       };
     },
     async analyze(p) {
@@ -325,7 +330,7 @@ function browserRuntime(mods) {
       const prov = mods.provenance || {};
       a.card.provenance = { ...(a.card.provenance || {}), ...prov,
         bitget: prov.bitget || { reachable: false, summary: "not probed in the static build", endpoints: [], disclosure: prov.bitgetDisclosure || null },
-        llm: { mode: "REPLAY/TEMPLATE", model: null, keyPresent: false, baseUrl: prov.llmBaseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1" },
+        llm: { mode: "REPLAY/TEMPLATE", model: null, keyPresent: false, baseUrl: prov.llmBaseUrl || "https://hackathon.bitgetops.com/v1" },
         excludedFromDistance: prov.excludedFromDistance || ["dv20z", "fng", "hyChg20"] };
       const narrative = narrateBrowser(a.card, p.question || "", language);
       return { ok: true, question: p.question || "", language, card: a.card, detail: a.detail, narrative, wallMs: Math.round(performance.now() - t0) };
@@ -362,14 +367,21 @@ function setBadges() {
   bl.className = "badge ok";
   bl.title = `${l.symbols.length} instruments, ${l.sessions} sessions, ${l.from} .. ${l.to}${h?.engineInitMs != null ? ` - engine ready in ${h.engineInitMs} ms` : ""}`;
 
+  // One badge used to say "bitget mcp: unreachable", which read as "this project has no Bitget
+  // integration". It has two, with opposite results on this network, and the badge now says both:
+  // the market-data MCP resets at the TCP layer, while the Bitget-operated hackathon LLM gateway the
+  // narrative layer calls is reachable. Collapsing them either way would misstate the integration.
   const bg = S.boot?.bitget || S.boot?.provenance?.bitget;
   const bb = $("badge-bitget");
+  const narr = bg?.narrative;
   if (bg && bg.summary) {
-    bb.textContent = `bitget mcp: ${bg.reachable ? "reachable" : "unreachable"}`;
-    bb.className = `badge ${bg.reachable ? "ok" : "bad"}`;
+    const md = bg.marketData?.reachable ?? bg.reachable;
+    const gw = narr?.reachable ?? false;
+    bb.textContent = `bitget: data ${md ? "reachable" : "unreachable"} \u00b7 gateway ${gw ? "reachable" : "unreachable"}`;
+    bb.className = `badge ${md ? "ok" : gw ? "warn" : "bad"}`;
     bb.title = bg.summary;
   } else {
-    bb.textContent = "bitget mcp: not probed";
+    bb.textContent = "bitget: not probed";
     bb.className = "badge warn";
     bb.title = "Run node scripts/probe-network.mjs, or /api/bitget-probe on the server deployment.";
   }
@@ -427,7 +439,7 @@ function kpi(k, v, n = "", cls = "") {
 }
 
 function renderCardbar(card, detail) {
-  const i = card.idea, d = card.distribution, c = card.conformal, e = card.excursion;
+  const i = card.idea, d = card.distribution, c = card.conformal, e = card.excursion, w = card.wrapper;
   const med = pc(d?.medianPct), p10 = pc(d?.p10Pct), p90 = pc(d?.p90Pct);
   $("cardbar").innerHTML = `
     <div class="headline">
@@ -439,7 +451,10 @@ function renderCardbar(card, detail) {
     ${c ? kpi(`conformal ${pctPlain(c.coverageTargetPct, 0)}`, `${esc(pc(c.lowerPct).text)} / ${esc(pc(c.upperPct).text)}`, `width ${pctPlain(c.widthPct)}`) : ""}
     ${kpi("P(below start)", pctPlain(d?.probabilityBelowZeroPct), `${d?.n ?? 0} episodes`)}
     ${kpi("P(loss > 10%)", pctPlain(d?.probabilityBelow?.minus10Pct), "at the endpoint", (d?.probabilityBelow?.minus10Pct ?? 0) > 20 ? "neg" : "")}
-    ${e ? kpi("median MAE", esc(pc(e.maxAdverseMedianPct).text), "worst intra-path print", "neg") : ""}`;
+    ${e ? kpi("median MAE", esc(pc(e.maxAdverseMedianPct).text), "worst intra-path print", "neg") : ""}
+    ${w?.sevenByTwentyFour?.closedMoveSharePct != null
+      ? kpi("moved while cash shut", pctPlain(w.sevenByTwentyFour.closedMoveSharePct), `${esc(w.instrument || "")} wrapper`, "neg")
+      : (w?.referenceMarket?.closedSharePct != null ? kpi("week cash-shut", pctPlain(w.referenceMarket.closedSharePct), "reference market, no verified wrapper") : "")}`;
 }
 
 function renderNarrative(narr) {
@@ -653,6 +668,96 @@ function renderDist(card, detail) {
     </div>`;
 }
 
+/**
+ * The 7x24 wrapper panel - the measured answer to the one claim the desk could previously only assert.
+ *
+ * Everything on it comes from data-cache/wrapper-probe.json, written by scripts/measure-wrapper.mjs
+ * and attached to the card by desk.mjs. Three states are rendered and all three are honest:
+ * a verified wrapper with its own tracking, premium, liquidity and closed-hours figures; a symbol
+ * with NO verified wrapper, which says so rather than borrowing a sibling's numbers; and a build on
+ * which the venue was unreachable, which shows the degradation block. A missing measurement is never
+ * filled in with an estimate.
+ */
+function renderWrapper(card) {
+  const box = $("wrapper");
+  const w = card.wrapper;
+  if (!w) {
+    box.innerHTML = `<div class="note">This card carries no wrapper-layer block. It is attached by <code>desk.mjs</code> from <code>data-cache/wrapper-probe.json</code>; run <code>node scripts/measure-wrapper.mjs</code> to produce it.</div>`;
+    return;
+  }
+  const ref = w.referenceMarket;
+  const refBlock = ref ? `
+    <h3>The reference market is shut for most of the week <span class="sub">derived from the library's own session calendar - no venue needed</span></h3>
+    ${kpi("week closed", pctPlain(ref.closedSharePct), `${num(ref.closedHoursPerWeek, 1)}h of ${num(ref.weekHours, 0)}h`)}
+    ${kpi("cash hours / week", num(ref.cashOpenHoursPerWeek, 1), `${num(ref.sessionsPerWeek, 2)} sessions x 6.5h`)}
+    ${kpi("sessions measured", num(ref.sessions, 0), `${esc(ref.from || "")} .. ${esc(ref.to || "")}`)}
+    <p class="small" style="margin-top:6px">${esc(ref.note || "")}</p>` : "";
+
+  if (w.status === "not-measured") {
+    box.innerHTML = `${refBlock}
+      <div class="note bad" style="margin-top:10px"><b>Wrapper layer not measured on this build.</b> ${esc(w.degradation?.disclosure || w.caveatNote || "")}
+      <div class="mono small" style="margin-top:6px">${esc(w.venueName || "")} &middot; ${esc(w.degradation?.kind || "")} &middot; ${esc(w.degradation?.detail || "")} &middot; probed ${esc(w.degradation?.probedAt || "")}</div></div>`;
+    return;
+  }
+
+  if (w.status === "no-verified-wrapper") {
+    box.innerHTML = `${refBlock}
+      <div class="note warn" style="margin-top:10px"><b>No verified tokenised wrapper for ${esc(w.symbol)}.</b> ${esc(w.reason || "")}
+      <div class="small" style="margin-top:6px">${num(w.candidatesTested, 0)} candidate listing(s) on ${esc(w.venueName || "")} were tested and rejected; every rejection and its reason is in <code>data-cache/wrapper-probe.json</code> and served by <code>/api/wrapper</code>. Measured ${esc(w.measuredAt || "")}.</div>
+      <div class="small" style="margin-top:6px">${esc(w.caveatNote || "")}</div></div>`;
+    return;
+  }
+
+  const t = w.tracking || {}, pr = w.premium || {}, lq = w.liquidity || {}, s24 = w.sevenByTwentyFour || {};
+  const tierCls = t.tier === "tight" ? "ok" : t.tier === "fair" ? "info" : "warn";
+  box.innerHTML = `
+    <div class="headline" style="margin-bottom:8px">
+      <h3 style="margin:0">${esc(w.instrument || "")} <span class="dim mono" style="font-size:13px">as a wrapper for ${esc(w.symbol)}</span></h3>
+      <div class="meta">${esc(w.venueName || "")} &middot; snapshot ${esc(w.measuredAt || "")} &middot; issuer suffix ${esc(w.issuerSuffix || "")}</div>
+    </div>
+    ${badge(tierCls, esc(t.tierLabel || t.tier || "unknown"))}
+    ${refBlock}
+
+    <h3 style="margin-top:14px">The measured 7x24 part <span class="sub">how much of the wrapper's own movement lands in the hours the cash market is shut</span></h3>
+    ${kpi("movement outside cash hours", pctPlain(s24.closedMoveSharePct), `of realised hourly moves`, (s24.closedMoveSharePct ?? 0) > 50 ? "neg" : "")}
+    ${kpi("hours outside session", pctPlain(s24.closedHoursSharePct), `${num(s24.hoursObserved, 0)} hourly buckets observed`)}
+    ${kpi("traded outside session", pctPlain(s24.tradedOutsideSessionPct), "share of closed hours with a print")}
+    <p class="small" style="margin-top:6px">${esc(s24.note || "")}</p>
+    ${s24.conventionNote ? `<div class="note info" style="margin-top:6px"><b>Convention, stated so the figure can be checked:</b> ${esc(s24.conventionNote)}</div>` : ""}
+
+    <h3 style="margin-top:14px">Tracking quality <span class="sub">wrapper daily returns against the underlying's raw session closes</span></h3>
+    ${kv([
+      ["return correlation", num(t.returnCorrelation, 4)],
+      ["tracking error", `${num(t.trackingErrorBpPerDay, 0)} <span class="muted">bp / day</span>`],
+      ["tier", `${badge(tierCls, esc(t.tierLabel || t.tier || "unknown"))}`],
+      ["overlap", `${num(t.overlapSessions, 0)} sessions (${esc(t.from || "")} .. ${esc(t.to || "")})`]
+    ])}
+    <p class="small">${esc(t.note || "")}</p>
+
+    <h3 style="margin-top:14px">Premium to the underlying <span class="sub">traded wrapper price against the traded raw close</span></h3>
+    ${kv([
+      ["median premium", pctPlain(pr.medianPct)],
+      ["p10 / p90 band", `${pctPlain(pr.p10Pct)} / ${pctPlain(pr.p90Pct)}`],
+      ["last deviation", pctPlain(pr.priceDeviationPct)],
+      ["wrapper last / raw close", `${num(pr.wrapperLast, 4)} / ${num(pr.lastRawClose, 4)} <span class="muted">(${esc(pr.lastRawCloseDate || "")})</span>`]
+    ])}
+    <p class="small">${esc(pr.note || "")}</p>
+
+    <h3 style="margin-top:14px">Liquidity at the snapshot <span class="sub">what an exit would actually run into</span></h3>
+    ${kv([
+      ["spread", isNum(lq.spreadBps) ? `${num(lq.spreadBps)} <span class="muted">bp</span>` : "\u2013"],
+      ["touch", isNum(lq.bestBid) ? `${num(lq.bestBid, 4)} / ${num(lq.bestAsk, 4)}` : "\u2013"],
+      ["top of book", isNum(lq.topOfBookUsdt) ? `${num(lq.topOfBookUsdt, 0)} <span class="muted">USDT</span>` : "\u2013"],
+      ["depth within 50 bp", isNum(lq.depthWithin50BpsUsdt) ? `${num(lq.depthWithin50BpsUsdt, 0)} <span class="muted">USDT</span>` : "\u2013"],
+      ["depth within 200 bp", isNum(lq.depthWithin200BpsUsdt) ? `${num(lq.depthWithin200BpsUsdt, 0)} <span class="muted">USDT</span>` : "\u2013"],
+      ["quote volume, 24h", isNum(lq.quoteVolume24hUsdt) ? `${num(lq.quoteVolume24hUsdt, 0)} <span class="muted">USDT</span>` : "\u2013"],
+      ["median daily quote volume", isNum(lq.medianDailyQuoteVolumeUsdt) ? `${num(lq.medianDailyQuoteVolumeUsdt, 0)} <span class="muted">USDT</span>` : "\u2013"]
+    ])}
+    <p class="small">${esc(lq.note || "")}</p>
+
+    <div class="note info" style="margin-top:10px">${esc(w.interpretation || "")}</div>
+    <div class="caveat"><b>Caveat, carried verbatim:</b> ${esc(w.caveat || "")}</div>`;
+}
 function renderStress(card) {
   const rows = card.stress || [];
   if (!rows.length) {
@@ -802,19 +907,41 @@ function renderProv(card) {
     : `<div class="note">No network probe on record. Run <code>node scripts/probe-network.mjs</code>; it writes <code>data-cache/network-probe.json</code> and this panel reports the measured result.</div>`;
 
   const bg = p.bitget || np?.bitget;
+  const md = bg?.marketData || null, narr = bg?.narrative || null;
+  const epRow = (e) => `<div class="mono small" style="margin-bottom:3px">${e.ok ? "\u2713" : "\u2717"} ${esc(e.name)} <span class="muted">${esc(e.url)} &middot; ${esc(e.kind || "")}${e.detail ? " &middot; " + esc(e.detail) : ""}${e.latencyMs != null ? " &middot; " + num(e.latencyMs, 0) + "ms" : ""}</span></div>`;
   $("bitget").innerHTML = bg ? `
-    ${badge(bg.reachable ? "ok" : "bad", bg.reachable ? "connected" : "degraded")}
-    <p class="small" style="margin-top:8px">${esc(bg.summary || "")}</p>
-    ${(bg.endpoints || []).map((e) => `<div class="mono small" style="margin-bottom:3px">${e.ok ? "\u2713" : "\u2717"} ${esc(e.name)} <span class="muted">${esc(e.url)} &middot; ${esc(e.kind || "")}${e.detail ? " &middot; " + esc(e.detail) : ""}</span></div>`).join("")}
-    ${bg.disclosure ? `<div class="note bad" style="margin-top:8px">${esc(bg.disclosure)}</div>` : ""}`
+    <p class="small" style="margin-bottom:8px">Two separate Bitget integrations, probed separately, because they have opposite results on this network and a single badge for both would misstate whichever way it pointed.</p>
+    <h4 style="margin:6px 0 4px">1. Market data \u2014 the official MCP toolkit</h4>
+    ${badge((md?.reachable ?? bg.reachable) ? "ok" : "bad", (md?.reachable ?? bg.reachable) ? "connected" : "degraded")}
+    <p class="small" style="margin-top:6px">${esc(md?.summary || bg.summary || "")}</p>
+    ${(md?.endpoints || bg.endpoints || []).map(epRow).join("")}
+    <h4 style="margin:12px 0 4px">2. Narrative \u2014 the Bitget-operated hackathon LLM gateway</h4>
+    ${narr ? badge(narr.reachable ? "ok" : "bad", narr.reachable ? "reachable" : "unreachable") : badge("warn", "not probed")}
+    ${narr?.endpoint ? epRow(narr.endpoint) : ""}
+    ${narr?.summary ? `<p class="small" style="margin-top:6px">${esc(narr.summary)}</p>` : ""}
+    ${bg.disclosure ? `<div class="note bad" style="margin-top:10px">${esc(bg.disclosure)}</div>` : ""}`
     : `<p class="small">Not probed in this build.</p>`;
+
+  const wp = p.wrapper || p.wrapperMeasurement;
+  $("wrapperprov").innerHTML = wp ? `
+    ${badge(wp.degraded ? "bad" : wp.available || wp.verifiedWrappers ? "ok" : "warn", wp.degraded ? "not measured" : "measured")}
+    <p class="small" style="margin-top:8px">${esc(wp.summary || "")}</p>
+    ${kv([
+      ["venue", `<span class="mono small">${esc(wp.venueName || wp.venue || "")}</span>`],
+      ["measured at", esc(wp.measuredAt || wp.generatedAt || "")],
+      ["verified wrappers", num(wp.verified ?? wp.verifiedWrappers, 0)],
+      ["reference market closed", pctPlain(wp.referenceMarket?.closedSharePct)],
+      ["role", `<span class="small">${esc(wp.role || "measurement of the tokenised-equity wrapper layer; NOT a price source for the analog library")}</span>`]
+    ])}
+    <p class="small" style="margin-bottom:0">Written by <code>scripts/measure-wrapper.mjs</code> into <code>data-cache/wrapper-probe.json</code>, committed, and read as data by both runtimes. Rejections and the reason for each are in that file and at <code>/api/wrapper</code>.</p>`
+    : `<div class="note">No wrapper measurement on record. Run <code>node scripts/measure-wrapper.mjs</code>.</div>`;
 
   const llm = p.llm || {};
   $("llmpanel").innerHTML = `
     ${kv([
       ["mode", esc(llm.mode || (S.rt.kind === "BROWSER" ? "REPLAY/TEMPLATE" : "TEMPLATE"))],
       ["model", esc(llm.model || "none configured")],
-      ["endpoint", `<span class="mono small">${esc(llm.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1")}</span>`],
+      ["endpoint", `<span class="mono small">${esc(llm.baseUrl || "https://hackathon.bitgetops.com/v1")}</span>`],
       ["api key present", llm.keyPresent ? "yes" : "no"]
     ])}
     <p class="small">The model receives the research card and nothing else. Every numeral it writes is checked against that card by
@@ -898,6 +1025,7 @@ async function run() {
     renderConformal(r.card);
     renderDist(r.card, r.detail);
     renderStress(r.card);
+    renderWrapper(r.card);
     renderAnalogs(r.card, r.detail);
     renderProv(r.card);
     renderFollowups(r.card, p);
@@ -929,9 +1057,10 @@ const REQUIRED_IDS = [
   "q", "go", "symbol", "date", "horizon", "k", "lang", "stress", "chips", "parsed",
   "status", "badge-mode", "badge-runtime", "badge-lib", "badge-bitget",
   "main", "empty", "results", "request-notes", "cardbar", "tabs", "followups",
-  "panel-brief", "panel-dist", "panel-stress", "panel-analogs", "panel-prov",
+  "panel-brief", "panel-dist", "panel-stress", "panel-wrap", "panel-analogs", "panel-prov",
   "narrative", "state", "conformal", "personal", "dist-sub", "hist", "diststats", "fan", "excursion",
-  "stresstable", "stressdetail", "analog-note", "analogtable",
+  "stresstable", "stressdetail", "wrapper", "analog-note", "analogtable",
+  "wrapperprov",
   "validation", "sources", "network", "bitget", "llmpanel"
 ];
 

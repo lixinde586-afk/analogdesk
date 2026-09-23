@@ -58,6 +58,7 @@
       <button class="tab active" data-tab="brief">Research brief</button>
       <button class="tab" data-tab="dist">Distribution</button>
       <button class="tab" data-tab="stress">Stress scenarios</button>
+      <button class="tab" data-tab="wrap">7x24 wrapper</button>
       <button class="tab" data-tab="analogs">Analog library hits</button>
       <button class="tab" data-tab="prov">Provenance &amp; validation</button>
     </nav>
@@ -94,6 +95,11 @@
       <div id="stressdetail"></div>
     </section>
 
+    <section class="panel" id="panel-wrap">
+      <p class="small">The desk is built on a library of US daily sessions, so the "trades 7x24" premise used to be the one thing it asserted rather than measured. This panel is that measurement: a tokenised-equity wrapper for the instrument on the card, verified against the underlying by two independent tests before any figure from it is shown, then measured for tracking, premium, liquidity and - the point of the whole exercise - how much of its own price movement happens while the reference cash market is shut. It is committed data from <code>scripts/measure-wrapper.mjs</code>, never a live call, and it feeds nothing in the retrieval, calibration or validation path.</p>
+      <div id="wrapper"></div>
+    </section>
+
     <section class="panel" id="panel-analogs">
       <p class="small" id="analog-note"></p>
       <div id="analogtable"></div>
@@ -110,8 +116,10 @@
         <div>
           <h3>Network reachability, as measured</h3>
           <div id="network"></div>
-          <h3>Bitget official MCP</h3>
+          <h3>Bitget integration, as probed</h3>
           <div id="bitget"></div>
+          <h3>7x24 wrapper measurement</h3>
+          <div id="wrapperprov"></div>
           <h3>Narrative layer</h3>
           <div id="llmpanel"></div>
         </div>

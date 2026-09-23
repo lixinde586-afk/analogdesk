@@ -27,6 +27,14 @@ const rnd = (v, dp = 3) => {
 };
 const s = (x, suffix = "") => { const v = nz(x); return v == null ? "n/a" : `${rnd(v)}${suffix}`; };
 const pc = (x) => s(x, "%");
+/** A count, not a measurement: rendered as an integer so the prose never implies decimals it does not have. */
+const num0 = (x) => { const v = nz(x); return v == null ? "no" : String(Math.round(v)); };
+/**
+ * An integer MEASUREMENT, rendered as one. This is not `s(x, 0)`: the second argument of `s` is a
+ * string suffix, so `s(720, 0)` renders "7200" - a number that is in no payload and reads like a
+ * transcription error. Counts and basis-point figures go through here instead.
+ */
+const n0 = (x) => { const v = nz(x); return v == null ? "n/a" : rnd(v, 0); };
 const list = (a, joiner = ", ") => (a || []).join(joiner);
 
 /**
@@ -62,12 +70,66 @@ function bestScenarios(stress, n = 2) {
     .slice(0, n);
 }
 
+/**
+ * The 7x24 wrapper paragraph. It sits in [limits] rather than [verdict] because it is a statement
+ * about what this analysis covers, and because putting a venue measurement in the headline would
+ * invite reading it as part of the analog result - it is not, and nothing in the distribution above is
+ * computed from it. Three states, and each one says which state it is.
+ *
+ * Every figure is read straight off card.wrapper, which desk.mjs fills from the committed
+ * data-cache/wrapper-probe.json, so the numeric gate allows all of them. Integers that exist only
+ * inside explanatory sentences ("50 bp", "168 hours", "6.5 cash hours") are allowed too, because
+ * verify-numbers.mjs whitelists numerals found in card fields named note/caveat/interpretation/label -
+ * which is why those sentences live under exactly those keys.
+ */
+function wrapperEn(w) {
+  if (!w) return null;
+  if (w.status === "measured") {
+    const t = w.tracking, s24 = w.sevenByTwentyFour, lq = w.liquidity, pr = w.premium;
+    return [
+      `The 7x24 premise, measured rather than asserted. The reference cash market is closed for ${pc(s24.referenceClosedSharePct)} of the week - ${s(s24.referenceClosedHoursPerWeek)} of ${s(w.referenceMarket?.weekHours)} hours - and ${pc(s24.closedMoveSharePct)} of ${w.instrument}'s own realised hourly price movement over ${n0(s24.hoursObserved)} observed hours landed inside those closed hours, during which it printed a trade in ${pc(s24.tradedOutsideSessionPct)} of them.`,
+      `That wrapper is a ${t.tierLabel}: daily-return correlation ${s(t.returnCorrelation, 4)} against ${w.symbol}, tracking error ${n0(t.trackingErrorBpPerDay)} bp per day over ${n0(t.overlapSessions)} overlapping sessions, median premium ${pc(pr.medianPct)} with a ${pc(pr.p10Pct)} to ${pc(pr.p90Pct)} band, spread ${s(lq.spreadBps)} bp and ${n0(lq.depthWithin50BpsUsdt)} USDT resting within 50 bp of the touch at the snapshot.`,
+      `${w.caveat}`
+    ].join(" ");
+  }
+  if (w.status === "no-verified-wrapper") {
+    return `The 7x24 premise is only partly measured for this name. The reference cash market is closed for ${pc(w.referenceMarket?.closedSharePct)} of the week, but ${w.reason} ${num0(w.candidatesTested)} candidate listing(s) were tested and refused, and every refusal is recorded with its reason in data-cache/wrapper-probe.json rather than dropped. No wrapper spread, premium or closed-hours figure is reported for ${w.symbol}, and none is estimated.`;
+  }
+  if (w.status === "not-measured") {
+    return `The 7x24 wrapper layer was not measured on this build: ${w.venueName} returned ${w.degradation?.kind || "no result"}. Only the calendar figure is reported, because it needs no venue - the reference cash market is closed for ${pc(w.referenceMarket?.closedSharePct)} of the week. No wrapper figure is estimated to fill the gap.`;
+  }
+  return null;
+}
+
+function wrapperZh(w) {
+  if (!w) return null;
+  // The tier label is rendered in Chinese here and kept in Latin everywhere else, matching the rule the
+  // rest of this file follows: prose is translated, measured field values are not invented in a second
+  // language. A loose tracker is named as loose in both.
+  const ZH_TIER = { tight: "紧密跟踪凭证", fair: "一般跟踪凭证", loose: "松散跟踪凭证，不可当作标的本身阅读", unknown: "无法判定跟踪质量", rejected: "不构成跟踪" };
+  if (w.status === "measured") {
+    const t = w.tracking, s24 = w.sevenByTwentyFour, lq = w.liquidity, pr = w.premium;
+    return [
+      `"7x24"这个前提在这里是被测量出来的，而不是被断言的。参考现货市场每周有 ${pc(s24.referenceClosedSharePct)} 的时间休市——${s(s24.referenceClosedHoursPerWeek)} 小时，全周共 ${s(w.referenceMarket?.weekHours)} 小时；而在 ${n0(s24.hoursObserved)} 个观测小时中，${w.instrument} 自身已实现的小时级价格变动有 ${pc(s24.closedMoveSharePct)} 发生在这些休市时段里，其中 ${pc(s24.tradedOutsideSessionPct)} 的休市小时确实有成交。`,
+      `该凭证属于${ZH_TIER[t.tier] || t.tierLabel}：与 ${w.symbol} 的日收益相关性 ${s(t.returnCorrelation, 4)}，在 ${n0(t.overlapSessions)} 个重叠交易日上的跟踪误差为 ${n0(t.trackingErrorBpPerDay)} 个基点/日，溢价中位数 ${pc(pr.medianPct)}，区间 ${pc(pr.p10Pct)} 至 ${pc(pr.p90Pct)}，快照时点差 ${s(lq.spreadBps)} 个基点，距最优价 50 个基点以内挂单深度 ${n0(lq.depthWithin50BpsUsdt)} USDT。`,
+      `${w.caveat}`
+    ].join("");
+  }
+  if (w.status === "no-verified-wrapper") {
+    return `"7x24"这个前提对该标的只测量到一半：参考现货市场每周有 ${pc(w.referenceMarket?.closedSharePct)} 的时间休市，但${w.reason}共有 ${num0(w.candidatesTested)} 个候选挂牌被测试并拒绝，每一条拒绝及其原因都记录在 data-cache/wrapper-probe.json 中，而不是被静默丢弃。${w.symbol} 的凭差点差、溢价与休市时段数字均不予报告，也不做任何估算。`;
+  }
+  if (w.status === "not-measured") {
+    return `本次构建未能测量 7x24 凭证层：${w.venueName} 返回 ${w.degradation?.kind || "无结果"}。因此只报告不依赖任何交易场所的日历口径数字——参考现货市场每周有 ${pc(w.referenceMarket?.closedSharePct)} 的时间休市。缺口不用估算填补。`;
+  }
+  return null;
+}
 /* --------------------------------- English -------------------------------- */
 
 function renderEn(card) {
   const i = card.idea, r = card.retrieval, d = card.distribution, e = card.excursion, c = card.conformal;
   const v = card.validation, p = card.provenance || {};
   const st = card.stress || [];
+  const w = card.wrapper || null;
   const O = {};
 
   O.verdict = d ? [
@@ -121,6 +183,7 @@ function renderEn(card) {
     v ? `Probability calibration fails a uniformity test: PIT chi-square ${s(v.pitChiSquare)} against a 5% critical value of ${s(v.pitChiSquareCritical5Pct)}. Directional hit rate of the analog median is ${pc(v.directionalHitRatePct)}, i.e. no better than a coin toss, which is the expected result for daily-feature equity prediction and is stated rather than hidden.` : null,
     v?.honestVerdict ? `Engine's own verdict: ${v.honestVerdict}` : null,
     `Retrieval costs ${s(v?.meanRetrievalMs)} ms per query over a library of ${p.sessions} sessions; the full scenario suite is one query per scenario.`,
+    wrapperEn(w),
     `Data provenance: ${p.priceSource || "see research/DATA-PROVENANCE.md"}. Bitget official MCP status for this run: ${p.bitgetMcp?.status || "not probed"}${p.bitgetMcp?.reason ? ` (${p.bitgetMcp.reason})` : ""}.`,
     `Nothing here is investment advice, and no part of it is a prediction. It is a documented, reproducible description of what happened next in a set of historical episodes that resemble the present one.`
   ].filter(Boolean).join(" ");
@@ -134,6 +197,7 @@ function renderZh(card) {
   const i = card.idea, r = card.retrieval, d = card.distribution, e = card.excursion, c = card.conformal;
   const v = card.validation, p = card.provenance || {};
   const st = card.stress || [];
+  const w = card.wrapper || null;
   const O = {};
 
   O.verdict = d ? [
@@ -187,6 +251,7 @@ function renderZh(card) {
     v ? `概率标定未通过均匀性检验：PIT 卡方 ${s(v.pitChiSquare)}，5% 临界值 ${s(v.pitChiSquareCritical5Pct)}。类比中位数的方向命中率 ${pc(v.directionalHitRatePct)}，与抛硬币无异——这对"日频特征预测股票收益"是应有结果，此处如实写出而非隐去。` : null,
     v?.honestVerdict ? `引擎自评：${v.honestVerdict}` : null,
     `单次检索耗时 ${s(v?.meanRetrievalMs)} 毫秒，情景套件每个情景一次检索。`,
+    wrapperZh(w),
     `数据溯源：${p.priceSource || "见 research/DATA-PROVENANCE.md"}。本次运行的 Bitget 官方 MCP 状态：${p.bitgetMcp?.status || "未探测"}${p.bitgetMcp?.reason ? `（${p.bitgetMcp.reason}）` : ""}。`,
     `以上均非投资建议，任何部分都不是预测。它是对"与当前状态相似的历史片段随后发生了什么"的一份可复现、可追溯的描述。`
   ].filter(Boolean).join("");

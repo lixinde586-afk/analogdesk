@@ -1,30 +1,44 @@
 /**
- * AnalogDesk - Bitget official MCP adapter with connectivity probe and honest degradation.
+ * AnalogDesk - Bitget integration adapter, with a connectivity probe and honest degradation.
  *
- * Track 3 expects integration with the Bitget developer toolkit where it helps. The official MCP
- * server for US stocks / ETFs is the natural one for this desk: read-only reference data about the
- * instruments a trader is actually about to trade.
+ * Track 3 expects integration with the Bitget developer toolkit where it helps. This project touches
+ * Bitget in two separate places, and they have opposite fates on the network this build ran on. Both
+ * are measured here and both are reported separately, because collapsing them into one "Bitget: up"
+ * or "Bitget: down" badge would be wrong in whichever direction it was collapsed:
  *
- * It is also, on the network this project was built on, unreachable: every *.bitget.com endpoint
- * fails with ECONNRESET. That is documented here rather than papered over, and the app is built so
- * the failure is visible in the UI:
+ *   1. MARKET DATA - the official Bitget MCP server for US stocks / ETFs, plus the Bitget web and
+ *      public REST hosts. This is the integration a trading desk would want for instrument metadata,
+ *      and it is UNREACHABLE: every *.bitget.com attempt fails with ECONNRESET at the TCP layer, not
+ *      the application layer, from two independent networks. It is documented rather than papered
+ *      over, and the failure is rendered in the UI provenance panel instead of hidden.
  *
- *   - `probeBitget()` runs at server startup and on demand, and records the actual error code;
- *   - `createBitgetAdapter()` returns a degraded adapter that contributes a disclosure block to the
- *     provenance panel instead of data;
- *   - nothing in the retrieval, calibration or stress pipeline depends on it, so a dead endpoint
- *     cannot silently corrupt a number. Every figure in AnalogDesk comes from the keyless sources
- *     listed in research/DATA-PROVENANCE.md.
+ *   2. NARRATIVE - the Bitget-operated hackathon LLM gateway (hackathon.bitgetops.com, OpenAI-
+ *      compatible /v1/chat/completions). This one IS reachable and IS on the critical path: it is the
+ *      endpoint src/llm/client.mjs calls to turn a research card into prose. Every LIVE-mode sentence
+ *      in AnalogDesk, and every generation baked into the replay cache that a keyless reviewer reads,
+ *      was produced through it.
  *
- * If the endpoint becomes reachable, the adapter starts returning instrument metadata and the UI
- * renders it; no code path has to change.
+ * So the honest summary is not "0 Bitget endpoints" and not "Bitget connected". It is: the market-data
+ * toolkit contributes nothing and is disclosed as such, while the narrative layer runs on a Bitget-
+ * operated gateway. `probeAllBitget()` reports the two groups distinctly and `reachable` deliberately
+ * keeps meaning "the MARKET-DATA toolkit is reachable", so no existing panel starts claiming a Bitget
+ * data integration that does not exist.
+ *
+ * Nothing in the retrieval, calibration or stress pipeline depends on either group, so a dead endpoint
+ * cannot silently corrupt a number. Every figure in AnalogDesk comes from the keyless sources listed
+ * in research/DATA-PROVENANCE.md. If the market-data endpoints become reachable, the adapter starts
+ * returning instrument metadata and the UI renders it; no code path has to change.
  */
 
 export const BITGET_ENDPOINTS = {
   mcp: "https://agent.bitget.com/mcp",
   www: "https://www.bitget.com",
-  api: "https://api.bitget.com"
+  api: "https://api.bitget.com",
+  llmGateway: "https://hackathon.bitgetops.com/v1/chat/completions"
 };
+
+/** The market-data group. `reachable`/`reachableCount`/`total`/`endpoints` all describe this group. */
+export const BITGET_MARKET_DATA_KEYS = ["mcp", "www", "api"];
 
 /**
  * Walk the whole `cause` chain. undici reports a TLS/TCP failure as a generic TypeError
@@ -85,45 +99,89 @@ export async function probeBitgetMcp(url = BITGET_ENDPOINTS.mcp, { timeoutMs = 6
     headers: { "Content-Type": "application/json" },
     body: { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }
   });
-  return { ...p, transport: "jsonrpc-2.0 / tools/list" };
+  return { ...p, transport: "jsonrpc-2.0 / tools/list", group: "market-data" };
 }
 
-export async function probeAllBitget({ timeoutMs = 6000 } = {}) {
-  const out = [];
-  out.push(await probeBitgetMcp(BITGET_ENDPOINTS.mcp, { timeoutMs }));
-  out.push(await probeEndpoint(BITGET_ENDPOINTS.www, "Bitget web (www)", { timeoutMs }));
-  out.push(await probeEndpoint(BITGET_ENDPOINTS.api, "Bitget public REST (api)", { timeoutMs }));
-  const reachable = out.filter((x) => x.ok);
+/**
+ * The Bitget-operated hackathon LLM gateway the narrative layer actually calls. Probed WITHOUT a key
+ * and with a deliberately empty message list: what is being measured is reachability, not permission,
+ * so a 401/400 is a successful result and no credential ever leaves this function. The probe reports
+ * the model the running configuration would ask for, so the disclosure names the integration that is
+ * really in use instead of implying a data feed.
+ */
+export async function probeBitgetLlmGateway(url = BITGET_ENDPOINTS.llmGateway, { timeoutMs = 8000, model = null } = {}) {
+  const p = await probeEndpoint(url, "Bitget hackathon LLM gateway (OpenAI-compatible /v1/chat/completions)", {
+    timeoutMs, method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: { model: model || "probe", messages: [] }
+  });
+  return { ...p, transport: "openai-compatible chat/completions", group: "narrative", model: model || null,
+    role: model
+      ? `the narrative layer calls this endpoint; the generations baked into the replay cache were produced here with model ${model}`
+      : "the narrative layer calls this endpoint when an API key is configured" };
+}
+
+export async function probeAllBitget({ timeoutMs = 6000, model = null } = {}) {
+  const marketData = [];
+  marketData.push(await probeBitgetMcp(BITGET_ENDPOINTS.mcp, { timeoutMs }));
+  marketData.push({ ...(await probeEndpoint(BITGET_ENDPOINTS.www, "Bitget web (www)", { timeoutMs })), group: "market-data" });
+  marketData.push({ ...(await probeEndpoint(BITGET_ENDPOINTS.api, "Bitget public REST (api)", { timeoutMs })), group: "market-data" });
+  const narrative = await probeBitgetLlmGateway(BITGET_ENDPOINTS.llmGateway, { timeoutMs: Math.max(timeoutMs, 8000), model });
+
+  const mdReachable = marketData.filter((x) => x.ok);
+  const endpoints = [...marketData, narrative];
+  const mdSummary = mdReachable.length
+    ? `${mdReachable.length}/${marketData.length} Bitget market-data endpoints reachable`
+    : `0/${marketData.length} Bitget market-data endpoints reachable - ${marketData[0].kind}: ${marketData[0].detail}`;
+  const narrSummary = narrative.ok
+    ? `Bitget hackathon LLM gateway reachable (HTTP ${narrative.status}, ${narrative.latencyMs}ms) - this is the endpoint the narrative layer calls`
+    : `Bitget hackathon LLM gateway unreachable - ${narrative.kind}: ${narrative.detail}; the narrative layer falls back to the stored replay cache and then to the deterministic template`;
+
   return {
     probedAt: new Date().toISOString(),
-    reachable: reachable.length > 0,
-    reachableCount: reachable.length,
-    total: out.length,
-    endpoints: out,
-    summary: reachable.length
-      ? `${reachable.length}/${out.length} Bitget endpoints reachable`
-      : `0/${out.length} Bitget endpoints reachable - ${out[0].kind}: ${out[0].detail}`,
-    disclosure: reachable.length ? null
-      : "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+    // `reachable` keeps meaning "the MARKET-DATA toolkit is reachable". Letting the LLM gateway flip
+    // it would make the provenance panel claim a Bitget data integration this project does not have.
+    reachable: mdReachable.length > 0,
+    reachableCount: mdReachable.length,
+    total: marketData.length,
+    endpoints: marketData,
+    marketData: {
+      reachable: mdReachable.length > 0, reachableCount: mdReachable.length, total: marketData.length,
+      endpoints: marketData, summary: mdSummary,
+      disclosure: mdReachable.length ? null
+        : "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced MARKET figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
+    },
+    narrative: {
+      reachable: narrative.ok, endpoint: narrative, summary: narrSummary,
+      model: narrative.model, transport: narrative.transport
+    },
+    summary: `${mdSummary}; ${narrSummary}`,
+    disclosure: mdReachable.length ? null
+      : `Two separate Bitget integrations, two separate results. MARKET DATA: the official Bitget MCP server for US stocks/ETFs and both Bitget web/API hosts are unreachable from this network (${marketData[0].kind}: ${marketData[0].detail}), so AnalogDesk ships no Bitget-sourced market figure; every number comes from the keyless sources in research/DATA-PROVENANCE.md. NARRATIVE: the Bitget-operated hackathon LLM gateway at ${BITGET_ENDPOINTS.llmGateway.replace("/chat/completions", "")} IS reachable${narrative.ok ? ` (HTTP ${narrative.status} on an unauthenticated probe)` : ""}, and it is the endpoint the narrative layer calls${narrative.model ? ` with model ${narrative.model}` : ""} - the prose a reviewer reads was generated there. This distinction is reported rather than collapsed into a single badge, because either collapse would overstate or understate the integration.`
   };
 }
 
 /**
  * Adapter used by the rest of the app. `enrich()` is a no-op that returns a disclosure when the
- * endpoint is down, so callers can invoke it unconditionally.
+ * market-data endpoint is down, so callers can invoke it unconditionally.
  */
 export function createBitgetAdapter(probe) {
   const ok = Boolean(probe?.reachable);
+  const narrative = probe?.narrative || null;
   return {
     available: ok,
     probe,
     status: ok ? "connected" : "degraded",
+    narrativeStatus: narrative?.reachable ? "connected" : "unavailable",
     async enrich(payload) {
+      const narr = narrative
+        ? { status: narrative.reachable ? "connected" : "degraded", summary: narrative.summary, model: narrative.model, probedAt: probe.narrative?.endpoint?.probedAt || probe.probedAt }
+        : null;
       if (!ok) {
-        return { ...payload, bitget: { status: "degraded", disclosure: probe.disclosure, endpoints: probe.endpoints, probedAt: probe.probedAt } };
+        return { ...payload, bitget: { status: "degraded", disclosure: probe.marketData?.disclosure ?? probe.disclosure, endpoints: probe.endpoints, narrative: narr, probedAt: probe.probedAt } };
       }
       // Reachable path: a real tools/list result would be turned into instrument metadata here.
-      return { ...payload, bitget: { status: "connected", probedAt: probe.probedAt, endpoints: probe.endpoints } };
+      return { ...payload, bitget: { status: "connected", probedAt: probe.probedAt, endpoints: probe.endpoints, narrative: narr } };
     }
   };
 }

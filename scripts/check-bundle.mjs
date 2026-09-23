@@ -47,11 +47,17 @@ function mkEl(tag, id = "", attrs = new Map()) {
     appendChild(c) { return c; },
     setAttribute(k, v) { if (k === "id") this.id = v; },
     scrollIntoView() {},
-    /** Only the three selectors app.js actually uses. Anything else is a stub gap, not a pass. */
+    /** Only the selectors app.js actually uses. Anything else is a stub gap, not a pass. */
     querySelectorAll(sel) {
       if (sel === ".tab") return TABS.map((t) => node(t.attrs.get("id") || "", "button", t.attrs));
       if (sel === ".chip") return [...this._html.matchAll(/<button class="chip" data-i="(\d+)"/g)].map((m) => { const a = new Map([["data-i", m[1]]]); return node("", "button", a); });
       if (sel === "tbody tr[data-id]") return [...this._html.matchAll(/data-id="([^"]+)"/g)].map((m) => { const a = new Map([["data-id", m[1]]]); return node("", "tr", a); });
+      // renderFollowups wires its suggestion buttons through this selector. It was missing, so the stub
+      // threw inside run(), run()'s catch swallowed it into a console.error, and every panel assertion
+      // below then measured a page that had stopped rendering two steps early. A stub gap that fails
+      // loudly is fine; one that fails quietly is how a broken demo ships.
+      if (sel === "button") return [...this._html.matchAll(/<button([^>]*)>/g)].map((m) => node("", "button",
+        new Map([...m[1].matchAll(/([\w-]+)="([^"]*)"/g)].map((x) => [x[1], x[2]]))));
       throw new Error(`check-bundle stub: unsupported selector ${JSON.stringify(sel)} - teach the stub, do not return []`);
     },
     querySelector() { return null; }
@@ -94,7 +100,8 @@ const ok = (m) => console.log("  ok   " + m);
 const assert = (cond, goodMsg, badMsg) => (cond ? ok(goodMsg) : fail(badMsg));
 
 const PANELS_TO_RENDER = ["cardbar", "narrative", "state", "conformal", "hist", "diststats", "fan",
-  "excursion", "stresstable", "stressdetail", "analogtable", "validation", "sources", "network", "llmpanel"];
+  "excursion", "stresstable", "stressdetail", "wrapper", "analogtable", "validation", "sources", "network",
+  "bitget", "wrapperprov", "llmpanel"];
 
 const bundle = readFileSync("dist/app.bundle.js", "utf8");
 const t0 = Date.now();
@@ -141,6 +148,16 @@ for (const id of PANELS_TO_RENDER) {
   assert(len > 0, `${String(len).padStart(7)} bytes  #${id}`, `#${id} rendered nothing (${len})`);
 }
 
+console.log("\nthe auto-run actually finished");
+{
+  // run() catches its own errors, paints "failed" into #cardbar and leaves every earlier panel filled,
+  // so a throw halfway through used to look like a pass. Assert the end state instead of trusting it.
+  const cb = NODES.get("cardbar")?.innerHTML || "";
+  assert(cb.includes("analog") && !/>failed</.test(cb), "#cardbar holds the completed headline, not run()'s failure markup", "#cardbar holds the failure markup - the auto-run threw part-way and every panel above is half-rendered");
+  const fu = NODES.get("followups");
+  assert(!!fu && fu.innerHTML.includes("<button") && fu.hidden === false, "#followups rendered its suggestion buttons and is visible", "#followups is empty or hidden - renderFollowups did not complete");
+}
+
 console.log("\nrendered text hygiene");
 const all = PANELS_TO_RENDER.map((id) => NODES.get(id)?.innerHTML || "").join("\n");
 assert(!/\bundefined\b/.test(all), "no literal 'undefined' in any panel", `literal 'undefined' found: ${all.match(/.{0,60}\bundefined\b.{0,60}/)?.[0]}`);
@@ -152,7 +169,8 @@ const AD = globalThis.AnalogDesk;
 assert(!!AD, "window.AnalogDesk exposed", "window.AnalogDesk not set");
 if (AD) {
   const t1 = Date.now();
-  const desk = AD.desk.createDesk({ dataset: AD.dataset, validationResults: AD.validationResults, provenance: AD.provenance, config: {} });
+  assert(!!AD.wrapper, "wrapper measurement baked into the bundle", "window.AnalogDesk.wrapper is missing - the static build would render cards with no 7x24 block while the server renders one, and the two would hash differently");
+  const desk = AD.desk.createDesk({ dataset: AD.dataset, validationResults: AD.validationResults, provenance: AD.provenance, config: {}, wrapper: AD.wrapper || null });
   ok(`engine init in ${Date.now() - t1} ms; ${desk.engine.mx.nSym} instruments x ${desk.engine.mx.nDates} sessions`);
   for (const [sym, H] of [["NVDA", 5], ["BABA", 20], ["SPY", 1], ["KWEB", 10]]) {
     const t2 = Date.now();
@@ -162,6 +180,10 @@ if (AD) {
     const gate = AD.verify.verifyNumbers(tmpl.text, allow);
     const line = `${sym.padEnd(5)} H=${String(H).padEnd(3)} analyze=${String(Date.now() - t2).padStart(4)}ms n=${card.distribution.n} median=${card.distribution.medianPct}% conf=${card.conformal.lowerPct}..${card.conformal.upperPct} scen=${card.stress.length} gate=${gate.ok}(${gate.unsupportedCount}/${gate.total})`;
     assert(gate.ok && card.distribution.n > 0, "  " + line, "  " + line);
+    const w = card.wrapper;
+    assert(!!w && typeof w.status === "string" && w.referenceMarket?.closedSharePct != null,
+      `  ${sym.padEnd(5)} wrapper block present (status ${w?.status}, reference market closed ${w?.referenceMarket?.closedSharePct}%)`,
+      `  ${sym} has no usable wrapper block - the card would silently drop the measured 7x24 figure`);
   }
 }
 

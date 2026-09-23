@@ -73,7 +73,7 @@ if (perturbed) {
     run.timing = { ...(run.timing || {}), meanQueryMs: 999.9, coldQueryMs: 1234.5 };
   }
 }
-const browserDesk = createDesk({ dataset, validationResults: perturbed, provenance: browserProvenance });
+const browserDesk = createDesk({ dataset, validationResults: perturbed, provenance: browserProvenance, wrapper: readJson(join(ROOT, "data-cache", "wrapper-probe.json")) });
 const runC = browserDesk.analyze(baseReq).card;
 runC.provenance = {
   ...(runC.provenance || {}), ...browserProvenance,

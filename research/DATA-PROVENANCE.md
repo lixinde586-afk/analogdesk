@@ -143,7 +143,7 @@ win32 / node v24.21.0:
 | `api.kraken.com` | **connect timeout** | not used — same |
 | `en.wikipedia.org` | **connect timeout** | not used — no narrative depends on it |
 | `api.github.com`, `registry.npmjs.org` | reachable, HTTP 200 | available; the project has zero runtime dependencies, so npm is tooling only |
-| `dashscope.aliyuncs.com` | reachable, **HTTP 401** without a key | optional narrative layer; the product is complete without it |
+| `api.gateio.ws` | reachable, **HTTP 200** keyless | **USED for measurement only** — Gate.io spot v4 supplies the tokenised-equity wrapper layer (tracking, premium, spread, depth, closed-hours movement) for `scripts/measure-wrapper.mjs`. It is never a price source for the analog library; see section 9 |
 | `hackathon.bitgetops.com` | reachable, **HTTP 200** with the hackathon key | the endpoint the committed replay cache was generated from: model `qwen3.8-max` with `enable_thinking:false`, the only model this key admits (`qwen-plus` and `qwen3-max` return 403 `Model.AccessDenied`). Narrative text only - it never supplies a figure |
 | `*.bitget.com`, re-tested | **connection-reset** on all three endpoints, from a second independent network | the 0/3 result in section 6 is not an artefact of one machine's network - it reproduces elsewhere, which is why no Bitget-sourced figure ships |
 
@@ -199,3 +199,67 @@ contract guarantee. They were chosen because a judge can reproduce the build wit
 The cost is that a schema change upstream would break the build; the mitigation is the raw HTTP cache in
 `data-cache/raw/`, which makes every committed dataset byte-for-byte reproducible offline, and the committed
 `dataset.json` itself, which lets the demo, the validation and the static bundle run with no network at all.
+---
+
+## 9. The 7x24 wrapper-layer measurement
+
+Sections 1–8 describe the data the **analog library** is built from. This section describes the only data in
+the project that comes from a trading venue, and it is kept separate on purpose: it is a *measurement of the
+instrument layer*, and no retrieval, conformal or validation figure uses any of it. Adding a venue must not be
+able to move a published number, so it cannot.
+
+**Why it exists.** The thesis is about a market that never closes, but every price above is a US daily
+session. `research/LIMITATIONS.md` §9 used to state that plainly: nothing in the repo measured a weekend. That
+gap is now closed for the instrument layer.
+
+**Venue.** `api.gateio.ws` — Gate.io spot v4, public and keyless (`/spot/currency_pairs`, `/spot/tickers`,
+`/spot/order_book`, `/spot/candlesticks`). Chosen because it is reachable from this network and lists
+tokenised US equities against USDT; the Bitget market-data endpoints are not (§6). Reachability is measured
+by `npm run probe` alongside every other host and recorded in `data-cache/network-probe.json`.
+
+**Connector.** `src/data/xstocks.mjs` — URL builders, the two verification tests, the pure statistics, a
+reachability probe symmetric with the Bitget one, and a `venueDegradation()` block so an unreachable venue
+produces a disclosure rather than a number.
+
+**Runner.** `scripts/measure-wrapper.mjs` → `data-cache/wrapper-probe.json` (committed, ~129 KB, snapshot
+`2026-09-23T10:51:11Z`). Read as *data* by `server.mjs`, `mcp-server.mjs`, `scripts/run-demo.mjs`,
+`scripts/replay-cards.mjs` and the compiled bundle — never fetched at request time, because a live order book
+changes every second and a card whose numbers move between runs cannot be matched against the replay cache.
+
+**Verification — two independent tests, both required.**
+
+1. **Price.** The wrapper's last traded price must sit within +/-7% of the underlying's last **raw** session
+   close (`prices[sym].c`). Never the dividend-adjusted close (`prices[sym].a`), which sits below it by the
+   cumulative dividend factor — comparing across bases would fail every dividend payer.
+2. **Correlation.** Daily returns must correlate >= 0.5 with the underlying's over >= 20 overlapping library
+   sessions. Tracking error (sd of the daily return difference, bp/day) is reported next to it and the pair is
+   tiered `tight` / `fair` / `loose`; the tier is always shown with the number.
+
+Test 1 alone is not evidence and was caught being not evidence: **LINK (Chainlink) trades near LI Auto's share
+price**, so a price-only rule would have "verified" a crypto token as a tokenised Chinese EV maker. It is
+refused by test 2 at correlation 0.227. `scripts/check-wrapper.mjs` asserts that specific rejection by name,
+so loosening the correlation floor fails the build.
+
+**Discovery is deliberately permissive, verification is not.** Any base starting with the underlying's ticker
+and quoted in USDT, with up to three extra characters, is a candidate — Gate.io lists the same underlying from
+more than one issuer (`G` 27, `X` 17, `ON` 20 candidates). Of **256** candidates, **33** were accepted and
+**192** refused; every refusal is stored in `wrapper-probe.json` with the stage and reason that refused it
+(`price` 160, `correlation` 1, `duplicate` 31). Nothing is dropped silently. Where several wrappers verify
+against one underlying, the canonical one reported is the verified pair with the highest 24h quote volume.
+
+**The closed-hours figure, and its convention.** US cash regular trading hours are 13:30–20:00 UTC in daylight
+time and 14:30–21:00 UTC in standard time. The measurement counts every Monday–Friday hourly candle bucket
+from 13:00 to 20:59 UTC as "reference session open" — 40 hours a week against the real 32.5. The convention is
+**deliberately generous to the cash session**, so the resulting closed-hours movement share is biased
+*downward*: it understates how much of the wrapper's movement lands while the reference market is shut rather
+than overstating it. The convention string is stored in the file and rendered on the card.
+
+The reference-market closed share itself (**81.4%** of the week, 136.67h of 168h) needs no venue at all: it
+is derived from the library's own session calendar (2513 sessions over 521.4 weeks = 4.819 sessions/week x
+6.5h = 31.33h open), so it is reported even for the 38 instruments that have no verified wrapper.
+
+**Trust boundary.** Gate.io is a free keyless endpoint with no SLA, and tokenised-equity listings change: a
+pair can be delisted, reissued under a new suffix, or start trading at a level that fails the price test. The
+committed snapshot is what every card reports, and it is timestamped; re-running `npm run measure:wrapper`
+produces a new snapshot and `npm run check:wrapper` re-verifies every acceptance rule against it. A card
+never shows a wrapper figure without the timestamp it was measured at.

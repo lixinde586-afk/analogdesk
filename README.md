@@ -261,8 +261,9 @@ report does **not** show: `research/VALIDATION.md` and `research/LIMITATIONS.md`
 
 ## Data and the network this was built on
 
-Six keyless sources, all reachable from the build machine and all measured by `npm run probe`
-(`data-cache/network-probe.json`, timestamps included):
+Six keyless sources feed the analog library, all reachable from the build machine and all measured by
+`npm run probe` (`data-cache/network-probe.json`, timestamps included). A seventh host, `api.gateio.ws`, is
+used **only** to measure the tokenised-wrapper layer and never as a price source:
 
 `api.stockanalysis.com` (daily raw OHLCV **+ adjusted close** - both bases carried per symbol, never
 mixed in one ratio, 71 instruments, 10y) · `fred.stlouisfed.org`
@@ -276,14 +277,63 @@ Rejected or unused candidates are disclosed rather than silently dropped: Yahoo 
 keyless programmatic access; Stooq is reachable but kept out so every source is one keyless endpoint with a
 stable contract; CoinGecko, Kraken and Wikipedia time out from this machine.
 
-### Bitget official MCP — degraded, disclosed
+`api.gateio.ws` (Gate.io spot v4, keyless) supplies the **7x24 wrapper-layer measurement** only — tracking,
+premium, spread, depth and closed-hours movement for tokenised US equities. It feeds nothing in the analog
+library, the conformal scale or the validation, so adding a venue cannot move a published figure.
 
-**0 of 3** Bitget endpoints (`agent.bitget.com/mcp`, `www.bitget.com`, `api.bitget.com`) are reachable from
-the network this build ran on. Every attempt fails at the **TCP layer**: `connection-reset — TCP connection
-reset by peer before any HTTP response`. AnalogDesk therefore ships **no Bitget-sourced figure**. The
-connector is implemented (`src/data/bitget.mjs`), probes on start-up, classifies the transport error, and
-renders the degradation in the provenance panel of every card instead of hiding it. The run record states
-which probe run the evidence comes from.
+
+
+### Bitget — two integrations, opposite results, both disclosed
+
+Bitget appears here twice, and the honest summary is neither "0 endpoints" nor "Bitget connected".
+
+**Market data: 0 of 3 reachable.** `agent.bitget.com/mcp`, `www.bitget.com` and `api.bitget.com` all fail at
+the **TCP layer** from the network this build ran on (`connection-reset — TCP connection reset by peer before
+any HTTP response`, re-probed 2026-09-23, reproduced from a second independent network). AnalogDesk therefore
+ships **no Bitget-sourced market figure**. The connector is implemented (`src/data/bitget.mjs`), probes on
+start-up, classifies the transport error by walking the `cause` chain, and renders the degradation in the
+provenance panel of every card instead of hiding it.
+
+**Narrative: reachable, and on the critical path.** The Bitget-operated hackathon LLM gateway
+`https://hackathon.bitgetops.com/v1` answers an unauthenticated probe with HTTP 401 — reachable — and it is
+the endpoint `src/llm/client.mjs` calls. Every LIVE-mode sentence, and **every generation in the committed
+replay cache that a keyless reviewer reads**, was produced there with model `qwen3.8-max`. It supplies prose
+and never a figure: the numeric gate rejects any numeral not present in the research card.
+
+`probeAllBitget()` reports the two groups separately, and `reachable` keeps meaning *the market-data toolkit
+is reachable*, so no panel can claim a Bitget data integration that does not exist. The header badge reads
+`bitget: data unreachable · gateway reachable`. Full detail: `research/DATA-PROVENANCE.md` §6 and
+`research/LIMITATIONS.md` §12.
+
+### The 7x24 wrapper layer — measured, not asserted
+
+The desk's headline premise is a market that never closes, but every price in the analog library is a US daily
+session. That used to be the one claim with no number behind it, and `research/LIMITATIONS.md` §9 said so.
+`scripts/measure-wrapper.mjs` now measures it against a venue that *is* reachable from this network — Gate.io
+spot v4, public and keyless — and commits the result to `data-cache/wrapper-probe.json` (snapshot
+2026-09-23T10:51:11Z). Every card carries it as `card.wrapper`, the UI has a `7x24 wrapper` tab, and
+`npm run check:wrapper` gates it.
+
+| measured | value |
+|---|---|
+| reference cash market closed | **81.4% of the week** (136.67h of 168h, from the library's own 2513-session calendar) |
+| wrapper movement in those closed hours | **median 60.9%** of realised hourly moves (range 46.2% – 79.9%, 33 pairs x 720 hourly candles) |
+| wrappers verified | **33** of 71 library instruments (**46.5%** coverage), from 256 candidates |
+| candidates refused | **192**, each recorded with the test that refused it |
+| tracking | median correlation **0.9561**, median tracking error **47 bp/day**, tiers 14 tight / 14 fair / 5 loose |
+| premium to the raw close | median **0.08%**, worst p90 **4.09%** |
+| liquidity at the snapshot | median spread **33.13 bp** (5 – 327 bp), median **44,765 USDT** within 50 bp of the touch |
+
+Two independent tests decide what counts as a wrapper: price within +/-7% of the underlying's **raw** session
+close, *and* daily-return correlation >= 0.5 over >= 20 sessions. Price proximity alone is not evidence and
+was caught being not evidence — **LINK trades near LI Auto's share price**, passes on price, and is refused on
+correlation at 0.227. `check:wrapper` asserts that rejection by name.
+
+It is a **measurement of the instrument layer, not a new price source**: nothing in retrieval, the conformal
+scale or any validation figure uses it, so adding a venue cannot move a number a reviewer has already read.
+The limits — one venue and not Bitget's, a conservative closed-hours convention that biases the 60.9%
+*downward*, 38 instruments with no verified wrapper, and a calm-market snapshot — are itemised in
+`research/LIMITATIONS.md` §9.
 
 ---
 
@@ -294,15 +344,19 @@ server.mjs                 zero-dependency node:http API + static server
 mcp-server.mjs             the same desk as an MCP tool server (stdio JSON-RPC 2.0, zero dependencies)
 web/                       the desk UI (index.html, styles.css, app.js)
 dist/                      static deployment bundle (browser-side engine, zero fetch)
-src/data/                  sources.mjs, build-dataset.mjs, universe.mjs, bitget.mjs, xstocks.mjs
+src/data/                  sources.mjs, build-dataset.mjs, universe.mjs,
+                           bitget.mjs (market-data MCP probe + honest degradation),
+                           xstocks.mjs (tokenised-wrapper connector, verification tests, stats)
 src/engine/                features, analog, distribution, stress, validation
 src/llm/                   client, config, prompt, card, lui, narrate, template, replay, verify-numbers
 src/desk.mjs               the facade the UI and the demo both call
 scripts/                   verify.mjs, run-demo.mjs, compile-bundle.mjs, probe-network.mjs,
-                           check-{gate,lui,html,bundle,replay,mcp,server,browser}.mjs,
+                           measure-wrapper.mjs (the 7x24 wrapper measurement),
+                           check-{gate,lui,html,bundle,wrapper,replay,mcp,server,browser}.mjs,
                            replay-cards.mjs, warm-replay.mjs, publish-github.mjs
-data-cache/                dataset.json (committed), llm-replay/ (committed), network-probe.json,
-                           build-report.md, raw/ (git)
+data-cache/                dataset.json (committed), llm-replay/ (committed),
+                           network-probe.json + wrapper-probe.json (both committed measurements),
+                           build-report.md, raw/ (gitignored)
 research/                  VALIDATION.md, THESIS.md, DATA-PROVENANCE.md, LIMITATIONS.md
 demo/                      RUN-RECORD.md, run-record.json, narrative.txt
 ```
@@ -324,7 +378,20 @@ AnalogDesk 是一台**决策压力测试台**：你用一句自然语言说出�
 - 非法或越界请求会被规范化并**如实披露**：期限对齐到已测量档位（1/5/10/20/40/60），邻居数限制在 10..200；
   只要不是 k = 50，卡片上方就会出现琥珀色提示条，说明冻结的共形尺度与全部样本外指标都是在 k = 50 下拟合和测量的。
   无法回答的请求直接报错并指出怎么改，绝不返回一张空壳卡片。
-- Bitget 官方 MCP 在本构建网络下 TCP 层被重置（0/3 可达），已如实披露，产品中不含任何 Bitget 来源数字。
+- **「7x24」这句话现在是测出来的，不是喊出来的。** 类比库全部是美股日线，所以过去这是唯一一个没有数字支撑的
+  主张。`scripts/measure-wrapper.mjs` 现在在本网络可达的 Gate.io 现货 v4（公开、免密钥）上测量代币化美股凭证层，
+  结果提交在 `data-cache/wrapper-probe.json`，每张卡片带 `card.wrapper`，UI 有独立的「7x24 wrapper」标签页：
+  参考现货市场每周有 **81.4%** 的时间休市（168 小时中的 136.67 小时，由库内 2513 个交易日的日历推出，不依赖任何交易场所）；
+  33 个已验证凭证自身**已实现的小时级价格变动中，中位数 60.9% 发生在这些休市时段**（区间 46.2%–79.9%）；
+  跟踪相关性中位数 0.9561，跟踪误差中位数 47 bp/日，溢价中位数 0.08%，点差中位数 33.13 bp。
+  凭证必须同时通过**两道独立检验**（价格贴近原始收盘价 ±7%，且日收益相关性 ≥ 0.5）才会被采用：
+  LINK 的价格接近理想汽车股价，只靠价格检验就会把一个加密代币"验证"成中概股，因此被相关性检验以 0.227 拒绝，
+  `npm run check:wrapper` 会点名断言这条拒绝记录。256 个候选中 192 个被拒，**每一条拒绝及其原因都被记录**。
+  它只是**工具层的测量**，不进入检索、共形尺度或任何验证指标，所以新增一个交易场所动不了已发布的数字。
+- Bitget 有两处集成，结果相反，分开披露：**行情数据** 0/3 可达（`agent.bitget.com/mcp`、`www`、`api` 全部在 TCP 层被
+  重置），产品中不含任何 Bitget 来源的行情数字；**叙述层**走 Bitget 运营的黑客松网关
+  `https://hackathon.bitgetops.com/v1`，可达，且正是模型文案（含已提交的回放缓存）的实际来源。顶部徽章因此显示
+  `bitget: data unreachable · gateway reachable`，而不是一个会把两种情况都说错的单一状态。
 
 ## Disclaimer
 

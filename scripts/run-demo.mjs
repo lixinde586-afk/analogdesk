@@ -85,7 +85,14 @@ function renderMarkdown(ctx) {
   L.push(`| Decision session | ${mdEsc(i.asOfSession)}, adjusted close ${n(i.referenceClose, 4)} (return basis), raw close ${n(i.referenceCloseRaw, 4)} (path-risk basis) |`);
   L.push(`| Horizon | ${mdEsc(i.horizonLabel)} |`);
   L.push(`| Narrative mode | **${narrative.mode}**${narrative.model ? ` (${narrative.model})` : ""} |`);
-  L.push(`| Numeric gate | ${gate.ok ? "**PASS**" : "**FAIL**"} - ${gate.total - gate.unsupportedCount}/${gate.total} numerals traced to the research card |`);
+  L.push(`| Numeric gate | ${gate.ok ? "**PASS" : "**FAIL"} - ${gate.total - gate.unsupportedCount}/${gate.total} numerals traced to the research card |`);
+  // The 7x24 premise used to be the one row this table could not fill. It is a measurement now, so it
+  // gets a row: which instrument was verified, and how much of its own movement landed outside cash hours.
+  L.push(`| 7x24 wrapper layer | ${card.wrapper?.status === "measured"
+    ? `**measured** - ${mdEsc(card.wrapper.instrument)} (${mdEsc(card.wrapper.tracking.tierLabel)}), reference market closed ${pl(card.wrapper.sevenByTwentyFour.referenceClosedSharePct)} of the week, ${pl(card.wrapper.sevenByTwentyFour.closedMoveSharePct)} of the wrapper's own hourly movement landed in those closed hours`
+    : card.wrapper?.status === "no-verified-wrapper"
+      ? `**no verified wrapper for ${mdEsc(i.symbol)}** - reference market closed ${pl(card.wrapper.referenceMarket?.closedSharePct)} of the week; no wrapper figure reported and none estimated`
+      : `**not measured on this build**`} |`);
   L.push(`| Wall time | engine init ${n(timing.engineInitMs, 0)} ms, analysis ${n(timing.analyzeMs, 0)} ms (retrieval ${n(timing.retrievalMs, 0)} ms), narrative ${isFinite(narrative.latencyMs) ? n(narrative.latencyMs, 0) + " ms" : "n/a (no model call)"} |`);
   L.push(``);
   L.push(`---`);
@@ -289,17 +296,55 @@ function renderMarkdownPart2(ctx) {
     for (const t of np.targets || []) L.push(`| \`${mdEsc(t.name)}\` | ${t.status ?? "\u2013"} | ${t.ok ? "yes" : `no (${mdEsc(t.kind)})`} | ${mdEsc(t.role)} |`);
     L.push(``);
   }
-  L.push(`### Bitget official MCP`);
+  L.push(`### Bitget - two integrations, probed separately`);
+  L.push(``);
+  L.push(`Bitget appears in this project twice and the two results are opposite, so they are reported separately: one badge for both would misstate the integration whichever way it pointed.`);
   L.push(``);
   if (bitget) {
-    L.push(`${mdEsc(bitget.summary || "")} (${mdEsc(bitget.probedAt || "n/a")}).`);
-
+    const md = bitget.marketData || null, narr = bitget.narrative || null;
+    L.push(`**1. Market data - the official MCP toolkit.** ${mdEsc(md?.summary || bitget.summary || "")} (probed ${mdEsc(bitget.probedAt || "n/a")}).`);
     if (bitgetProbeSource) L.push(`Evidence for this probe: ${mdEsc(bitgetProbeSource)}.`);
-    for (const e of bitget.endpoints || []) L.push(`- ${e.ok ? "reachable" : "UNREACHABLE"} - ${mdEsc(e.name)} \`${mdEsc(e.url)}\` - ${mdEsc(e.kind || "")}${e.detail ? ": " + mdEsc(e.detail) : ""}`);
+    for (const e of md?.endpoints || bitget.endpoints || []) L.push(`- ${e.ok ? "reachable" : "UNREACHABLE"} - ${mdEsc(e.name)} \`${mdEsc(e.url)}\` - ${mdEsc(e.kind || "")}${e.detail ? ": " + mdEsc(e.detail) : ""}`);
+    L.push(``);
+    L.push(`**2. Narrative - the Bitget-operated hackathon LLM gateway.** ${mdEsc(narr?.summary || "not probed")}`);
+    if (narr?.endpoint) L.push(`- ${narr.endpoint.ok ? "reachable" : "UNREACHABLE"} - ${mdEsc(narr.endpoint.name)} \`${mdEsc(narr.endpoint.url)}\` - ${mdEsc(narr.endpoint.kind || "")}${narr.endpoint.detail ? ": " + mdEsc(narr.endpoint.detail) : ""}`);
+    L.push(`- this is the endpoint the narrative layer calls; the mode on this run was **${mdEsc(narrative.mode)}**${narrative.model ? ` with model \`${mdEsc(narrative.model)}\`` : ""}. It supplies prose and never a figure.`);
     L.push(``);
     if (bitget.disclosure) L.push(`> ${mdEsc(bitget.disclosure)}`);
   } else {
     L.push(`Not probed for this run.`);
+  }
+  L.push(``);
+  L.push(`### 7x24 wrapper layer, as measured`);
+  L.push(``);
+  const w = card.wrapper;
+  if (!w || w.status === "not-measured") {
+    L.push(`Not measured on this build${w?.degradation ? ` (${mdEsc(w.venueName)}: ${mdEsc(w.degradation.kind)} - ${mdEsc(w.degradation.detail)})` : ""}. No wrapper figure is reported and none is estimated; the card describes the underlying only.`);
+  } else {
+    const rm = w.referenceMarket;
+    if (rm) L.push(`Reference market, from the library's own session calendar (no venue needed): **${pl(rm.closedSharePct)}** of the week closed - ${n(rm.closedHoursPerWeek, 2)}h of ${n(rm.weekHours, 0)}h, from ${n(rm.sessions, 0)} sessions over ${n(rm.weeksObserved, 1)} weeks at 6.5 cash hours each.`);
+    if (w.status === "measured") {
+      const t = w.tracking, s24 = w.sevenByTwentyFour, lq = w.liquidity, pr = w.premium;
+      L.push(``);
+      L.push(`Wrapper verified for ${mdEsc(card.idea.symbol)}: \`${mdEsc(w.instrument)}\` on ${mdEsc(w.venueName)}, snapshot ${mdEsc(w.measuredAt)}.`);
+      L.push(``);
+      L.push(`| measured | value |`);
+      L.push(`|---|---|`);
+      L.push(`| movement outside the cash session | **${pl(s24.closedMoveSharePct)}** of realised hourly moves, over ${n(s24.hoursObserved, 0)} hourly candles |`);
+      L.push(`| hours outside the session | ${pl(s24.closedHoursSharePct)}, with a print in ${pl(s24.tradedOutsideSessionPct)} of them |`);
+      L.push(`| tracking | correlation ${n(t.returnCorrelation, 4)}, error ${n(t.trackingErrorBpPerDay, 0)} bp/day over ${n(t.overlapSessions, 0)} sessions - **${mdEsc(t.tierLabel)}** |`);
+      L.push(`| premium to the raw close | median ${pl(pr.medianPct)}, p10..p90 ${pl(pr.p10Pct)}..${pl(pr.p90Pct)}, last deviation ${pl(pr.priceDeviationPct)} |`);
+      L.push(`| liquidity at the snapshot | spread ${n(lq.spreadBps)} bp, ${n(lq.depthWithin50BpsUsdt, 0)} USDT within 50 bp, ${n(lq.depthWithin200BpsUsdt, 0)} USDT within 200 bp, 24h quote volume ${n(lq.quoteVolume24hUsdt, 0)} USDT |`);
+      L.push(``);
+      L.push(`Convention, so the figure can be checked: ${mdEsc(s24.conventionNote || "")}`);
+      L.push(``);
+      L.push(`> ${mdEsc(w.caveat || "")}`);
+    } else {
+      L.push(``);
+      L.push(`**No verified wrapper for ${mdEsc(card.idea.symbol)}.** ${mdEsc(w.reason || "")} ${n(w.candidatesTested, 0)} candidate listing(s) were tested and refused; every refusal and its reason is in \`data-cache/wrapper-probe.json\`. No wrapper spread, premium or closed-hours figure is reported for this instrument, and none is estimated.`);
+    }
+    L.push(``);
+    L.push(`Produced by \`scripts/measure-wrapper.mjs\`, committed as \`data-cache/wrapper-probe.json\`, gated by \`npm run check:wrapper\`. It is a measurement of the instrument layer: no retrieval, conformal or validation figure above uses any of it.`);
   }
   L.push(``);
   L.push(`## 9. Reproducing this run`);
@@ -308,8 +353,10 @@ function renderMarkdownPart2(ctx) {
   L.push(`npm install            # zero runtime dependencies; this is a no-op but keeps the flow standard`);
   L.push(`npm run build:data     # rebuild data-cache/dataset.json from the keyless sources (cached; ~10s warm)`);
   L.push(`npm run verify         # re-fit and re-score the frozen validation -> research/VALIDATION.md`);
-  L.push(`npm run demo           # regenerate this file and demo/run-record.json`);
-  L.push(`npm run check          # numeric-gate grid + static bundle build + in-browser engine check`);
+  L.push(`npm run demo           # regenerate this file and demo/run-record.json
+npm run measure:wrapper# re-measure the 7x24 wrapper layer -> data-cache/wrapper-probe.json`);
+  L.push(`npm run check          # nine gates: numeric grid, LUI, markup, bundle-in-a-DOM-stub, wrapper
+                       # measurement, replay cache, MCP, server, real headless Chrome`);
   L.push(`npm start              # the interactive desk at http://127.0.0.1:3000`);
   L.push("```");
   L.push(``);
@@ -377,6 +424,7 @@ async function main() {
   const dataset = readJson(datasetPath);
   const validationResults = readJson(join(ROOT, "research", "validation-results.json"));
   const networkProbe = readJson(join(ROOT, "data-cache", "network-probe.json"));
+const wrapperProbe = readJson(join(ROOT, "data-cache", "wrapper-probe.json"));
 
   log(`loading analog library ...`);
   const t0 = Date.now();
@@ -391,7 +439,7 @@ async function main() {
     } : null,
     validationGeneratedAt: validationResults?.generatedAt || null
   };
-  const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg });
+  const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe });
   const engineInitMs = Date.now() - t0;
   log(`engine ready in ${engineInitMs} ms - ${desk.engine.mx.nSym} instruments x ${desk.engine.mx.nDates} sessions (${dataset.meta?.from} .. ${dataset.meta?.to})`);
 
@@ -408,7 +456,9 @@ async function main() {
     : "not probed";
   try {
     log(`probing Bitget endpoints ...`);
-    const live = await probeAllBitget({ timeoutMs: Number(cfg.bitget.probeTimeoutMs) });
+    // The narrative probe names the model this run is configured for, so the recorded disclosure says which
+// integration is actually in use rather than implying a market-data feed.
+const live = await probeAllBitget({ timeoutMs: Number(cfg.bitget.probeTimeoutMs), model: cfg.llm.model });
     if (isClassified(live)) {
       bitget = live;
       bitgetProbeSource = `live probe ${live.probedAt || "n/a"}`;
