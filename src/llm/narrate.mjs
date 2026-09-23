@@ -28,7 +28,7 @@ import { buildAllowlist, verifyNumbers, retryInstruction, defaultAllowance } fro
 import { cardDigest } from "./replay.mjs";
 import { detectLang } from "./lui.mjs";
 
-export const PROMPT_VERSION = "1";
+export const PROMPT_VERSION = "2";
 
 function allowFor(card) {
   return buildAllowlist(card, defaultAllowance(card));

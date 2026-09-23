@@ -39,6 +39,15 @@ export const FEATURE_UNITS = {
 
 const PCT_FEATURES = new Set(Object.entries(FEATURE_UNITS).filter(([, u]) => u === "pct").map(([k]) => k));
 
+/**
+ * z-scores leave the engine as full doubles. The card is the only thing the model sees, and the
+ * numeric gate accepts anything within 0.5% of a payload value - so a payload carrying sixteen
+ * significant digits licenses the model to print all sixteen, which reads as a machine dump rather
+ * than an analysis. Rounding here is the control that actually works: a figure the card does not
+ * carry cannot be cited at that precision. Three decimals matches what template.mjs already renders.
+ */
+const round3 = (x) => (x == null || !Number.isFinite(x) ? null : Number(x.toFixed(3)));
+
 export function displayFeature(name, value) {
   if (value == null || !Number.isFinite(value)) return null;
   if (PCT_FEATURES.has(name)) return Number((value * 100).toFixed(2));
@@ -59,7 +68,7 @@ export function notableFeatures(query, { top = 8, exclude = [] } = {}) {
   return FEATURES
     .filter((f) => !ex.has(f))
     .map((f) => ({ feature: f, label: FEATURE_LABELS[f] || f, unit: FEATURE_UNITS[f] || "level",
-      value: displayFeature(f, query.features[f]), z: query.z[f], zUsed: query.zUsed[f] }))
+      value: displayFeature(f, query.features[f]), z: round3(query.z[f]), zUsed: round3(query.zUsed[f]) }))
     .filter((x) => x.z != null && Number.isFinite(x.z))
     .sort((a, b) => Math.abs(b.z) - Math.abs(a.z))
     .slice(0, top);
@@ -95,7 +104,7 @@ export function buildCard({ result, stress = null, validation = null, provenance
     currentState: {
       notable: notableFeatures(q, { top: 8, exclude: [] }),
       allFeatures: FEATURES.map((f) => ({ feature: f, label: FEATURE_LABELS[f] || f, unit: FEATURE_UNITS[f] || "level",
-        value: displayFeature(f, q.features[f]), z: q.z[f] == null || !Number.isFinite(q.z[f]) ? null : Number(q.z[f].toFixed(3)) })),
+        value: displayFeature(f, q.features[f]), z: round3(q.z[f]) })),
       groups: GROUPS.map((g) => ({ group: g.g, weightPct: Number((g.w * 100).toFixed(0)), features: g.f }))
     },
     retrieval: {

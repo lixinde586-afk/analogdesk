@@ -1,6 +1,6 @@
 {
   "schema": "analogdesk.run-record/1",
-  "generatedAt": "2026-09-23T08:51:47.269Z",
+  "generatedAt": "2026-09-23T09:29:18.122Z",
   "generatedBy": "scripts/run-demo.mjs",
   "track": {
     "hackathon": "Bitget AI Base Camp Hackathon S2",
@@ -166,33 +166,33 @@
   "narrative": {
     "mode": "LIVE",
     "model": "qwen3.8-max",
-    "promptVersion": "1",
-    "cardId": "a9a04d70",
-    "latencyMs": 39377,
+    "promptVersion": "2",
+    "cardId": "c349657d",
+    "latencyMs": 42182,
     "usage": {
-      "completion_tokens": 1999,
-      "prompt_tokens": 12897,
+      "completion_tokens": 2242,
+      "prompt_tokens": 12751,
       "prompt_tokens_details": {
         "cached_tokens": 0,
-        "text_tokens": 12897
+        "text_tokens": 12751
       },
-      "total_tokens": 14896
+      "total_tokens": 14993
     },
     "warnings": [],
     "numericGate": {
       "ok": true,
-      "total": 119,
+      "total": 168,
       "unsupportedCount": 0,
       "relTol": 0.005,
-      "structuralPasses": 1
+      "structuralPasses": 2
     },
     "sections": {
-      "verdict": "In the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the realised 5-session returns were slightly positive on balance, with a median of 0.86% and a mean of 0.65%. The single number to anchor on is the dispersion: the standard deviation across those 50 outcomes was 3.8%, meaning the path over one trading week routinely swung several percent in either direction. This is a description of a historical conditional distribution, not a forecast or a recommendation to open or avoid a position.",
-      "state": "The engine selected these analogs because the current state is defined by a specific combination of features. NVDA is sitting -6.03% from its 52-week high (dist52), which places it near but not at the absolute peak. Its own 20-session realised volatility (vol20) is elevated at 45.77%, while the benchmark 20-session volatility (mktVol20) is unusually quiet at 9.16%. That divergence—high idiosyncratic vol against a calm market—is a primary driver of the retrieval. The macro backdrop includes a sharp WTI crude change over 20 days (oilChg20) of 19.24%, the most extreme z-score in the feature set at 1.124. Liquidity conditions are softer than average, flagged by a 20-session dollar-volume regime z-score (dv20z) of -0.785. Finally, there are 45 calendar days to the next earnings release (dte) and 0 scheduled events in the next 5 sessions (eventLoad5). The name-weighting block (30% of the distance metric) pulls in other Technology names, while the macro block (20%) matches episodes with similar oil and rate dynamics.",
-      "history": "Over the 5-session horizon, the 50 analogs produced a median return of 0.86% and a mean of 0.65%. The spread is wide: the 10th percentile was -4.04%, the 25th percentile was -2.03%, the 75th percentile was 3.07%, and the 90th percentile was 4.68%. The extremes ranged from a minimum of -7.34% to a maximum of 10.25%. In 56% of the episodes the 5-session return was above 0%, and in 44% it was below 0%. The histogram shows the bulk of outcomes clustered between -1.85% and 3.29%, with a slight positive skew of 0.214.\n\nThe bad tail is dominated by specific episodes. The closest analog in the entire library is NVDA itself on 2026-09-08 (distance 0.2999), which went on to realise a 5-session return of -5.9%. Another Technology analog, XLK on 2026-08-13 (distance 0.4178), returned -4.02%. On the upside, a prior NVDA episode on 2025-06-20 (distance 0.4317) returned 9.66%, and MU on 2024-01-16 (distance 0.4111) returned 3.45%. The retrieval spans from 2016-12-14 to 2026-09-08, drawing from 31 distinct sessions and 33 distinct symbols, with only 3 same-symbol matches for NVDA.",
-      "tails": "A position can finish the week near flat and still be difficult to hold through the intra-week path. Across the 50 analogs, the median max adverse excursion was -2.01%. At the 25th percentile, the worst drawdown during the 5 sessions reached -3.77%, and at the 10th percentile it reached -4.38%. Conversely, the median max favourable excursion was 2.55%, reaching 4.39% at the 75th percentile and 6.71% at the 90th percentile. The reward-risk ratio computed from these excursions is 1.27.\n\nFor specific drawdown thresholds, the probability of breaching a 5% drawdown at any point during the 5 sessions was 8 out of 50 episodes. The probability of breaching a 10% drawdown was 0 out of 50, as was the probability for 15% and 20% drawdowns. The conformal interval, scaled to target 80% coverage, runs from -4.12% to 5.83%, a total width of 9.95%.",
-      "stress": "The stress scenarios that materially worsen the baseline median of 0.65% are led by the 2020-02/03 liquidity crash window. There, the median 5-session return was -5.4%, a delta of -6.26% versus baseline, and the 10th percentile reached -14.14%. The probability of falling below -10% was 20.8%, and the probability of breaching a 10% drawdown intra-horizon was 58.3%. Caveat: central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns; it is a sample of one regime, not a forecast of the next one.\n\nThe 2018-Q4 tightening scare produced a median return of -3.02% (delta -3.88%), with the 90th percentile at -0.19%, meaning almost no upside in that regime. Caveat: it ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs. The 2022 inflation/rate bear scenario showed a median of -2.42% (delta -3.28%). Caveat: a nine-month window means the per-date cap of 2 analogs samples it repeatedly; treat it as a regime description, not 50 independent events. The 2024-08-05 carry unwind had a median of -2.11% (delta -2.97%). Caveat: reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not. The 2025-04 tariff shock yielded a median of -2.7% (delta -3.56%). Caveat: policy reversals inside the window make the tail of the distribution asymmetric in a way that is specific to that episode.\n\nAmong the shock scenarios, a +2 sigma VIX spike produced a median of -0.18% (delta -1.04%). Caveat: VIX shocks mean-revert quickly, so this stresses entry timing more than terminal value. A liquidity air pocket had a median of 0.83% (delta -0.03%). Caveat: gap20 is measured on the underlying exchange session, not on a 7x24 venue, bounding reference-market gap risk only. The remaining scenarios (regional banks 2023, rates-up, earnings-day, FOMC-day, crypto contagion, China ADR de-rating) produced medians ranging from -0.39% to 1.61%, none worsening the baseline by more than -1.25%. No scenarios were skipped by the engine.",
-      "limits": "This analysis has concrete limits. The engine's own validation states explicitly: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" The directional hit rate is 50.1%, meaning the retrieval does not reliably predict the sign of the next week's return better than a coin flip. The matched coverage sharpness versus the same-name unconditional benchmark is -7.6%. The PIT chi-square statistic is 208.6, far above the 5% critical value of 16.92, confirming the raw probability integral transform fails uniformity.\n\nOnly 3 of the 50 retrieved analogs are NVDA itself; the rest are cross-sectional matches from 33 distinct symbols, meaning the idiosyncratic behaviour of NVDA is heavily diluted by sector and macro proxies. The retrieval relies on 31 distinct sessions spanning 2016-12-14 to 2026-09-08. Bitget endpoints were unreachable during the build (TCP connection reset), so no Bitget-sourced figures are present. Earnings dates for foreign private issuers are derived from 6-K full-text search and are noisier than domestic 8-K filings. Every stress scenario carries its own caveat, detailed above, preventing any of them from being treated as a clean probability of future loss."
+      "verdict": "In the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the median realised return over the next 5 sessions was 0.86%, with a mean of 0.65% and a standard deviation of 3.8%. The distribution is slightly right-skewed (skew 0.214), but 44% of those analogs finished below zero, so the single number to anchor on is that median 0.86% gain rather than the upside outliers.",
+      "state": "The engine pulled these 50 analogs from 31 distinct sessions across 33 symbols because the current state has a specific fingerprint. NVDA is sitting -6.03% from its 52-week high (z-score 0.564) after a 60-session run of 11.82% (z-score 0.39). Its own 20-session realised volatility is elevated at 45.77% (z-score 0.824), yet the benchmark 20-session volatility is unusually quiet at 9.16% (z-score -0.574). Mean absolute overnight and weekend gaps over 20 sessions are 1.28% (z-score 0.718). WTI crude oil surged 19.24% over 20 days (z-score 1.124), the most extreme macro feature in the vector. Dollar volume is running below average with a 20-session regime z-score of -0.785 (used as -0.62). There are 45 calendar days to the next earnings release (z-score 0.663) and 0 scheduled events in the next 5 sessions (z-score -0.496). This combination of a high-volatility name near its highs against a low-volatility market, paired with an oil shock and thin dollar volume, defines the neighborhood. Only 3 of the 50 retrieved analogs are NVDA itself; the rest span Technology (9 total), Energy (4), Health Care (5), Financials (5), and various ETF sleeves.",
+      "history": "Over the 5-session horizon, the 50 analogs produced a median return of 0.86% and a mean of 0.65%. The spread is wide: the 10th percentile is -4.04%, the 25th percentile is -2.03%, the 75th percentile is 3.07%, and the 90th percentile is 4.68%. The extremes range from -7.34% to 10.25%. In 56% of the episodes the return was above zero, and in 44% it was below. Six out of the 50 episodes (12%) fell below -5%, and none fell below -10% or -20%. The histogram shows the most populated bin is around -0.38% (10% share), with a secondary cluster near 1.82% (12% share) and 3.29% (10% share). The bad tail is dominated by two specific episodes. The closest analog overall is NVDA itself on 2026-09-08 (distance 0.2999), which returned -5.9% over the next 5 sessions. Another heavy hitter is XLK on 2026-08-13 (distance 0.4178), which returned -4.02%. On the upside, NVDA on 2025-06-20 (distance 0.4317) returned 9.66%, pulling the maximum up to 10.25% across the set. The conformal prediction interval, scaled at 1.31 and fitted on 2019-2022 data, spans from -4.12% to 5.83% (width 9.95%), achieving 80.8% coverage on 2698 out-of-sample test queries from 2023 onward.",
+      "tails": "A position can end the week near flat while being un-holdable intraweek. Across the 50 analogs, the median max adverse excursion was -2.01%. At the 25th percentile, the path dipped -3.77% before recovering, and at the 10th percentile, the worst intra-horizon drawdown was -4.38%. Conversely, the median max favourable excursion was 2.55%, reaching 4.39% at the 75th percentile and 6.71% at the 90th percentile. The reward-to-risk ratio based on these excursions is 1.27. Looking at specific breach probabilities during the 5-session path: 8% of the analogs breached a 5% drawdown at some point. None of the 50 episodes breached a 10%, 15%, or 20% drawdown threshold. This means that while the endpoint distribution has a 12% chance of finishing worse than -4.04%, the intra-week path risk beyond -4.38% (the 10th percentile adverse excursion) was historically absent in this specific conditional set.",
+      "stress": "When the engine forces the analog set into known stress regimes, the picture changes materially compared to the baseline median of 0.65%. The 2020-02/03 liquidity crash scenario (48 analogs used) produces a median forward return of -5.4%, a delta of -6.26% versus baseline. The 10th percentile there is -14.14%, and 58.3% of paths breached a 10% drawdown. Caveat: central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns; it is a sample of one regime, not a forecast of the next one. The 2018-Q4 tightening scare (50 analogs) yields a median of -3.02% (delta -3.88%), with a 10th percentile of -6.18% and only 4% breaching a 10% drawdown. Caveat: it ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs. The 2022 inflation/rate bear (50 analogs) gives a median of -2.42% (delta -3.28%), a 10th percentile of -8.44%, and 16% breaching a 10% drawdown. Caveat: a nine-month window means the per-date cap of 2 analogs samples it repeatedly; treat it as a regime description, not 50 independent events. The 2024-08-05 carry unwind (36 analogs) shows a median of -2.11% (delta -2.97%) and a 10th percentile of -8.61%, with 16.7% breaching a 10% drawdown. Caveat: reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not. The 2025-04 tariff shock (26 analogs) produces a median of -2.7% (delta -3.56%) and a 10th percentile of -8.21%. Caveat: policy reversals inside the window make the tail of the distribution asymmetric in a way that is specific to that episode. A +2 sigma VIX spike (50 analogs) results in a median of -0.18% (delta -1.04%) and a 10th percentile of -7.47%. Caveat: VIX shocks mean-revert quickly, so this stresses entry timing more than terminal value. Scenarios that did not materially worsen the baseline include the 2023-03 regional bank stress (median 1.51%, delta 0.65%), the liquidity air pocket (median 0.83%, delta -0.03%), earnings day (median 1.61%, delta 0.75%), FOMC day (median 0.07%, delta -0.79%), crypto contagion (median 0.8%, delta -0.06%), China ADR de-rating (median -0.06%, delta -0.92%), policy-rate re-pricing (median -0.39%, delta -1.25%), and rates-up shock. No scenarios were skipped by the engine.",
+      "limits": "This analysis describes a historical conditional distribution, not a probability of the future. The engine's own validation states explicitly: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" Specifically, the analog conformal width is 10.4% versus 10.2% for the unconditional name-in-time band at matched coverage, and the directional hit rate is only 50.1%. The PIT chi-square statistic is 208.6, far exceeding the 16.92 critical value at the 5% level, meaning the probability integral transform is not uniform. Only 3 of the 50 retrieved analogs are NVDA itself; the rest are cross-sectional matches from other names and sectors, so idiosyncratic NVDA risks are underrepresented. The distance metric excludes dv20z, fng, and hyChg20, clipping z-scores at 3. Earnings dates for foreign private issuers come from 6-K full-text search and are noisier than domestic 8-K Item 2.02 dates. Bitget endpoints were unreachable (TCP connection reset), so no Bitget-sourced figures are present. Stress scenarios carry their own caveats regarding sample size, regime overlap, and embedded rebounds, which must be read alongside the numbers."
     },
     "order": [
       "verdict",
@@ -202,11 +202,11 @@
       "stress",
       "limits"
     ],
-    "text": "[verdict]\nIn the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the realised 5-session returns were slightly positive on balance, with a median of 0.86% and a mean of 0.65%. The single number to anchor on is the dispersion: the standard deviation across those 50 outcomes was 3.8%, meaning the path over one trading week routinely swung several percent in either direction. This is a description of a historical conditional distribution, not a forecast or a recommendation to open or avoid a position.\n\n[state]\nThe engine selected these analogs because the current state is defined by a specific combination of features. NVDA is sitting -6.03% from its 52-week high (dist52), which places it near but not at the absolute peak. Its own 20-session realised volatility (vol20) is elevated at 45.77%, while the benchmark 20-session volatility (mktVol20) is unusually quiet at 9.16%. That divergence—high idiosyncratic vol against a calm market—is a primary driver of the retrieval. The macro backdrop includes a sharp WTI crude change over 20 days (oilChg20) of 19.24%, the most extreme z-score in the feature set at 1.124. Liquidity conditions are softer than average, flagged by a 20-session dollar-volume regime z-score (dv20z) of -0.785. Finally, there are 45 calendar days to the next earnings release (dte) and 0 scheduled events in the next 5 sessions (eventLoad5). The name-weighting block (30% of the distance metric) pulls in other Technology names, while the macro block (20%) matches episodes with similar oil and rate dynamics.\n\n[history]\nOver the 5-session horizon, the 50 analogs produced a median return of 0.86% and a mean of 0.65%. The spread is wide: the 10th percentile was -4.04%, the 25th percentile was -2.03%, the 75th percentile was 3.07%, and the 90th percentile was 4.68%. The extremes ranged from a minimum of -7.34% to a maximum of 10.25%. In 56% of the episodes the 5-session return was above 0%, and in 44% it was below 0%. The histogram shows the bulk of outcomes clustered between -1.85% and 3.29%, with a slight positive skew of 0.214.\n\nThe bad tail is dominated by specific episodes. The closest analog in the entire library is NVDA itself on 2026-09-08 (distance 0.2999), which went on to realise a 5-session return of -5.9%. Another Technology analog, XLK on 2026-08-13 (distance 0.4178), returned -4.02%. On the upside, a prior NVDA episode on 2025-06-20 (distance 0.4317) returned 9.66%, and MU on 2024-01-16 (distance 0.4111) returned 3.45%. The retrieval spans from 2016-12-14 to 2026-09-08, drawing from 31 distinct sessions and 33 distinct symbols, with only 3 same-symbol matches for NVDA.\n\n[tails]\nA position can finish the week near flat and still be difficult to hold through the intra-week path. Across the 50 analogs, the median max adverse excursion was -2.01%. At the 25th percentile, the worst drawdown during the 5 sessions reached -3.77%, and at the 10th percentile it reached -4.38%. Conversely, the median max favourable excursion was 2.55%, reaching 4.39% at the 75th percentile and 6.71% at the 90th percentile. The reward-risk ratio computed from these excursions is 1.27.\n\nFor specific drawdown thresholds, the probability of breaching a 5% drawdown at any point during the 5 sessions was 8 out of 50 episodes. The probability of breaching a 10% drawdown was 0 out of 50, as was the probability for 15% and 20% drawdowns. The conformal interval, scaled to target 80% coverage, runs from -4.12% to 5.83%, a total width of 9.95%.\n\n[stress]\nThe stress scenarios that materially worsen the baseline median of 0.65% are led by the 2020-02/03 liquidity crash window. There, the median 5-session return was -5.4%, a delta of -6.26% versus baseline, and the 10th percentile reached -14.14%. The probability of falling below -10% was 20.8%, and the probability of breaching a 10% drawdown intra-horizon was 58.3%. Caveat: central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns; it is a sample of one regime, not a forecast of the next one.\n\nThe 2018-Q4 tightening scare produced a median return of -3.02% (delta -3.88%), with the 90th percentile at -0.19%, meaning almost no upside in that regime. Caveat: it ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs. The 2022 inflation/rate bear scenario showed a median of -2.42% (delta -3.28%). Caveat: a nine-month window means the per-date cap of 2 analogs samples it repeatedly; treat it as a regime description, not 50 independent events. The 2024-08-05 carry unwind had a median of -2.11% (delta -2.97%). Caveat: reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not. The 2025-04 tariff shock yielded a median of -2.7% (delta -3.56%). Caveat: policy reversals inside the window make the tail of the distribution asymmetric in a way that is specific to that episode.\n\nAmong the shock scenarios, a +2 sigma VIX spike produced a median of -0.18% (delta -1.04%). Caveat: VIX shocks mean-revert quickly, so this stresses entry timing more than terminal value. A liquidity air pocket had a median of 0.83% (delta -0.03%). Caveat: gap20 is measured on the underlying exchange session, not on a 7x24 venue, bounding reference-market gap risk only. The remaining scenarios (regional banks 2023, rates-up, earnings-day, FOMC-day, crypto contagion, China ADR de-rating) produced medians ranging from -0.39% to 1.61%, none worsening the baseline by more than -1.25%. No scenarios were skipped by the engine.\n\n[limits]\nThis analysis has concrete limits. The engine's own validation states explicitly: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" The directional hit rate is 50.1%, meaning the retrieval does not reliably predict the sign of the next week's return better than a coin flip. The matched coverage sharpness versus the same-name unconditional benchmark is -7.6%. The PIT chi-square statistic is 208.6, far above the 5% critical value of 16.92, confirming the raw probability integral transform fails uniformity.\n\nOnly 3 of the 50 retrieved analogs are NVDA itself; the rest are cross-sectional matches from 33 distinct symbols, meaning the idiosyncratic behaviour of NVDA is heavily diluted by sector and macro proxies. The retrieval relies on 31 distinct sessions spanning 2016-12-14 to 2026-09-08. Bitget endpoints were unreachable during the build (TCP connection reset), so no Bitget-sourced figures are present. Earnings dates for foreign private issuers are derived from 6-K full-text search and are noisier than domestic 8-K filings. Every stress scenario carries its own caveat, detailed above, preventing any of them from being treated as a clean probability of future loss."
+    "text": "[verdict]\nIn the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the median realised return over the next 5 sessions was 0.86%, with a mean of 0.65% and a standard deviation of 3.8%. The distribution is slightly right-skewed (skew 0.214), but 44% of those analogs finished below zero, so the single number to anchor on is that median 0.86% gain rather than the upside outliers.\n\n[state]\nThe engine pulled these 50 analogs from 31 distinct sessions across 33 symbols because the current state has a specific fingerprint. NVDA is sitting -6.03% from its 52-week high (z-score 0.564) after a 60-session run of 11.82% (z-score 0.39). Its own 20-session realised volatility is elevated at 45.77% (z-score 0.824), yet the benchmark 20-session volatility is unusually quiet at 9.16% (z-score -0.574). Mean absolute overnight and weekend gaps over 20 sessions are 1.28% (z-score 0.718). WTI crude oil surged 19.24% over 20 days (z-score 1.124), the most extreme macro feature in the vector. Dollar volume is running below average with a 20-session regime z-score of -0.785 (used as -0.62). There are 45 calendar days to the next earnings release (z-score 0.663) and 0 scheduled events in the next 5 sessions (z-score -0.496). This combination of a high-volatility name near its highs against a low-volatility market, paired with an oil shock and thin dollar volume, defines the neighborhood. Only 3 of the 50 retrieved analogs are NVDA itself; the rest span Technology (9 total), Energy (4), Health Care (5), Financials (5), and various ETF sleeves.\n\n[history]\nOver the 5-session horizon, the 50 analogs produced a median return of 0.86% and a mean of 0.65%. The spread is wide: the 10th percentile is -4.04%, the 25th percentile is -2.03%, the 75th percentile is 3.07%, and the 90th percentile is 4.68%. The extremes range from -7.34% to 10.25%. In 56% of the episodes the return was above zero, and in 44% it was below. Six out of the 50 episodes (12%) fell below -5%, and none fell below -10% or -20%. The histogram shows the most populated bin is around -0.38% (10% share), with a secondary cluster near 1.82% (12% share) and 3.29% (10% share). The bad tail is dominated by two specific episodes. The closest analog overall is NVDA itself on 2026-09-08 (distance 0.2999), which returned -5.9% over the next 5 sessions. Another heavy hitter is XLK on 2026-08-13 (distance 0.4178), which returned -4.02%. On the upside, NVDA on 2025-06-20 (distance 0.4317) returned 9.66%, pulling the maximum up to 10.25% across the set. The conformal prediction interval, scaled at 1.31 and fitted on 2019-2022 data, spans from -4.12% to 5.83% (width 9.95%), achieving 80.8% coverage on 2698 out-of-sample test queries from 2023 onward.\n\n[tails]\nA position can end the week near flat while being un-holdable intraweek. Across the 50 analogs, the median max adverse excursion was -2.01%. At the 25th percentile, the path dipped -3.77% before recovering, and at the 10th percentile, the worst intra-horizon drawdown was -4.38%. Conversely, the median max favourable excursion was 2.55%, reaching 4.39% at the 75th percentile and 6.71% at the 90th percentile. The reward-to-risk ratio based on these excursions is 1.27. Looking at specific breach probabilities during the 5-session path: 8% of the analogs breached a 5% drawdown at some point. None of the 50 episodes breached a 10%, 15%, or 20% drawdown threshold. This means that while the endpoint distribution has a 12% chance of finishing worse than -4.04%, the intra-week path risk beyond -4.38% (the 10th percentile adverse excursion) was historically absent in this specific conditional set.\n\n[stress]\nWhen the engine forces the analog set into known stress regimes, the picture changes materially compared to the baseline median of 0.65%. The 2020-02/03 liquidity crash scenario (48 analogs used) produces a median forward return of -5.4%, a delta of -6.26% versus baseline. The 10th percentile there is -14.14%, and 58.3% of paths breached a 10% drawdown. Caveat: central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns; it is a sample of one regime, not a forecast of the next one. The 2018-Q4 tightening scare (50 analogs) yields a median of -3.02% (delta -3.88%), with a 10th percentile of -6.18% and only 4% breaching a 10% drawdown. Caveat: it ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs. The 2022 inflation/rate bear (50 analogs) gives a median of -2.42% (delta -3.28%), a 10th percentile of -8.44%, and 16% breaching a 10% drawdown. Caveat: a nine-month window means the per-date cap of 2 analogs samples it repeatedly; treat it as a regime description, not 50 independent events. The 2024-08-05 carry unwind (36 analogs) shows a median of -2.11% (delta -2.97%) and a 10th percentile of -8.61%, with 16.7% breaching a 10% drawdown. Caveat: reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not. The 2025-04 tariff shock (26 analogs) produces a median of -2.7% (delta -3.56%) and a 10th percentile of -8.21%. Caveat: policy reversals inside the window make the tail of the distribution asymmetric in a way that is specific to that episode. A +2 sigma VIX spike (50 analogs) results in a median of -0.18% (delta -1.04%) and a 10th percentile of -7.47%. Caveat: VIX shocks mean-revert quickly, so this stresses entry timing more than terminal value. Scenarios that did not materially worsen the baseline include the 2023-03 regional bank stress (median 1.51%, delta 0.65%), the liquidity air pocket (median 0.83%, delta -0.03%), earnings day (median 1.61%, delta 0.75%), FOMC day (median 0.07%, delta -0.79%), crypto contagion (median 0.8%, delta -0.06%), China ADR de-rating (median -0.06%, delta -0.92%), policy-rate re-pricing (median -0.39%, delta -1.25%), and rates-up shock. No scenarios were skipped by the engine.\n\n[limits]\nThis analysis describes a historical conditional distribution, not a probability of the future. The engine's own validation states explicitly: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" Specifically, the analog conformal width is 10.4% versus 10.2% for the unconditional name-in-time band at matched coverage, and the directional hit rate is only 50.1%. The PIT chi-square statistic is 208.6, far exceeding the 16.92 critical value at the 5% level, meaning the probability integral transform is not uniform. Only 3 of the 50 retrieved analogs are NVDA itself; the rest are cross-sectional matches from other names and sectors, so idiosyncratic NVDA risks are underrepresented. The distance metric excludes dv20z, fng, and hyChg20, clipping z-scores at 3. Earnings dates for foreign private issuers come from 6-K full-text search and are noisier than domestic 8-K Item 2.02 dates. Bitget endpoints were unreachable (TCP connection reset), so no Bitget-sourced figures are present. Stress scenarios carry their own caveats regarding sample size, regime overlap, and embedded rebounds, which must be read alongside the numbers."
   },
   "card": {
     "schema": "analogdesk.research-card/1",
-    "generatedAt": "2026-09-23T08:51:49.247Z",
+    "generatedAt": "2026-09-23T09:29:20.597Z",
     "idea": {
       "symbol": "NVDA",
       "name": "NVIDIA",
@@ -226,64 +226,64 @@
           "label": "WTI crude change, 20 days",
           "unit": "pct",
           "value": 19.24,
-          "z": 1.124312162399292,
-          "zUsed": 1.124312162399292
+          "z": 1.124,
+          "zUsed": 1.124
         },
         {
           "feature": "vol20",
           "label": "20-session realised volatility (annualised)",
           "unit": "pct",
           "value": 45.77,
-          "z": 0.8237225413322449,
-          "zUsed": 0.8237225413322449
+          "z": 0.824,
+          "zUsed": 0.824
         },
         {
           "feature": "gap20",
           "label": "mean absolute overnight/weekend gap, 20 sessions",
           "unit": "pct",
           "value": 1.28,
-          "z": 0.71769779920578,
-          "zUsed": 0.71769779920578
+          "z": 0.718,
+          "zUsed": 0.718
         },
         {
           "feature": "dte",
           "label": "calendar days to next earnings release (capped at 45)",
           "unit": "days",
           "value": 45,
-          "z": 0.6628530025482178,
-          "zUsed": 0.6628530025482178
+          "z": 0.663,
+          "zUsed": 0.663
         },
         {
           "feature": "dv20z",
           "label": "20-session dollar-volume regime z-score",
           "unit": "z",
           "value": -0.785,
-          "z": -0.6195158362388611,
-          "zUsed": -0.6195158362388611
+          "z": -0.62,
+          "zUsed": -0.62
         },
         {
           "feature": "mktVol20",
           "label": "benchmark 20-session volatility",
           "unit": "pct",
           "value": 9.16,
-          "z": -0.5743805170059204,
-          "zUsed": -0.5743805170059204
+          "z": -0.574,
+          "zUsed": -0.574
         },
         {
           "feature": "dist52",
           "label": "distance from 52-week high",
           "unit": "pct",
           "value": -6.03,
-          "z": 0.5637789964675903,
-          "zUsed": 0.5637789964675903
+          "z": 0.564,
+          "zUsed": 0.564
         },
         {
           "feature": "eventLoad5",
           "label": "scheduled event load, next 5 sessions",
           "unit": "count",
           "value": 0,
-          "z": -0.4960664212703705,
-          "zUsed": -0.4960664212703705
+          "z": -0.496,
+          "zUsed": -0.496
         }
       ],
       "allFeatures": [
@@ -1874,7 +1874,7 @@
       "earningsSource": "efts.sec.gov full-text search (keyless, contact UA): forms=8-K q=\"Item 2.02\" for domestic filers; forms=6-K q=\"unaudited\" / q=\"financial results\" fallback for foreign private issuers; filing dates clustered at 6 calendar days",
       "horizonLabel": "5 sessions (one trading week)",
       "bitget": {
-        "probedAt": "2026-09-23T08:51:49.082Z",
+        "probedAt": "2026-09-23T09:29:20.413Z",
         "reachable": false,
         "reachableCount": 0,
         "total": 3,
@@ -1882,8 +1882,8 @@
           {
             "url": "https://agent.bitget.com/mcp",
             "name": "Bitget official MCP (US stocks / ETF, read-only)",
-            "probedAt": "2026-09-23T08:51:48.060Z",
-            "latencyMs": 465,
+            "probedAt": "2026-09-23T09:29:18.949Z",
+            "latencyMs": 433,
             "ok": false,
             "status": null,
             "kind": "connection-reset",
@@ -1893,8 +1893,8 @@
           {
             "url": "https://www.bitget.com",
             "name": "Bitget web (www)",
-            "probedAt": "2026-09-23T08:51:48.525Z",
-            "latencyMs": 233,
+            "probedAt": "2026-09-23T09:29:19.382Z",
+            "latencyMs": 630,
             "ok": false,
             "status": null,
             "kind": "connection-reset",
@@ -1903,8 +1903,8 @@
           {
             "url": "https://api.bitget.com",
             "name": "Bitget public REST (api)",
-            "probedAt": "2026-09-23T08:51:48.758Z",
-            "latencyMs": 324,
+            "probedAt": "2026-09-23T09:29:20.012Z",
+            "latencyMs": 401,
             "ok": false,
             "status": null,
             "kind": "connection-reset",
@@ -1923,7 +1923,7 @@
         "model": "qwen3.8-max",
         "baseUrl": "https://hackathon.bitgetops.com/v1",
         "keyPresent": true,
-        "promptVersion": "1"
+        "promptVersion": "2"
       }
     }
   },
@@ -11286,9 +11286,9 @@
       }
     ],
     "timing": {
-      "analyzeMs": 166,
-      "retrievalMs": 33,
-      "engineInitMs": 675
+      "analyzeMs": 184,
+      "retrievalMs": 34,
+      "engineInitMs": 680
     }
   },
   "validation": {
@@ -11604,7 +11604,7 @@
     "earningsSource": "efts.sec.gov full-text search (keyless, contact UA): forms=8-K q=\"Item 2.02\" for domestic filers; forms=6-K q=\"unaudited\" / q=\"financial results\" fallback for foreign private issuers; filing dates clustered at 6 calendar days",
     "horizonLabel": "5 sessions (one trading week)",
     "bitget": {
-      "probedAt": "2026-09-23T08:51:49.082Z",
+      "probedAt": "2026-09-23T09:29:20.413Z",
       "reachable": false,
       "reachableCount": 0,
       "total": 3,
@@ -11612,8 +11612,8 @@
         {
           "url": "https://agent.bitget.com/mcp",
           "name": "Bitget official MCP (US stocks / ETF, read-only)",
-          "probedAt": "2026-09-23T08:51:48.060Z",
-          "latencyMs": 465,
+          "probedAt": "2026-09-23T09:29:18.949Z",
+          "latencyMs": 433,
           "ok": false,
           "status": null,
           "kind": "connection-reset",
@@ -11623,8 +11623,8 @@
         {
           "url": "https://www.bitget.com",
           "name": "Bitget web (www)",
-          "probedAt": "2026-09-23T08:51:48.525Z",
-          "latencyMs": 233,
+          "probedAt": "2026-09-23T09:29:19.382Z",
+          "latencyMs": 630,
           "ok": false,
           "status": null,
           "kind": "connection-reset",
@@ -11633,8 +11633,8 @@
         {
           "url": "https://api.bitget.com",
           "name": "Bitget public REST (api)",
-          "probedAt": "2026-09-23T08:51:48.758Z",
-          "latencyMs": 324,
+          "probedAt": "2026-09-23T09:29:20.012Z",
+          "latencyMs": 401,
           "ok": false,
           "status": null,
           "kind": "connection-reset",
@@ -11653,11 +11653,11 @@
       "model": "qwen3.8-max",
       "baseUrl": "https://hackathon.bitgetops.com/v1",
       "keyPresent": true,
-      "promptVersion": "1"
+      "promptVersion": "2"
     }
   },
   "bitget": {
-    "probedAt": "2026-09-23T08:51:49.082Z",
+    "probedAt": "2026-09-23T09:29:20.413Z",
     "reachable": false,
     "reachableCount": 0,
     "total": 3,
@@ -11665,8 +11665,8 @@
       {
         "url": "https://agent.bitget.com/mcp",
         "name": "Bitget official MCP (US stocks / ETF, read-only)",
-        "probedAt": "2026-09-23T08:51:48.060Z",
-        "latencyMs": 465,
+        "probedAt": "2026-09-23T09:29:18.949Z",
+        "latencyMs": 433,
         "ok": false,
         "status": null,
         "kind": "connection-reset",
@@ -11676,8 +11676,8 @@
       {
         "url": "https://www.bitget.com",
         "name": "Bitget web (www)",
-        "probedAt": "2026-09-23T08:51:48.525Z",
-        "latencyMs": 233,
+        "probedAt": "2026-09-23T09:29:19.382Z",
+        "latencyMs": 630,
         "ok": false,
         "status": null,
         "kind": "connection-reset",
@@ -11686,8 +11686,8 @@
       {
         "url": "https://api.bitget.com",
         "name": "Bitget public REST (api)",
-        "probedAt": "2026-09-23T08:51:48.758Z",
-        "latencyMs": 324,
+        "probedAt": "2026-09-23T09:29:20.012Z",
+        "latencyMs": 401,
         "ok": false,
         "status": null,
         "kind": "connection-reset",
@@ -11697,11 +11697,11 @@
     "summary": "0/3 Bitget endpoints reachable - connection-reset: TCP connection reset by peer before any HTTP response",
     "disclosure": "The Bitget official MCP server and the Bitget web/API hosts are unreachable from the network this build ran on (every attempt fails at the TCP layer, not the application layer). AnalogDesk therefore ships no Bitget-sourced figure. All data comes from the keyless sources in research/DATA-PROVENANCE.md, and this disclosure is rendered in the provenance panel rather than hidden."
   },
-  "bitgetProbeSource": "live probe 2026-09-23T08:51:49.082Z",
+  "bitgetProbeSource": "live probe 2026-09-23T09:29:20.413Z",
   "timing": {
-    "engineInitMs": 676,
-    "analyzeMs": 166,
-    "retrievalMs": 33,
-    "totalMs": 41254
+    "engineInitMs": 681,
+    "analyzeMs": 184,
+    "retrievalMs": 34,
+    "totalMs": 44530
   }
 }
