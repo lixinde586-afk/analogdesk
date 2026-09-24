@@ -239,7 +239,8 @@ function shimPayloadAssignments() {
     `globalThis.AnalogDesk.validationResults = `,
     `globalThis.AnalogDesk.replaySeed = `,
     `globalThis.AnalogDesk.provenance = `,
-    `globalThis.AnalogDesk.wrapper = `
+    `globalThis.AnalogDesk.wrapper = `,
+    `globalThis.AnalogDesk.bitget7x24 = `
   ];
 }
 
@@ -280,6 +281,20 @@ function build() {
   const wrapper = wrapperFull ? (({ pairs, ...rest }) => rest)(wrapperFull) : null;
   if (!wrapper) log("WARNING no data-cache/wrapper-probe.json - the static build ships no 7x24 wrapper block.");
   else log(`wrapper: ${Object.keys(wrapper.bySymbol || {}).length} verified wrapper(s), reference market closed ${wrapper.referenceMarket?.closedSharePct}% of the week, median closed-hours move ${wrapper.summary?.medianReferenceClosedMoveSharePct}%, ${wrapper.closedSessionReturns?.pooled?.weekendReturnDistribution?.n ?? 0} weekend return block(s)`);
+
+  // The committed Bitget 7x24 measurement - the PRIMARY venue for the closed-session layer, written by
+  // scripts/measure-bitget-7x24.mjs. Baked in whole (instruments, per-instrument blocks and refusals)
+  // because the browser card has to hash identically to the server card, and trimming a field desk.mjs
+  // reads would change the digest and orphan every warmed replay record. Only two fields the card never
+  // reads are dropped; the full file is published beside the bundle as bitget-7x24.json.
+  const bitget7x24Full = readJsonOrNull(join(ROOT, "data-cache", "bitget-7x24.json"));
+  const bitget7x24 = bitget7x24Full ? (() => {
+    const { observedTickerFields, catalog, ...rest } = bitget7x24Full;
+    return { ...rest, catalog: catalog ? { rows: catalog.rows, rwaFlagged: catalog.rwaFlagged, exchangesReported: catalog.exchangesReported, note: catalog.note } : null };
+  })() : null;
+  if (!bitget7x24) log("WARNING no data-cache/bitget-7x24.json - the static build ships no Bitget primary-venue block and the card falls back to Gate.io.");
+  else if (bitget7x24.degradation) log(`bitget 7x24: DEGRADED (${bitget7x24.degradation.kind}) - the static build ships the disclosure and no Bitget figure.`);
+  else log(`bitget 7x24: ${bitget7x24.summary?.instrumentsVerified} verified RWA perpetual(s) covering ${bitget7x24.summary?.coveragePct}% of the library on the ${bitget7x24.venue?.route} route; ${bitget7x24.summary?.weekendBlocksObserved} weekend block(s) over ${bitget7x24.summary?.distinctWeekendStarts} distinct weekend(s); cross-venue on ${bitget7x24.summary?.crossVenueCompared} symbol(s)`);
 
   // The committed Bitget measurement, written by scripts/measure-bitget.mjs. Baked in for the same
   // reason as the wrapper probe: the static package makes no network call, and a keyless reviewer must
@@ -378,7 +393,18 @@ function build() {
       // quotes. Per-pair blocks stay in bySymbol and are read from there by the card.
       closedSessionReturns: wrapper.closedSessionReturns
         ? { pairsWithReturnLayer: wrapper.closedSessionReturns.pairsWithReturnLayer, distinctWeekendStarts: wrapper.closedSessionReturns.distinctWeekendStarts, pooled: wrapper.closedSessionReturns.pooled, caveat: wrapper.closedSessionReturns.caveat, convention: wrapper.closedSessionReturns.convention }
-        : null
+        : null,
+      // The primary venue for the 7x24 layer, mirrored field-for-field with what desk.wrapper() returns
+      // on the server, so the provenance panel renders identically in both runtimes.
+      bitget: bitget7x24 ? {
+        available: Boolean(bitget7x24.summary && !bitget7x24.degradation), degraded: Boolean(bitget7x24.degradation),
+        measuredAt: bitget7x24.generatedAt || null, venueName: bitget7x24.venue?.name || null, route: bitget7x24.venue?.route || null,
+        summary: bitget7x24.summary || null, verified: (bitget7x24.instruments || []).length,
+        closedSessionReturns: bitget7x24.closedSessionReturns
+          ? { instrumentsWithReturnLayer: bitget7x24.closedSessionReturns.instrumentsWithReturnLayer, distinctWeekendStarts: bitget7x24.closedSessionReturns.distinctWeekendStarts, pooled: bitget7x24.closedSessionReturns.pooled, caveat: bitget7x24.closedSessionReturns.caveat, convention: bitget7x24.closedSessionReturns.convention }
+          : null,
+        crossVenue: bitget7x24.crossVenue?.available ? { comparedSymbols: bitget7x24.crossVenue.comparedSymbols, medianDifferenceBitgetMinusGateio: bitget7x24.crossVenue.medianDifferenceBitgetMinusGateio, windowHours: bitget7x24.crossVenue.windowHours, note: bitget7x24.crossVenue.note, bitgetVenue: bitget7x24.crossVenue.bitgetVenue, gateVenue: bitget7x24.crossVenue.gateVenue } : null
+      } : null
     } : null
   };
 
@@ -392,7 +418,7 @@ function build() {
     return transformModule(key, mod.src);
   });
 
-  return { dataset, validation, replaySeed, provenance, promptVersion, transformed, ms: Date.now() - t0, validationFull, netProbe, wrapper, wrapperFull, bitgetFull, bitgetMeasurement };
+  return { dataset, validation, replaySeed, provenance, promptVersion, transformed, ms: Date.now() - t0, validationFull, netProbe, wrapper, wrapperFull, bitgetFull, bitgetMeasurement, bitget7x24, bitget7x24Full };
 }
 
 /* -------------------------------- assemble -------------------------------- */
@@ -423,6 +449,7 @@ function emit() {
     `${A[2]}${JSON.stringify(b.replaySeed)};`,
     `${A[3]}${JSON.stringify(b.provenance)};`,
     `${A[4]}${JSON.stringify(b.wrapper)};`,
+    `${A[5]}${JSON.stringify(b.bitget7x24)};`,
     ``,
     `// app.js is required LAST and synchronously: it calls boot() at module scope and reads`,
     `// window.AnalogDesk there, so every field above must already be assigned. Requiring it earlier`,
@@ -478,12 +505,16 @@ function emit() {
   // Same reasoning, same treatment: the full Bitget measurement including all 71 per-symbol quote rows
   // and every earnings-date pairing, so the cross-check can be audited without cloning the repo.
   if (b.bitgetFull) writeFileSync(join(DIST, "bitget-probe.json"), JSON.stringify(b.bitgetFull, null, 2), "utf8");
+  // And the primary venue's full audit trail beside it: every verified instrument, every recorded
+  // refusal and every closed-session block, so a reviewer can recompute a weekend return from its own
+  // entry and exit prices without cloning the repository.
+  if (b.bitget7x24Full) writeFileSync(join(DIST, "bitget-7x24.json"), JSON.stringify(b.bitget7x24Full, null, 2), "utf8");
 
   const size = (f) => statSync(join(DIST, f)).size;
   const mb = (n) => `${(n / 1048576).toFixed(2)} MB`;
   const gz = gzipSync(Buffer.from(bundle, "utf8")).length;
   log(`bundle: ${b.transformed.length} modules, ${mb(size("app.bundle.js"))} raw, ${mb(gz)} gzipped (build ${b.ms} ms)`);
-  for (const f of ["index.html", "styles.css", "app.bundle.js", "validation-summary.json", "network-probe.json", "wrapper-probe.json", "bitget-probe.json"]) {
+  for (const f of ["index.html", "styles.css", "app.bundle.js", "validation-summary.json", "network-probe.json", "wrapper-probe.json", "bitget-probe.json", "bitget-7x24.json"]) {
     if (existsSync(join(DIST, f))) log(`  dist/${f.padEnd(26)} ${mb(size(f))}`);
   }
   log(`payload: library ${b.provenance.sessions} sessions x ${b.provenance.symbols} instruments (${b.provenance.from} .. ${b.provenance.to});`

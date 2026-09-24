@@ -103,7 +103,19 @@ export function buildCanonicalEntries() {
   // a new direction. server.mjs and the compiled bundle both read the same file.
   const wrapper = readJson(join(ROOT, "data-cache", "wrapper-probe.json"));
   if (!wrapper) console.warn("  warn  data-cache/wrapper-probe.json is missing - canonical cards will carry no wrapper block and will not match a card built where it exists. Run: node scripts/measure-wrapper.mjs");
-  const desk = createDesk({ dataset, validationResults, provenance: {}, wrapper });
+  // data-cache/bitget-7x24.json is the PRIMARY venue of the same 7x24 layer, and card.wrapper names which
+  // venue headed the card. A canonical card built without it therefore hashes to the Gate.io-headed id
+  // while the compiled bundle and server.mjs hash to the Bitget-headed one, and every warmed record
+  // misses in one runtime or the other - the digest drift check:replay exists to catch, arriving from
+  // the venue direction. Trimmed exactly as scripts/compile-bundle.mjs trims it: the two dropped fields
+  // are the only ones no card ever reads, so all three runtimes still hash to one id.
+  const bitget7x24Full = readJson(join(ROOT, "data-cache", "bitget-7x24.json"));
+  const bitget7x24 = bitget7x24Full ? (() => {
+    const { observedTickerFields, catalog, ...rest } = bitget7x24Full;
+    return { ...rest, catalog: catalog ? { rows: catalog.rows, rwaFlagged: catalog.rwaFlagged, exchangesReported: catalog.exchangesReported, note: catalog.note } : null };
+  })() : null;
+  if (!bitget7x24) console.warn("  warn  data-cache/bitget-7x24.json is missing - canonical cards head the Gate.io second venue and will not match a bundle built where the primary venue exists. Run: node scripts/measure-bitget-7x24.mjs");
+  const desk = createDesk({ dataset, validationResults, provenance: {}, wrapper, bitget7x24 });
 
   const entries = [];
   for (const spec of CANONICAL_REQUESTS) {

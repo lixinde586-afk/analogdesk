@@ -74,6 +74,12 @@ const networkProbe = readJson(join(CACHE, "network-probe.json"));
 // changes every second, and a card whose numbers move between runs cannot be matched against the
 // replay cache. Absent file -> wrapper block reports "not measured", and no figure is invented.
 const wrapperProbe = readJson(join(CACHE, "wrapper-probe.json"));
+// data-cache/bitget-7x24.json is the same 7x24 layer measured on BITGET'S OWN venue - Bitget RWA
+// perpetuals fetched through the official Bitget MCP - written by scripts/measure-bitget-7x24.mjs.
+// It is the PRIMARY venue for that layer and the Gate.io file above is the independent second one.
+// Same rule as every other measurement here: read from disk, never fetched per request, and an
+// absent or degraded file means "not measured" rather than an invented figure.
+const bitget7x24Probe = readJson(join(CACHE, "bitget-7x24.json"));
 const buildReport = fs.existsSync(join(CACHE, "build-report.md")) ? fs.readFileSync(join(CACHE, "build-report.md"), "utf8") : null;
 
 const provenanceBase = {
@@ -102,7 +108,7 @@ const wrapperAudit = wrapperProbe ? {
   verifiedWrappers: Object.keys(wrapperProbe.bySymbol || {}).length, rejectedCandidates: (wrapperProbe.rejected || []).length
 } : null;
 
-const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe });
+const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe, bitget7x24: bitget7x24Probe });
 
 // The library view handed to the shared parser: symbols, the session calendar (so "10 个交易日前"
 // resolves to a real session rather than an approximate calendar day) and the measured horizon grid.
@@ -120,6 +126,12 @@ log(`validation loaded for horizons: ${Object.keys(desk.allValidation()).join(",
     : w.available
       ? `7x24 wrapper layer: ${w.verified} verified wrapper(s) on ${w.venueName}, measured ${w.measuredAt}; reference market closed ${w.referenceMarket?.closedSharePct}% of the week`
       : `7x24 wrapper layer: no data-cache/wrapper-probe.json - run node scripts/measure-wrapper.mjs`);
+  const b7 = w.bitget;
+  log(b7?.degraded
+    ? `7x24 primary venue (Bitget): NOT MEASURED on this build - the card says so, quotes the Gate.io block instead, and no Bitget figure is estimated`
+    : b7?.available
+      ? `7x24 primary venue (Bitget): ${b7.verified} verified RWA perpetual(s) on ${b7.venueName} via ${b7.route}, measured ${b7.measuredAt}; ${b7.summary?.weekendBlocksObserved} weekend block(s) over ${b7.summary?.distinctWeekendStarts} distinct weekend(s); cross-venue against Gate.io on ${b7.crossVenue?.comparedSymbols ?? 0} symbol(s)`
+      : `7x24 primary venue (Bitget): no data-cache/bitget-7x24.json - run node scripts/measure-bitget-7x24.mjs`);
 }
 
 // Seed from the persisted probe so the very first request already carries an accurate Bitget
@@ -310,6 +322,13 @@ const server = http.createServer(async (req, res) => {
         if (!wrapperProbe) return notFound(res, "no wrapper measurement on record - run: node scripts/measure-wrapper.mjs");
         return sendJson(res, { ok: true, summary: desk.wrapper(), measurement: wrapperProbe });
       }
+      // The whole committed Bitget 7x24 measurement - the PRIMARY venue for this layer - including
+      // every candidate Bitget refused and the stage that refused it, so the coverage figure can be
+      // audited instead of trusted.
+      if (path === "/api/bitget7x24") {
+        if (!bitget7x24Probe) return notFound(res, "no Bitget 7x24 measurement on record - run: node scripts/measure-bitget-7x24.mjs");
+        return sendJson(res, { ok: true, summary: desk.wrapper().bitget, measurement: bitget7x24Probe });
+      }
       if (path === "/api/build-report") return buildReport ? sendText(res, 200, buildReport, "text/markdown; charset=utf-8") : notFound(res, "no build report");
       if (path === "/api/validation") {
         const H = Number(u.searchParams.get("horizon") || 0);
@@ -344,6 +363,7 @@ server.listen(port, host, () => {
   log(`  GET /api/analyze?symbol=NVDA&horizon=5&k=50       explicit parameters win over the sentence`);
   log(`  GET /api/validation    frozen out-of-sample summary`);
   log(`  GET /api/provenance    data sources, network probe, Bitget status, LLM mode`);
-  log(`  GET /api/wrapper       the committed 7x24 wrapper-layer measurement, rejections included`);
+  log(`  GET /api/bitget7x24    the committed 7x24 measurement on the PRIMARY venue (Bitget RWA perpetuals), refusals included`);
+  log(`  GET /api/wrapper       the committed 7x24 measurement on the second venue (Gate.io spot wrappers), rejections included`);
   if (!cfg.llm.enabled) log(`  no LLM_API_KEY: narrative runs in TEMPLATE mode. Copy .env.example to .env and set LLM_API_KEY to enable ${cfg.llm.model}.`);
 });

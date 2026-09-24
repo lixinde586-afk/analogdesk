@@ -221,7 +221,7 @@ export function createWrapperView(probe) {
         };
       })(),
       interpretation: `${a.pair} is a ${a.tierLabel} for ${symbol}: daily returns correlate at ${a.returnCorrelation} with a tracking error of ${a.trackingErrorBpPerDay} bp/day, and it prices within ${a.priceDeviationPct}% of the underlying's last raw close. It is the instrument a trader would actually hold outside cash hours - and outside those hours is where ${ch?.referenceClosedMoveSharePct ?? "most"}% of its own movement happens.`,
-      caveat: `Measured on ${venueName}, which is where these tokenised-equity wrappers are listed and tradeable; the official Bitget MCP is probed and cross-checked separately in the provenance panel, on both a direct and a proxied route, and neither route is the source of the figures on this card. A ${a.tier} tracker is not the underlying - at ${a.trackingErrorBpPerDay} bp/day of tracking error the wrapper carries its own idiosyncratic risk, and a premium band of ${a.premiumP10Pct}% to ${a.premiumP90Pct}% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure.`
+      caveat: `Measured on ${venueName}, which is where these tokenised-equity wrappers are listed and tradeable; the official Bitget MCP is probed and cross-checked separately in the provenance panel, on both a direct and a proxied route, and neither route is the source of the figures in this block. A ${a.tier} tracker is not the underlying - at ${a.trackingErrorBpPerDay} bp/day of tracking error the wrapper carries its own idiosyncratic risk, and a premium band of ${a.premiumP10Pct}% to ${a.premiumP90Pct}% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure.`
     };
   };
 
@@ -234,17 +234,173 @@ export function createWrapperView(probe) {
  * on a 7x24 venue" - an accurate admission of a gap. When the gap has been measured, the caveat says
  * so and quotes the measurement instead of only confessing to it.
  */
+/**
+ * The BITGET venue view of the same 7x24 layer, and the primary one.
+ *
+ * Why Bitget is primary and Gate.io is the second venue rather than the other way round:
+ *  - it is the host's own data on the host's own exchange (the exchange parameter is pinned to
+ *    "bitget" and the echoed exchange is asserted on every fetch), not a third-party aggregator's;
+ *  - it covers more of the library: 39 verified instruments over 39 of 71 underlyings against the
+ *    Gate.io spot wrappers' 34;
+ *  - it serves a deeper hourly window (~1000 bars, ~41 days), so the same claim rests on more distinct
+ *    weekends rather than fewer.
+ *
+ * And why it is labelled rather than quietly substituted: a Bitget RWA PERPETUAL is not a redeemable
+ * spot token. It carries funding and a basis, so its closed-session return is the return of a 7x24
+ * synthetic position. The instrument class is printed with every figure, and the Gate.io spot wrapper
+ * stays on the card as an independent second venue - agreement between two different instruments on
+ * one underlying is stronger evidence than the same instrument measured twice.
+ *
+ * The route is part of the label too: Bitget hosts reset at the TCP layer on a direct connection from
+ * the build machine, so this block exists because a local proxy answered. On a machine with no proxy
+ * the measurement degrades, says so, and the Gate.io block stands alone.
+ */
+export function createBitget7x24View(probe) {
+  const degraded = probe?.degradation || null;
+  const venue = probe?.venue || null;
+  const venueName = venue?.name || "Bitget official MCP (not reachable on this build)";
+  const measuredAt = probe?.generatedAt || null;
+  const route = venue?.route || null;
+  const summary = probe?.summary || null;
+  const bySymbol = new Map((probe?.instruments || []).map((a) => [a.sym, a]));
+  const crossRows = new Map((probe?.crossVenue?.available ? probe.crossVenue.perSymbol || [] : []).map((x) => [x.sym, x]));
+  const crossWindow = probe?.crossVenue?.windowHours || null;
+  const crossNote = probe?.crossVenue?.note || null;
+
+  const head = {
+    status: null, symbol: null, venueName, route, measuredAt, primary: true,
+    instrumentClass: venue?.instrumentClass || null, productType: venue?.productType || null,
+    exchangePinned: venue?.exchange || null, keyRequired: venue?.keyRequired ?? null
+  };
+
+  const forSymbol = (symbol) => {
+    if (!probe) return { ...head, status: "not-measured", symbol, caveatNote: "No Bitget 7x24 measurement is on record for this build, so no Bitget figure is reported and none is estimated." };
+    if (degraded) {
+      return {
+        ...head, status: "not-measured", symbol,
+        degradation: { kind: degraded.kind, detail: degraded.detail },
+        caveatNote: `The Bitget venue could not be reached on this run (${degraded.kind}), so no Bitget figure is reported and none is estimated: ${degraded.detail}`
+      };
+    }
+    const a = bySymbol.get(symbol);
+    if (!a) {
+      const refs = (probe.rejected || []).filter((x) => x.sym === symbol);
+      return {
+        ...head, status: "no-verified-instrument", symbol,
+        reason: `No Bitget listing passed both verification tests against ${symbol}, so no Bitget figure is reported for it and none is estimated.`,
+        refusals: refs.map((x) => ({ pair: x.pair, stage: x.stage, reason: x.reason })),
+        caveatNote: refs.length
+          ? `Bitget was asked about ${symbol} and the answer is on the record rather than absent: ${refs.map((x) => `${x.pair} refused at the ${x.stage} stage (${x.reason})`).join("; ")}.`
+          : `Bitget lists no tokenised instrument for ${symbol} in the measured universe, which is itself the finding.`
+      };
+    }
+    const ch = a.closedHours || null;
+    const ms = a.microstructure || null;
+    const cr = a.closedReturns || null;
+    const pooled = probe.closedSessionReturns || null;
+    const wd = cr?.weekendReturnDistribution || null;
+    return {
+      ...head, status: "measured", symbol,
+      instrument: a.pair, exchange: a.exchange, tier: a.tier, tierLabel: a.tierLabel,
+      intervalEchoed: a.intervalEchoed, exchangeEchoed: a.exchangeEchoed, hourlyCandles: a.hourlyCandles,
+      hourlyFrom: a.hourlyFrom || null, hourlyTo: a.hourlyTo || null,
+      flaggedRwaInCatalog: a.flaggedRwaInCatalog ?? null,
+      tracking: {
+        returnCorrelation: a.returnCorrelation, trackingErrorBpPerDay: a.trackingErrorBpPerDay,
+        tier: a.tier, tierLabel: a.tierLabel,
+        overlapSessions: a.overlapSessions, from: a.from, to: a.to,
+        note: `Daily returns of the Bitget ${a.pair} perpetual against ${symbol} raw session closes over ${a.overlapSessions} overlapping sessions (${a.from} to ${a.to}). Tracking error is the standard deviation of the daily return difference, in basis points per day.`
+      },
+      premium: {
+        medianPct: a.premiumMedianPct, p10Pct: a.premiumP10Pct, p90Pct: a.premiumP90Pct,
+        priceDeviationPct: a.priceDeviationPct, perpLast: a.perpLast, lastRawClose: a.lastRawClose, lastRawCloseDate: a.lastRawCloseDate,
+        note: "Basis of the perpetual against the underlying's RAW session close - a traded price against a traded price. On a perpetual this is a basis that funding pulls back toward the mark, not a redeemable premium, so it is labelled basis rather than premium."
+      },
+      liquidity: ms ? {
+        spreadBps: ms.spreadBps, bestBid: ms.bestBid, bestAsk: ms.bestAsk, mid: ms.mid,
+        depthWithin50BpsUsdt: ms.depthWithin50BpsUsdt, levels: ms.levels,
+        quoteVolume24hUsdt: a.quoteVolume24hUsdt, medianDailyVolumeBase: a.medianDailyVolumeBase,
+        note: `Bitget order-book snapshot at ${ms.snapshotAt}. Resting depth is notional USDT within 50 bp of the touch, both sides combined. It changes every second; this is the state at that timestamp, not a standing figure.`
+      } : {
+        spreadBps: null, depthWithin50BpsUsdt: null, quoteVolume24hUsdt: a.quoteVolume24hUsdt,
+        note: a.microstructureError ? `The Bitget order book could not be read on this run (${a.microstructureError}).` : "No Bitget order-book snapshot on this run."
+      },
+      sevenByTwentyFour: {
+        closedMoveSharePct: ch?.referenceClosedMoveSharePct ?? null,
+        closedHoursSharePct: ch?.referenceClosedHoursPct ?? null,
+        tradedOutsideSessionPct: ch?.tradedOutsideSessionPct ?? null,
+        hoursObserved: ch?.hoursObserved ?? null,
+        conventionNote: ch?.convention || null,
+        note: ch
+          ? `The measured core of the 7x24 claim, on Bitget's own candles: ${ch.referenceClosedMoveSharePct}% of this perpetual's realised hourly price movement over ${ch.hoursObserved} observed hours landed outside the US cash session, and it traded in ${ch.tradedOutsideSessionPct}% of those hours.`
+          : (a.hourlyError ? `Hourly candles were unavailable for this instrument on this run (${a.hourlyError}), so no movement share is reported and none is estimated.` : "Hourly candles were unavailable for this instrument on this run.")
+      },
+      closedSessionReturns: (cr || pooled) ? {
+        weekendBlocks: cr?.blocks?.weekend ?? null,
+        overnightBlocks: cr?.blocks?.overnight ?? null,
+        weekendReturnDistribution: wd,
+        weekendMaeDistribution: cr?.weekendMaeDistribution || null,
+        weekendShareBreached5PctDrawdownPct: cr?.weekendShareBreached5PctDrawdownPct ?? null,
+        weekendDrawdownThresholdPct: cr?.weekendShareBreached5PctDrawdownPct != null ? -5 : null,
+        hourlyStdRatioOutsideOverInside: cr?.hourlyStdRatioOutsideOverInside ?? null,
+        hourlyInsideSession: cr?.hourlyInsideSession || null,
+        hourlyOutsideSession: cr?.hourlyOutsideSession || null,
+        pooledWeekendReturnDistribution: pooled?.pooled?.weekendReturnDistribution || null,
+        pooledWeekendMaeDistribution: pooled?.pooled?.weekendMaeDistribution || null,
+        pooledWeekendShareBreached5PctDrawdownPct: pooled?.pooled?.weekendShareBreached5PctDrawdownPct ?? null,
+        pooledWeekendShareBreached10PctDrawdownPct: pooled?.pooled?.weekendShareBreached10PctDrawdownPct ?? null,
+        pooledInstruments: pooled?.instrumentsWithReturnLayer ?? null,
+        pooledDistinctWeekendStarts: pooled?.distinctWeekendStarts ?? null,
+        conventionNote: cr?.convention || null,
+        note: wd
+          ? `The return layer, measured on Bitget data. Across ${cr.blocks?.weekend ?? 0} weekend block(s) in the observed ${ch?.hoursObserved ?? a.hourlyCandles}-hour window, ${a.pair} went from the pre-weekend close to the reopen with a median return of ${wd.medianPct}% (p10 ${wd.p10Pct}%, p90 ${wd.p90Pct}%, sd ${wd.stdPct}%), and its median intra-weekend adverse excursion was ${cr.weekendMaeDistribution?.medianPct ?? "n/a"}%. Hour for hour, closed-session price formation was ${cr.hourlyStdRatioOutsideOverInside ?? "n/a"}x as volatile as open-session formation.`
+          : "No closed-session block in the observed window was long enough to measure for this instrument.",
+        caveatNote: pooled?.caveat || null
+      } : null,
+      interpretation: `${a.pair} is a ${a.tierLabel} for ${symbol} on Bitget's own venue: daily returns correlate at ${a.returnCorrelation} with a tracking error of ${a.trackingErrorBpPerDay} bp/day, and it prices within ${a.priceDeviationPct}% of the underlying's last raw close. It is a 24/7 perpetual, so it is the instrument a trader would actually hold outside cash hours - and outside those hours is where ${ch?.referenceClosedMoveSharePct ?? "most"}% of its own movement happens.`,
+      caveat: `Measured on ${venueName} through the official Bitget MCP on the ${route} route, with the exchange pinned to "${a.exchange}" and the echoed interval (${a.intervalEchoed}) and exchange (${a.exchangeEchoed}) asserted on every fetch - the upstream accepts a granularity parameter and silently ignores it, returning daily bars, so the echo is checked rather than trusted. A ${a.tier} perpetual is not the underlying and not a redeemable spot token: at ${a.trackingErrorBpPerDay} bp/day of tracking error it carries its own idiosyncratic risk, funding applies, and a basis band of ${a.premiumP10Pct}% to ${a.premiumP90Pct}% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure.`
+    };
+  };
+
+  const crossVenueFor = (symbol) => {
+    const row = crossRows.get(symbol);
+    if (!row) return null;
+    return { ...row, windowHours: crossWindow, note: crossNote };
+  };
+
+  return {
+    probe: probe || null,
+    available: Boolean(summary && !degraded),
+    degraded: Boolean(degraded),
+    summary, venueName, route, measuredAt,
+    forSymbol, crossVenueFor,
+    crossVenueSummary: probe?.crossVenue?.available ? {
+      comparedSymbols: probe.crossVenue.comparedSymbols,
+      medianDifferenceBitgetMinusGateio: probe.crossVenue.medianDifferenceBitgetMinusGateio,
+      windowHours: crossWindow, note: crossNote,
+      bitgetVenue: probe.crossVenue.bitgetVenue, gateVenue: probe.crossVenue.gateVenue
+    } : null
+  };
+}
+
 function annotateWrapperScenarios(card) {
   const w = card.wrapper;
-  if (!w || w.status !== "measured") return;
+  if (!w) return;
+  // Whichever venue is primary on this build is the one the scenario caveat quotes, and it names the
+  // instrument class so a perpetual is never described as a spot wrapper.
+  const bg = w.bitget;
+  const src = bg?.status === "measured" ? bg : (w.status === "measured" ? w : null);
+  if (!src) return;
   const s = (card.stress || []).find((x) => x.id === "liquidity-air-pocket");
-  const closed = w.sevenByTwentyFour?.closedMoveSharePct;
-  const refClosed = w.sevenByTwentyFour?.referenceClosedSharePct;
+  const closed = src.sevenByTwentyFour?.closedMoveSharePct;
+  const refClosed = src.sevenByTwentyFour?.referenceClosedSharePct ?? w.sevenByTwentyFour?.referenceClosedSharePct;
   if (!s || !Number.isFinite(closed)) return;
-  s.caveat = `${s.caveat} Measured on the wrapper itself (${w.instrument}, ${w.venueName}): the reference market is closed for ${refClosed}% of the week and ${closed}% of the wrapper's realised hourly movement happened in those closed hours, so the gap risk this scenario describes is not hypothetical for the instrument a trader would hold.`;
+  const kind = src === bg ? "Bitget RWA perpetual" : "tokenised-equity wrapper";
+  s.caveat = `${s.caveat} Measured on the instrument itself (${src.instrument}, a ${kind} on ${src.venueName}): the reference market is closed for ${refClosed}% of the week and ${closed}% of its realised hourly movement happened in those closed hours, so the gap risk this scenario describes is not hypothetical for the instrument a trader would hold.`;
 }
-export function createDesk({ dataset, validationResults = null, provenance = {}, config = {}, wrapper = null }) {
+export function createDesk({ dataset, validationResults = null, provenance = {}, config = {}, wrapper = null, bitget7x24 = null }) {
   const wrapperView = createWrapperView(wrapper);
+  const bitgetView = createBitget7x24View(bitget7x24);
   const t0 = Date.now();
   const engine = createEngine(dataset, { k: DEFAULT_K, horizon: DEFAULT_HORIZON });
 
@@ -312,7 +468,15 @@ export function createDesk({ dataset, validationResults = null, provenance = {},
       };
     },
 
-    wrapper() { return { available: wrapperView.available, degraded: wrapperView.degraded, measuredAt: wrapperView.probe?.generatedAt || null, venueName: wrapperView.probe?.venue?.name || null, summary: wrapperView.summary, referenceMarket: wrapperView.referenceMarket, verified: Object.keys(wrapperView.probe?.bySymbol || {}).length, closedSessionReturns: wrapperView.probe?.closedSessionReturns || null }; },
+    wrapper() { return { available: wrapperView.available, degraded: wrapperView.degraded, measuredAt: wrapperView.probe?.generatedAt || null, venueName: wrapperView.probe?.venue?.name || null, summary: wrapperView.summary, referenceMarket: wrapperView.referenceMarket, verified: Object.keys(wrapperView.probe?.bySymbol || {}).length, closedSessionReturns: wrapperView.probe?.closedSessionReturns || null,
+      // The primary venue for this layer, reported beside the second one rather than instead of it.
+      bitget: {
+        available: bitgetView.available, degraded: bitgetView.degraded, measuredAt: bitgetView.measuredAt,
+        venueName: bitgetView.venueName, route: bitgetView.route, summary: bitgetView.summary,
+        verified: (bitgetView.probe?.instruments || []).length,
+        closedSessionReturns: bitgetView.probe?.closedSessionReturns || null,
+        crossVenue: bitgetView.crossVenueSummary
+      } }; },
     validation(H = DEFAULT_HORIZON) { return validationByHorizon[H] || null; },
     allValidation() { return validationByHorizon; },
     conformal(H = DEFAULT_HORIZON) { return conformalByHorizon[H] || null; },
@@ -355,7 +519,24 @@ export function createDesk({ dataset, validationResults = null, provenance = {},
       // The wrapper layer is attached AFTER buildCard rather than passed into it: buildCard describes
       // the analog analysis, and this block describes the instrument that analysis would be traded
       // through. Keeping them separate is what makes it obvious that no retrieval figure depends on it.
-      card.wrapper = wrapperView.forSymbol(base.query.sym);
+      const gateBlock = wrapperView.forSymbol(base.query.sym);
+  const bitgetBlock = bitgetView.forSymbol(base.query.sym);
+  // Bitget is the PRIMARY venue for this layer; Gate.io is an independent second venue on a different
+  // instrument class, and the only venue on a machine with no route to Bitget. Which venue a figure
+  // came from is never left for the reader to infer.
+  const primaryVenue = bitgetBlock?.status === "measured" ? "bitget" : (gateBlock?.status === "measured" ? "gateio" : null);
+  card.wrapper = {
+    ...gateBlock,
+    primaryVenue,
+    primaryStatus: primaryVenue === "bitget" ? bitgetBlock.status : (primaryVenue === "gateio" ? gateBlock.status : null),
+    venueNote: primaryVenue === "bitget"
+      ? "The 7x24 figures headed on this card are measured on Bitget's own data - Bitget RWA perpetuals fetched through the official Bitget MCP with the exchange pinned to bitget. The Gate.io spot-wrapper measurement is kept beside it as an independent second venue on a different instrument class, not as a duplicate."
+      : (primaryVenue === "gateio"
+        ? "Bitget's own venue was not measurable for this instrument on this run, so the 7x24 figures headed on this card come from the Gate.io spot-wrapper measurement. The reason is recorded in wrapper.bitget rather than omitted."
+        : "Neither venue produced a verified instrument for this symbol on this run, so the card reports the reference-market calendar share only and no venue figure is estimated."),
+    bitget: bitgetBlock,
+    crossVenue: bitgetView.crossVenueFor(base.query.sym)
+  };
       annotateWrapperScenarios(card);
 
       // A card with no distribution is not a result: the UI would render a row of en-dashes and the

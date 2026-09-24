@@ -143,16 +143,18 @@ win32 / node v24.21.0:
 | `api.kraken.com` | **connect timeout** | not used — same |
 | `en.wikipedia.org` | **connect timeout** | not used — no narrative depends on it |
 | `api.github.com`, `registry.npmjs.org` | reachable, HTTP 200 | available; the project has zero runtime dependencies, so npm is tooling only |
-| `api.gateio.ws` | reachable, **HTTP 200** keyless | **USED for measurement only** — Gate.io spot v4 supplies the tokenised-equity wrapper layer (tracking, premium, spread, depth, closed-hours movement) for `scripts/measure-wrapper.mjs`. It is never a price source for the analog library; see section 9 |
+| `api.gateio.ws` | reachable on a direct connection, **HTTP 200** keyless | **USED for measurement only** — Gate.io spot v4 supplies the tokenised-equity wrapper layer (tracking, premium, spread, depth, closed-hours movement) for `scripts/measure-wrapper.mjs`: the **independent second venue** of the 7x24 layer, and the venue of record on a machine with no route to Bitget. Never a price source for the analog library; see section 9.2 |
 | `hackathon.bitgetops.com` | reachable, **HTTP 200** with the hackathon key | the endpoint the committed replay cache was generated from: model `qwen3.8-max` with `enable_thinking:false`, the only model this key admits (`qwen-plus` and `qwen3-max` return 403 `Model.AccessDenied`). Narrative text only - it never supplies a figure |
-| `*.bitget.com`, re-tested | **connection-reset** on all three endpoints, from a second independent network | the 0/3 result in section 6 is not an artefact of one machine's network - it reproduces elsewhere, which is why no Bitget-sourced figure ships |
+| `*.bitget.com`, re-tested | **connection-reset** on all three endpoints on a direct connection, from a second independent network; all three answer through a local proxy | the 0/3 direct result in section 6 is not an artefact of one machine's network - it reproduces elsewhere. The route is therefore part of every Bitget figure, and a machine with no proxy degrades to a disclosure instead |
+| `agent.bitget.com/mcp` | reachable through the local proxy, keyless, `bitget-mcp-server@4.0.5` | **USED for measurement only** — the **primary venue** of the 7x24 instrument layer: Bitget's own RWA perpetuals on tokenised US equities (ticker, order book, hourly and daily candles) for `scripts/measure-bitget-7x24.mjs`, plus the cross-checks in section 10. Never a price source for the analog library; see sections 6 and 9.1 |
 
 ---
 
-## 6. Bitget official MCP — route-dependent, measured on both routes, and cross-checked
+## 6. Bitget official MCP — route-dependent, measured on both routes, cross-checked, and consumed in one place
 
-`agent.bitget.com/mcp` (JSON-RPC `tools/list`), `www.bitget.com` and `api.bitget.com` were each probed 3 times.
-**0 of 3 reachable.** Every attempt fails at the transport layer:
+`agent.bitget.com/mcp` (JSON-RPC `tools/list`), `www.bitget.com` and `api.bitget.com` were each probed 3 times
+on **both** routes. On a **direct** connection: **0 of 3 reachable.** Every attempt fails at the transport
+layer:
 
 ```
 kind: connection-reset
@@ -160,22 +162,38 @@ detail: TCP connection reset by peer before any HTTP response
 probedAt: 2026-09-21T06:00:38.530Z (agent.bitget.com/mcp: 1038 ms, www: 230 ms, api: 656 ms)
 ```
 
-This is a TCP reset, not an HTTP error: no status code, no body, no application-layer response. The connector
-is fully implemented in `src/data/bitget.mjs` — endpoint list, JSON-RPC handshake, timeout, and an error
-classifier that walks the `cause` chain so `ECONNRESET` / `ETIMEDOUT` / `ENOTFOUND` / `ECONNREFUSED` /
-`UND_ERR_CONNECT_TIMEOUT` are named precisely instead of collapsing into "fetch failed".
+This is a TCP reset, not an HTTP error: no status code, no body, no application-layer response. Through a
+local HTTP proxy (`127.0.0.1:7890`, auto-detected) all three answer, and the official MCP completes a
+JSON-RPC handshake and identifies itself as **`bitget-mcp-server@4.0.5`**. Both results are committed to
+`data-cache/bitget-probe.json` by `scripts/measure-bitget.mjs` and gated by `npm run check:bitget`, and every
+verdict carries the route that produced it: reporting only the proxied success would be the same error as
+reporting only the direct failure, in the opposite direction.
+
+The connector is fully implemented in `src/data/bitget.mjs` — endpoint list, JSON-RPC handshake, timeout, and
+an error classifier that walks the `cause` chain so `ECONNRESET` / `ETIMEDOUT` / `ENOTFOUND` / `ECONNREFUSED` /
+`UND_ERR_CONNECT_TIMEOUT` are named precisely instead of collapsing into "fetch failed". The CONNECT tunnel is
+in `src/data/proxy.mjs`, built directly on `node:net` + `node:tls` with zero dependencies, and is Node-only:
+it never enters the browser module graph.
 
 Consequences, stated plainly:
 
-- AnalogDesk ships **no Bitget-sourced figure**. Every number comes from the six keyless sources above.
+- **No Bitget figure enters the analog library, the retrieval features, the frozen conformal scale or any
+  number in `research/VALIDATION.md`.** Those come from the six keyless sources above and stay reproducible on
+  any network, with no proxy. `npm run check:bitget7x24` asserts this directly rather than promising it: a
+  card's retrieval, conformal, excursion and validation blocks must be byte-identical with and without the
+  Bitget payload loaded.
+- **Bitget data is consumed in exactly one place: the 7x24 instrument layer (§9), where it is the primary
+  venue.** 39 Bitget RWA perpetuals, keyless, labelled with their instrument class and their route everywhere
+  they are rendered, and gated by `npm run check:bitget7x24`.
 - The probe runs at start-up and its result is rendered in the provenance panel of every card and in
   `demo/RUN-RECORD.md` §8, with the probe timestamp and which probe run the classification came from.
 - Where a run has no direct network egress (for example inside a sandbox), the live probe can only report a
   generic transport failure. In that case the run **falls back to the persisted, classified probe** in
   `data-cache/network-probe.json` and says so, rather than printing a vaguer error. See `bitgetProbeSource`
   in `demo/run-record.json`.
-- The tokenised-equity framing of the thesis is therefore about the *market structure* Bitget is building
-  (7x24 trading of US equity exposure), not about data taken from Bitget in this build.
+- On a machine with **no proxy at all** the 7x24 measurement writes a degradation block and no figures: the
+  card marks the primary venue `not-measured`, gives the reason, and quotes the Gate.io second venue instead
+  (§9). Nothing is estimated to fill the gap, and the fallback path is asserted by name in the gate.
 
 ---
 
@@ -201,30 +219,80 @@ The cost is that a schema change upstream would break the build; the mitigation 
 `dataset.json` itself, which lets the demo, the validation and the static bundle run with no network at all.
 ---
 
-## 9. The 7x24 wrapper-layer measurement
+## 9. The 7x24 instrument layer, measured on two venues
 
 Sections 1–8 describe the data the **analog library** is built from. This section describes the only data in
 the project that comes from a trading venue, and it is kept separate on purpose: it is a *measurement of the
 instrument layer*, and no retrieval, conformal or validation figure uses any of it. Adding a venue must not be
-able to move a published number, so it cannot.
+able to move a published number, so it cannot — and that is asserted, not promised: `npm run check:bitget7x24`
+requires a card's retrieval, conformal, excursion and validation blocks to be byte-identical with and without
+the Bitget payload loaded.
 
 **Why it exists.** The thesis is about a market that never closes, but every price above is a US daily
 session. `research/LIMITATIONS.md` §9 used to state that plainly: nothing in the repo measured a weekend. That
-gap is now closed for the instrument layer.
+gap is now closed for the instrument layer — on **two** venues, under **one** shared definition of "the
+reference market was closed". The definition, the block rules and the acceptance thresholds live in
+`src/data/closed-session.mjs` and are imported by both runners, because two venues measured under different
+rules cannot be compared and the comparison is the whole reason there are two. Both gates fail if a committed
+file's convention string drifts from that module.
+
+### 9.1 Primary venue — Bitget's own RWA perpetuals
+
+**Venue.** `agent.bitget.com/mcp` — the official Bitget MCP, JSON-RPC 2.0 over streamable HTTP, keyless,
+reached through a local CONNECT tunnel (§6). It serves Bitget's own ticker, order book and candles for the RWA
+perpetual futures Bitget lists on tokenised US equities, and those trade 24/7.
+
+**Connector.** `src/data/bitget-venue.mjs` — the MCP session, the candle normaliser, the order-book reader and
+the catalog cross-reference; `src/data/proxy.mjs` supplies the tunnel. Node-only, never in the browser graph.
+
+**Runner.** `scripts/measure-bitget-7x24.mjs` → `data-cache/bitget-7x24.json` (committed, snapshot
+`2026-09-24T02:04:34Z`, `bitget-mcp-server@4.0.5`, route `proxy 127.0.0.1:7890`). Gated by
+`npm run check:bitget7x24`, which re-derives every published aggregate from the rows behind it.
+
+**Measured traps, recorded in the file rather than worked around silently.**
+
+- The candle parameter is `interval`. `granularity` is accepted and **ignored**, and a caller who sends
+  `granularity=1h` receives **daily** bars. Every fetch asserts the echoed `interval` and fails the instrument
+  if it does not match: a silent daily fallback would turn a 7x24 measurement into a 5x24 one and nothing on
+  the card would show it.
+- The default `exchange` is **binance**, so `exchange:"bitget"` is pinned on every call and the echoed
+  `exchange` is asserted. Nothing in this file is Bitget data unless it says so.
+- `crypto_market` ignores `exchange` and returns the aggregator's own listing (500 rows, every one
+  `exchange=binance`, `limit` ignored), so it is used **only** to cross-reference which symbols are flagged
+  RWA and never as evidence that Bitget lists them. Whether Bitget lists a symbol is decided by calling Bitget
+  and reading the answer — 22 symbols came back "does not have market symbol" and are recorded as `listing`
+  refusals rather than skipped.
+- `startTime`/`endTime` are ignored, so there is no pagination: one call returns at most ~1000 bars (~41
+  hourly days), which is deeper than the second venue's 720.
+- HTTP 204 with an empty body is a real answer ("catalogued upstream, no data served"), not a transport
+  failure, and is never retried into something else.
+
+**Instrument class, stated because it changes what the number means.** A perpetual is not a redeemable spot
+token: it carries funding, has no redemption, and its basis can diverge from the underlying. So this layer is
+labelled "Bitget RWA perpetual" everywhere it is rendered, and the Gate.io spot-wrapper measurement is kept
+beside it as an independent second venue on a different instrument class. Agreement between a perpetual and a
+spot token on the same underlying is the **stronger** claim, and it is reported as that rather than as "the
+same thing measured twice".
+
+### 9.2 Second venue — Gate.io spot wrappers
 
 **Venue.** `api.gateio.ws` — Gate.io spot v4, public and keyless (`/spot/currency_pairs`, `/spot/tickers`,
-`/spot/order_book`, `/spot/candlesticks`). Chosen because it is reachable from this network and lists
-tokenised US equities against USDT; the Bitget market-data endpoints are not (§6). Reachability is measured
-by `npm run probe` alongside every other host and recorded in `data-cache/network-probe.json`.
+`/spot/order_book`, `/spot/candlesticks`), reachable on a **direct** connection, listing tokenised US equities
+against USDT. Reachability is measured by `npm run probe` alongside every other host and recorded in
+`data-cache/network-probe.json`.
 
 **Connector.** `src/data/xstocks.mjs` — URL builders, the two verification tests, the pure statistics, a
 reachability probe symmetric with the Bitget one, and a `venueDegradation()` block so an unreachable venue
 produces a disclosure rather than a number.
 
-**Runner.** `scripts/measure-wrapper.mjs` → `data-cache/wrapper-probe.json` (committed, ~129 KB, snapshot
-`2026-09-23T10:51:11Z`). Read as *data* by `server.mjs`, `mcp-server.mjs`, `scripts/run-demo.mjs`,
+**Runner.** `scripts/measure-wrapper.mjs` → `data-cache/wrapper-probe.json` (committed, snapshot
+`2026-09-23T14:12:46Z`). Gated by `npm run check:wrapper`. This is also the **fallback** venue: on a machine
+with no route to Bitget, the primary block degrades, says so, and this one stands alone as the venue of record.
+
+Both files are read as *data* by `server.mjs`, `mcp-server.mjs`, `scripts/run-demo.mjs`,
 `scripts/replay-cards.mjs` and the compiled bundle — never fetched at request time, because a live order book
 changes every second and a card whose numbers move between runs cannot be matched against the replay cache.
+`server.mjs` serves the full audit trail of each at `/api/bitget7x24` and `/api/wrapper`, refusals included.
 
 **Verification — two independent tests, both required.**
 
@@ -235,17 +303,31 @@ changes every second and a card whose numbers move between runs cannot be matche
    sessions. Tracking error (sd of the daily return difference, bp/day) is reported next to it and the pair is
    tiered `tight` / `fair` / `loose`; the tier is always shown with the number.
 
-Test 1 alone is not evidence and was caught being not evidence: **LINK (Chainlink) trades near LI Auto's share
-price**, so a price-only rule would have "verified" a crypto token as a tokenised Chinese EV maker. It is
-refused by test 2 at correlation 0.227. `scripts/check-wrapper.mjs` asserts that specific rejection by name,
-so loosening the correlation floor fails the build.
+The thresholds are **one shared rule set** (`ACCEPTANCE` in `src/data/closed-session.mjs`) applied to both
+venues, and both gates compare the committed file's thresholds against that module and fail on drift: two
+venues measured under different floors would not be comparable, and the comparison is the point.
 
-**Discovery is deliberately permissive, verification is not.** Any base starting with the underlying's ticker
-and quoted in USDT, with up to three extra characters, is a candidate — Gate.io lists the same underlying from
-more than one issuer (`G` 27, `X` 17, `ON` 20 candidates). Of **256** candidates, **33** were accepted and
-**192** refused; every refusal is stored in `wrapper-probe.json` with the stage and reason that refused it
-(`price` 160, `correlation` 1, `duplicate` 31). Nothing is dropped silently. Where several wrappers verify
-against one underlying, the canonical one reported is the verified pair with the highest 24h quote volume.
+Test 1 alone is not evidence and was caught being not evidence — **on both venues**. On Gate.io, **LINK
+(Chainlink) trades near LI Auto's share price**, so a price-only rule would have "verified" a crypto token as
+a tokenised Chinese EV maker; it is refused by test 2 at correlation 0.227. On Bitget, **CAT/USDT** does the
+same against Caterpillar and is refused at **-0.043**. Each gate asserts its own venue's rejection **by name**,
+so loosening the correlation floor fails the build on the exact case that motivated the two-test rule.
+
+**Discovery is deliberately permissive, verification is not.** On Gate.io any base starting with the
+underlying's ticker and quoted in USDT, with up to three extra characters, is a candidate — Gate.io lists the
+same underlying from more than one issuer (`G` 28, `X` 17, `ON` 20 candidates). Of **256** candidates, **34**
+were accepted and **191** refused; every refusal is stored in `wrapper-probe.json` with the stage and reason
+that refused it (`price` 159, `correlation` 1, `duplicate` 31). Nothing is dropped silently. Where several
+wrappers verify against one underlying, the canonical one reported is the verified pair with the highest 24h
+quote volume.
+
+On Bitget there is no suffix ambiguity — one perpetual per underlying, `<TICKER>/USDT` (Berkshire-B is written
+`BRKB`) — so all **71** library instruments were asked about by name: **39** accepted, **32** refused
+(`listing` 22 — Bitget does not list a tokenised instrument for them at all, `price` 8, `correlation` 1,
+`overlap` 1), each refusal stored with its stage and reason. The aggregator's `crypto_market` catalog flags
+32 symbols as RWA and reports every one of its 500 rows as `exchange=binance`; it is recorded in the file as a
+cross-reference and explicitly **not** treated as evidence of a Bitget listing, which is why 22 of the refusals
+are Bitget's own "does not have market symbol" answer rather than the catalog's opinion.
 
 **The closed-hours figure, and its convention.** US cash regular trading hours are 13:30–20:00 UTC in daylight
 time and 14:30–21:00 UTC in standard time. The measurement counts every Monday–Friday hourly candle bucket
@@ -256,13 +338,16 @@ than overstating it. The convention string is stored in the file and rendered on
 
 The reference-market closed share itself (**81.4%** of the week, 136.67h of 168h) needs no venue at all: it
 is derived from the library's own session calendar (2513 sessions over 521.4 weeks = 4.819 sessions/week x
-6.5h = 31.33h open), so it is reported even for the 38 instruments that have no verified wrapper.
+6.5h = 31.33h open), so it is reported even for the 22 instruments that have no verified instrument on either
+venue.
 
-**Trust boundary.** Gate.io is a free keyless endpoint with no SLA, and tokenised-equity listings change: a
-pair can be delisted, reissued under a new suffix, or start trading at a level that fails the price test. The
-committed snapshot is what every card reports, and it is timestamped; re-running `npm run measure:wrapper`
-produces a new snapshot and `npm run check:wrapper` re-verifies every acceptance rule against it. A card
-never shows a wrapper figure without the timestamp it was measured at.
+**Trust boundary.** Both venues are free keyless endpoints with no SLA, and tokenised-equity listings change:
+a pair can be delisted, reissued under a new suffix, or start trading at a level that fails the price test. The
+committed snapshots are what every card reports, and each is timestamped; re-running `npm run measure:wrapper`
+or `npm run measure:bitget7x24` produces a new snapshot and the matching gate re-verifies every acceptance rule
+against it. A card never shows a venue figure without the timestamp **and the route** it was measured on — the
+route matters because the Bitget venue needs a local proxy and would degrade to a disclosure without one.
+Neither venue is a price source for the analog library: the library stays on the six keyless sources of §1.
 
 ## 10. Bitget official MCP — what it returned, and what it was checked against
 
@@ -300,9 +385,13 @@ dropped from the denominator.
 
 **Boundary.** No Bitget figure enters the retrieval features, the frozen conformal scale, or any number in
 `research/VALIDATION.md`. The engine remains reproducible from the keyless sources in §1 alone, on any
-network, with no proxy; a reviewer who cannot reach Bitget loses the cross-check and nothing else. The
+network, with no proxy. What a reviewer who cannot reach Bitget loses is the **primary venue of the 7x24
+instrument layer** (§9.1) plus these cross-checks — and the card says so, marks the primary venue
+`not-measured` with the reason, and quotes the Gate.io second venue instead of estimating anything. The
 `sentiment_market_fear_greed` reading is excluded explicitly and the exclusion is justified in the file —
-adding a live series to a frozen, published distance function would invalidate every validated figure.
+adding a live series to a frozen, published distance function would invalidate every validated figure. For the
+same reason the 7x24 layer, although it now *is* Bitget-sourced, is walled off from the engine: it describes
+the instrument a trade would be executed in, never the distribution the trade is judged against.
 
 **Trust boundary.** This is a free, unauthenticated, third-party-operated endpoint behind Cloudflare with no
 published SLA, and its upstreams fail independently of it: during measurement the crypto fear-&-greed,

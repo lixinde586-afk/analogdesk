@@ -82,12 +82,46 @@ function bestScenarios(stress, n = 2) {
  * verify-numbers.mjs whitelists numerals found in card fields named note/caveat/interpretation/label -
  * which is why those sentences live under exactly those keys.
  */
+/**
+ * The Bitget venue sentences - the PRIMARY 7x24 measurement, so they come first.
+ *
+ * Everything quoted here is read off card.wrapper.bitget, which desk.mjs fills from the committed
+ * data-cache/bitget-7x24.json, so the numeric gate can trace every numeral to the payload. Three things
+ * are stated rather than left for the reader to infer: the instrument class (a perpetual is not a
+ * redeemable spot token), the route (a proxied answer is not a direct one), and the interval echo (the
+ * upstream accepts a granularity parameter, ignores it and returns daily bars, so the echo is asserted
+ * rather than trusted).
+ */
+function bitgetEn(w) {
+  const bg = w?.bitget;
+  if (!bg) return null;
+  if (bg.status === "not-measured") return `The primary venue for this layer is Bitget's own, and it was not measurable on this build: ${bg.caveatNote || bg.degradation?.detail || "no route to the venue"} What follows is therefore the Gate.io second venue only, and no Bitget figure is estimated to fill the gap.`;
+  if (bg.status === "no-verified-instrument") return `The primary venue for this layer is Bitget's own, and it has no verified instrument for ${w.symbol}: ${bg.reason} ${(bg.refusals || []).map((x) => `${x.pair} was refused at the ${x.stage} stage (${x.reason})`).join("; ")} What follows is the Gate.io second venue only, and no Bitget figure is estimated.`;
+  const t = bg.tracking || {}, s24 = bg.sevenByTwentyFour || {}, lq = bg.liquidity || {}, pr = bg.premium || {}, cr = bg.closedSessionReturns || {};
+  const wd = cr.weekendReturnDistribution, mae = cr.weekendMaeDistribution, pw = cr.pooledWeekendReturnDistribution, pm = cr.pooledWeekendMaeDistribution;
+  const ratio = cr.hourlyStdRatioOutsideOverInside;
+  const ratioClause = ratio == null ? "" : ` Hour for hour, closed-session price formation was ${s(ratio, 2)} times as volatile as open-session formation${ratio < 1 ? ", so a large movement share means there are far more closed hours than open ones, not that each closed hour moves more" : ""}.`;
+  const breach = cr.weekendShareBreached5PctDrawdownPct == null || cr.weekendDrawdownThresholdPct == null ? "" : `; ${pc(cr.weekendShareBreached5PctDrawdownPct)} of them traded at least ${pc(Math.abs(cr.weekendDrawdownThresholdPct))} below the pre-weekend close`;
+  const pooled = pw ? ` Pooled across ${num0(cr.pooledInstruments)} Bitget instruments, ${num0(pw.n)} weekend blocks over ${num0(cr.pooledDistinctWeekendStarts)} distinct weekend(s) gave a median weekend return of ${pc(pw.medianPct)} - tenth percentile ${pc(pw.p10Pct)}, standard deviation ${pc(pw.stdPct)} - and a median intra-weekend adverse excursion of ${pc(pm?.medianPct)}${cr.pooledWeekendShareBreached5PctDrawdownPct == null || cr.weekendDrawdownThresholdPct == null ? "" : `, with ${pc(cr.pooledWeekendShareBreached5PctDrawdownPct)} of them breaching ${pc(Math.abs(cr.weekendDrawdownThresholdPct))}`}. Those blocks are not independent draws: the whole tokenised-equity complex moves together and every instrument shares the same ${num0(cr.pooledDistinctWeekendStarts)} weekend(s), so the effective sample is ${num0(cr.pooledDistinctWeekendStarts)} weekend(s) rather than ${num0(pw.n)} blocks.` : "";
+  const cv = w.crossVenue;
+  const cvSentence = cv ? ` Cross-venue, the same underlying on this Bitget perpetual and on the Gate.io spot wrapper under one shared session convention: closed-session movement share ${pc(cv.closedMoveSharePct?.bitget)} against ${pc(cv.closedMoveSharePct?.gateio)}, daily-return correlation ${s(cv.returnCorrelation?.bitget, 4)} against ${s(cv.returnCorrelation?.gateio, 4)}, spread ${s(cv.spreadBps?.bitget)} bp against ${s(cv.spreadBps?.gateio)} bp, weekend median return ${pc(cv.weekendMedianReturnPct?.bitget)} against ${pc(cv.weekendMedianReturnPct?.gateio)}. The two venues do not serve the same hourly depth - a median ${num0(cv.windowHours?.bitgetMedian)} buckets observed on Bitget against ${num0(cv.windowHours?.gateioMedian)} on Gate.io - so the window is stated instead of assumed equal.` : "";
+  return [
+    `The 7x24 layer is measured primarily on Bitget's own data. ${bg.instrument}, a Bitget RWA perpetual on ${w.symbol}, is ${t.tierLabel}: daily-return correlation ${s(t.returnCorrelation, 4)} against the underlying's raw session closes over ${n0(t.overlapSessions)} overlapping sessions, tracking error ${n0(t.trackingErrorBpPerDay)} bp per day, basis median ${pc(pr.medianPct)} with a ${pc(pr.p10Pct)} to ${pc(pr.p90Pct)} band, spread ${s(lq.spreadBps)} bp and ${n0(lq.depthWithin50BpsUsdt)} USDT resting within 50 bp of the touch at the snapshot. It was fetched through the official Bitget MCP on the ${bg.route} route with the exchange pinned to ${bg.exchangePinned}, and the echoed interval (${bg.intervalEchoed}) and exchange (${bg.exchangeEchoed}) were asserted on every fetch, because the upstream accepts a granularity parameter, ignores it, and returns daily bars.`,
+    s24.closedMoveSharePct == null ? null : `${pc(s24.closedMoveSharePct)} of its own realised hourly price movement over ${n0(s24.hoursObserved)} observed hours landed outside the US cash session, and it printed a trade in ${pc(s24.tradedOutsideSessionPct)} of those hours.`,
+    wd ? `The return layer on Bitget data: across ${n0(cr.weekendBlocks)} weekend block(s) in the observed window, ${bg.instrument} went from the pre-weekend close to the reopen with a median return of ${pc(wd.medianPct)} - tenth percentile ${pc(wd.p10Pct)}, standard deviation ${pc(wd.stdPct)}, negative in ${pc(wd.shareNegativePct)} of them - and its median intra-weekend adverse excursion was ${pc(mae?.medianPct)}${breach}.${ratioClause}${pooled}` : null,
+    cvSentence.trim() || null,
+    `A perpetual is not a redeemable spot token: funding applies and the basis can diverge, so this is the return of a 7x24 synthetic position and is labelled as such. It feeds no retrieval feature, no conformal scale and no validation figure - the distribution above is built on 5x24 daily sessions and is unchanged.`
+  ].filter(Boolean).join(" ");
+}
+
 function wrapperEn(w) {
   if (!w) return null;
+  const bgEn = bitgetEn(w);
   if (w.status === "measured") {
     const t = w.tracking, s24 = w.sevenByTwentyFour, lq = w.liquidity, pr = w.premium;
     return [
-      `The 7x24 premise, measured rather than asserted. The reference cash market is closed for ${pc(s24.referenceClosedSharePct)} of the week - ${s(s24.referenceClosedHoursPerWeek)} of ${s(w.referenceMarket?.weekHours)} hours - and ${pc(s24.closedMoveSharePct)} of ${w.instrument}'s own realised hourly price movement over ${n0(s24.hoursObserved)} observed hours landed inside those closed hours, during which it printed a trade in ${pc(s24.tradedOutsideSessionPct)} of them.`,
+      bgEn,
+      `${bgEn ? "Second venue, same premise, a different instrument class: a Gate.io spot tokenised-equity wrapper." : "The 7x24 premise, measured rather than asserted."} The reference cash market is closed for ${pc(s24.referenceClosedSharePct)} of the week - ${s(s24.referenceClosedHoursPerWeek)} of ${s(w.referenceMarket?.weekHours)} hours - and ${pc(s24.closedMoveSharePct)} of ${w.instrument}'s own realised hourly price movement over ${n0(s24.hoursObserved)} observed hours landed inside those closed hours, during which it printed a trade in ${pc(s24.tradedOutsideSessionPct)} of them.`,
       `That wrapper is a ${t.tierLabel}: daily-return correlation ${s(t.returnCorrelation, 4)} against ${w.symbol}, tracking error ${n0(t.trackingErrorBpPerDay)} bp per day over ${n0(t.overlapSessions)} overlapping sessions, median premium ${pc(pr.medianPct)} with a ${pc(pr.p10Pct)} to ${pc(pr.p90Pct)} band, spread ${s(lq.spreadBps)} bp and ${n0(lq.depthWithin50BpsUsdt)} USDT resting within 50 bp of the touch at the snapshot.`,
       (() => {
         const cr = w.closedSessionReturns;
@@ -103,12 +137,46 @@ function wrapperEn(w) {
     ].filter(Boolean).join(" ");
   }
   if (w.status === "no-verified-wrapper") {
-    return `The 7x24 premise is only partly measured for this name. The reference cash market is closed for ${pc(w.referenceMarket?.closedSharePct)} of the week, but ${w.reason} ${num0(w.candidatesTested)} candidate listing(s) were tested and refused, and every refusal is recorded with its reason in data-cache/wrapper-probe.json rather than dropped. No wrapper spread, premium or closed-hours figure is reported for ${w.symbol}, and none is estimated.`;
+    return [bgEn, `The 7x24 premise is only partly measured for this name${bgEn ? " on the second venue" : ""}. The reference cash market is closed for ${pc(w.referenceMarket?.closedSharePct)} of the week, but ${w.reason} ${num0(w.candidatesTested)} candidate listing(s) were tested and refused, and every refusal is recorded with its reason in data-cache/wrapper-probe.json rather than dropped. No wrapper spread, premium or closed-hours figure is reported for ${w.symbol}, and none is estimated.`].filter(Boolean).join(" ");
   }
   if (w.status === "not-measured") {
-    return `The 7x24 wrapper layer was not measured on this build: ${w.venueName} returned ${w.degradation?.kind || "no result"}. Only the calendar figure is reported, because it needs no venue - the reference cash market is closed for ${pc(w.referenceMarket?.closedSharePct)} of the week. No wrapper figure is estimated to fill the gap.`;
+    return [bgEn, `The 7x24 wrapper layer was not measured on this build: ${w.venueName} returned ${w.degradation?.kind || "no result"}. Only the calendar figure is reported, because it needs no venue - the reference cash market is closed for ${pc(w.referenceMarket?.closedSharePct)} of the week. No wrapper figure is estimated to fill the gap.`].filter(Boolean).join(" ");
   }
   return null;
+}
+
+/** The Chinese tier wording, lifted to module scope so the Bitget paragraph and the Gate.io paragraph
+ *  cannot drift apart: a loose tracker must be called loose in both, in both languages. */
+const ZH_TIER_LOCAL = { tight: "紧密跟踪标的", fair: "一般跟踪标的", loose: "松散跟踪标的，不可当作标的本身阅读", unknown: "无法判定跟踪质量", rejected: "不构成跟踪" };
+
+/**
+ * Bitget 场地段落——7x24 层的**主**测量，因此排在最前。
+ *
+ * 这里引用的每个数字都取自 card.wrapper.bitget（desk.mjs 从已提交的 data-cache/bitget-7x24.json 填充），
+ * 所以数字闸门能把它们全部追溯到载荷。三件事必须写明而不是留给读者推断：工具类别（永续合约不是可赎回
+ * 的现货代币）、路由（经代理取得的结果不等于直连结果）、以及 interval 回显（上游接受 granularity 参数
+ * 却静默忽略并返回日线，所以回显是被断言的，不是被信任的）。
+ */
+function bitgetZh(w) {
+  const bg = w?.bitget;
+  if (!bg) return null;
+  if (bg.status === "not-measured") return `本层的主场地是 Bitget 自家数据，但本次构建无法测量：${bg.caveatNote || bg.degradation?.detail || "没有通往该场地的路由"}因此下文只有 Gate.io 第二场地的数字，Bitget 的缺口不用估算填补。`;
+  if (bg.status === "no-verified-instrument") return `本层的主场地是 Bitget 自家数据，但 ${w.symbol} 没有通过双重验证的标的：${bg.reason}${(bg.refusals || []).map((x) => `${x.pair} 在 ${x.stage} 阶段被拒（${x.reason}）`).join("；")}下文只有 Gate.io 第二场地的数字，不做任何估算。`;
+  const t = bg.tracking || {}, s24 = bg.sevenByTwentyFour || {}, lq = bg.liquidity || {}, pr = bg.premium || {}, cr = bg.closedSessionReturns || {};
+  const wd = cr.weekendReturnDistribution, mae = cr.weekendMaeDistribution, pw = cr.pooledWeekendReturnDistribution, pm = cr.pooledWeekendMaeDistribution;
+  const ratio = cr.hourlyStdRatioOutsideOverInside;
+  const ratioClause = ratio == null ? "" : `按小时计，休市时段的价格形成波动是开盘时段的 ${s(ratio, 2)} 倍${ratio < 1 ? "，所以变动份额之所以大，是因为休市小时数远多于开盘小时数，而不是每个休市小时波动更大" : ""}。`;
+  const breach = cr.weekendShareBreached5PctDrawdownPct == null || cr.weekendDrawdownThresholdPct == null ? "" : `；其中有 ${pc(cr.weekendShareBreached5PctDrawdownPct)} 的周末在区块内跌破周末前收盘价 ${pc(Math.abs(cr.weekendDrawdownThresholdPct))} 以上`;
+  const pooled = pw ? `在 ${num0(cr.pooledInstruments)} 个 Bitget 标的上合并统计：${num0(pw.n)} 个周末区块来自 ${num0(cr.pooledDistinctWeekendStarts)} 个不同的周末，周末中位收益 ${pc(pw.medianPct)}——第 10 百分位 ${pc(pw.p10Pct)}，标准差 ${pc(pw.stdPct)}——区块内中位最大不利偏移 ${pc(pm?.medianPct)}${cr.pooledWeekendShareBreached5PctDrawdownPct == null || cr.weekendDrawdownThresholdPct == null ? "" : `，其中 ${pc(cr.pooledWeekendShareBreached5PctDrawdownPct)} 跌破 ${pc(Math.abs(cr.weekendDrawdownThresholdPct))}`}。这些区块不是独立抽样：整个代币化股票板块同涨同跌，所有标的共享同样的 ${num0(cr.pooledDistinctWeekendStarts)} 个周末，因此有效样本是 ${num0(cr.pooledDistinctWeekendStarts)} 个周末，而不是 ${num0(pw.n)} 个区块。` : "";
+  const cv = w.crossVenue;
+  const cvSentence = cv ? `跨场地对照：同一标的在这个 Bitget 永续与 Gate.io 现货凭证上，使用同一套休市口径——休市时段变动份额 ${pc(cv.closedMoveSharePct?.bitget)} 对 ${pc(cv.closedMoveSharePct?.gateio)}，日收益相关性 ${s(cv.returnCorrelation?.bitget, 4)} 对 ${s(cv.returnCorrelation?.gateio, 4)}，点差 ${s(cv.spreadBps?.bitget)} 个基点对 ${s(cv.spreadBps?.gateio)} 个基点，周末中位收益 ${pc(cv.weekendMedianReturnPct?.bitget)} 对 ${pc(cv.weekendMedianReturnPct?.gateio)}。两个场地提供的小时深度并不相同——Bitget 中位观测 ${num0(cv.windowHours?.bitgetMedian)} 个小时桶，Gate.io 为 ${num0(cv.windowHours?.gateioMedian)} 个——所以窗口是写明的，而不是被假定相等。` : "";
+  return [
+    `7x24 这一层主要以 Bitget 自家数据测量。${bg.instrument} 是 Bitget 上 ${w.symbol} 的 RWA 永续合约，属于${ZH_TIER_LOCAL[t.tier] || t.tierLabel}：与标的原始收盘价的日收益相关性 ${s(t.returnCorrelation, 4)}，覆盖 ${n0(t.overlapSessions)} 个重叠交易日，跟踪误差 ${n0(t.trackingErrorBpPerDay)} 个基点/日，基差中位数 ${pc(pr.medianPct)}，区间 ${pc(pr.p10Pct)} 至 ${pc(pr.p90Pct)}，快照时点差 ${s(lq.spreadBps)} 个基点，距最优价 50 个基点以内挂单深度 ${n0(lq.depthWithin50BpsUsdt)} USDT。数据经官方 Bitget MCP 在 ${bg.route} 路由上取得，exchange 参数钉死为 ${bg.exchangePinned}，且每次取数都断言回显的 interval（${bg.intervalEchoed}）与 exchange（${bg.exchangeEchoed}）——因为上游接受 granularity 参数却静默忽略它并返回日线。`,
+    s24.closedMoveSharePct == null ? null : `在 ${n0(s24.hoursObserved)} 个观测小时中，它自身已实现的小时级价格变动有 ${pc(s24.closedMoveSharePct)} 发生在美国现货时段之外，其中 ${pc(s24.tradedOutsideSessionPct)} 的小时确实有成交。`,
+    wd ? `Bitget 数据上的收益层：在观测窗口的 ${n0(cr.weekendBlocks)} 个周末区块中，${bg.instrument} 从周末前收盘价到重新开盘的中位收益为 ${pc(wd.medianPct)}——第 10 百分位 ${pc(wd.p10Pct)}，标准差 ${pc(wd.stdPct)}，其中 ${pc(wd.shareNegativePct)} 为负——区块内中位最大不利偏移为 ${pc(mae?.medianPct)}${breach}。${ratioClause}${pooled}` : null,
+    cvSentence || null,
+    `永续合约不是可赎回的现货代币：它有资金费率、基差可能偏离，所以这是一个 7x24 合成仓位的收益，并如此标注。它不进入任何检索特征、不进入共形尺度、不进入任何验证数字——上面的分布建立在 5x24 日线上，没有改变。`
+  ].filter(Boolean).join("");
 }
 
 function wrapperZh(w) {
@@ -117,10 +185,12 @@ function wrapperZh(w) {
   // rest of this file follows: prose is translated, measured field values are not invented in a second
   // language. A loose tracker is named as loose in both.
   const ZH_TIER = { tight: "紧密跟踪凭证", fair: "一般跟踪凭证", loose: "松散跟踪凭证，不可当作标的本身阅读", unknown: "无法判定跟踪质量", rejected: "不构成跟踪" };
+  const bgZh = bitgetZh(w);
   if (w.status === "measured") {
     const t = w.tracking, s24 = w.sevenByTwentyFour, lq = w.liquidity, pr = w.premium;
     return [
-      `"7x24"这个前提在这里是被测量出来的，而不是被断言的。参考现货市场每周有 ${pc(s24.referenceClosedSharePct)} 的时间休市——${s(s24.referenceClosedHoursPerWeek)} 小时，全周共 ${s(w.referenceMarket?.weekHours)} 小时；而在 ${n0(s24.hoursObserved)} 个观测小时中，${w.instrument} 自身已实现的小时级价格变动有 ${pc(s24.closedMoveSharePct)} 发生在这些休市时段里，其中 ${pc(s24.tradedOutsideSessionPct)} 的休市小时确实有成交。`,
+      bgZh,
+      `${bgZh ? "第二场地，同一前提，工具类别不同：Gate.io 现货代币化股票凭证。" : ""}"7x24"这个前提在这里是被测量出来的，而不是被断言的。参考现货市场每周有 ${pc(s24.referenceClosedSharePct)} 的时间休市——${s(s24.referenceClosedHoursPerWeek)} 小时，全周共 ${s(w.referenceMarket?.weekHours)} 小时；而在 ${n0(s24.hoursObserved)} 个观测小时中，${w.instrument} 自身已实现的小时级价格变动有 ${pc(s24.closedMoveSharePct)} 发生在这些休市时段里，其中 ${pc(s24.tradedOutsideSessionPct)} 的休市小时确实有成交。`,
       `该凭证属于${ZH_TIER[t.tier] || t.tierLabel}：与 ${w.symbol} 的日收益相关性 ${s(t.returnCorrelation, 4)}，在 ${n0(t.overlapSessions)} 个重叠交易日上的跟踪误差为 ${n0(t.trackingErrorBpPerDay)} 个基点/日，溢价中位数 ${pc(pr.medianPct)}，区间 ${pc(pr.p10Pct)} 至 ${pc(pr.p90Pct)}，快照时点差 ${s(lq.spreadBps)} 个基点，距最优价 50 个基点以内挂单深度 ${n0(lq.depthWithin50BpsUsdt)} USDT。`,
       (() => {
         const cr = w.closedSessionReturns;
@@ -136,10 +206,10 @@ function wrapperZh(w) {
     ].filter(Boolean).join("");
   }
   if (w.status === "no-verified-wrapper") {
-    return `"7x24"这个前提对该标的只测量到一半：参考现货市场每周有 ${pc(w.referenceMarket?.closedSharePct)} 的时间休市，但${w.reason}共有 ${num0(w.candidatesTested)} 个候选挂牌被测试并拒绝，每一条拒绝及其原因都记录在 data-cache/wrapper-probe.json 中，而不是被静默丢弃。${w.symbol} 的凭差点差、溢价与休市时段数字均不予报告，也不做任何估算。`;
+    return [bgZh, `"7x24"这个前提对该标的${bgZh ? "在第二场地上" : ""}只测量到一半：参考现货市场每周有 ${pc(w.referenceMarket?.closedSharePct)} 的时间休市，但${w.reason}共有 ${num0(w.candidatesTested)} 个候选挂牌被测试并拒绝，每一条拒绝及其原因都记录在 data-cache/wrapper-probe.json 中，而不是被静默丢弃。${w.symbol} 的凭差点差、溢价与休市时段数字均不予报告，也不做任何估算。`].filter(Boolean).join("");
   }
   if (w.status === "not-measured") {
-    return `本次构建未能测量 7x24 凭证层：${w.venueName} 返回 ${w.degradation?.kind || "无结果"}。因此只报告不依赖任何交易场所的日历口径数字——参考现货市场每周有 ${pc(w.referenceMarket?.closedSharePct)} 的时间休市。缺口不用估算填补。`;
+    return [bgZh, `本次构建未能测量 7x24 凭证层：${w.venueName} 返回 ${w.degradation?.kind || "无结果"}。因此只报告不依赖任何交易场所的日历口径数字——参考现货市场每周有 ${pc(w.referenceMarket?.closedSharePct)} 的时间休市。缺口不用估算填补。`].filter(Boolean).join("");
   }
   return null;
 }

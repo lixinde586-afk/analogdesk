@@ -70,6 +70,9 @@ const networkProbe = readJson(join(CACHE, "network-probe.json"));
 // API produce. Loaded from disk, never fetched: the card has to hash identically everywhere or the
 // replay cache misses.
 const wrapperProbe = readJson(join(CACHE, "wrapper-probe.json"));
+// The same 7x24 layer measured on Bitget's own venue (RWA perpetuals via the official MCP). It is the
+// primary venue for that layer; wrapper-probe.json is the independent second one.
+const bitget7x24Probe = readJson(join(CACHE, "bitget-7x24.json"));
 
 const provenanceBase = {
   datasetBuiltAt: (dataset.meta && dataset.meta.builtAt) || null,
@@ -83,7 +86,7 @@ const provenanceBase = {
   servedOver: "mcp-stdio"
 };
 
-const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe });
+const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe, bitget7x24: bitget7x24Probe });
 const luiLib = (() => {
   const l = desk.library();
   return { symbols: l.symbols, dates: l.dates, from: l.from, to: l.to, horizons: l.horizons };
@@ -327,6 +330,10 @@ async function toolProvenance() {
   if (bitget.measurementSummary) out.push("  " + bitget.measurementSummary);
   for (const e of bitget.endpoints || []) out.push("  - " + (e.url || e.name || "endpoint") + ": " + (e.ok ? "ok" + (e.answeredOn ? " via " + e.answeredOn : "") : (e.kind || "error") + " - " + (e.detail || "")));
   out.push("  No Bitget-sourced figure enters the retrieval features, the frozen conformal scale or any validated number. The connector is implemented (src/data/bitget.mjs), both routes are probed on start-up (src/data/bitget-routes.mjs over the CONNECT tunnel in src/data/proxy.mjs), the transport error is classified precisely, and what the official MCP returned - with the route that produced it - is committed in data-cache/bitget-probe.json as a cross-check against this project's own keyless data.");
+  out.push("  " + (bitget7x24Probe && bitget7x24Probe.summary && !bitget7x24Probe.degradation
+    ? "The 7x24 closed-session layer IS measured on Bitget data, and it is the primary venue for that layer: " + bitget7x24Probe.summary.instrumentsVerified + " Bitget RWA perpetuals verified against " + bitget7x24Probe.summary.underlyingSymbolsCovered + " of " + bitget7x24Probe.summary.universeSymbols + " library instruments (" + bitget7x24Probe.summary.coveragePct + "%), exchange pinned to bitget, fetched on the " + (bitget7x24Probe.venue && bitget7x24Probe.venue.route) + " route through " + (bitget7x24Probe.summary.server || "the official MCP") + ". " + bitget7x24Probe.summary.weekendBlocksObserved + " weekend blocks over " + bitget7x24Probe.summary.distinctWeekendStarts + " distinct weekend(s), pooled median weekend return " + bitget7x24Probe.summary.pooledWeekendMedianReturnPct + "% (p10 " + bitget7x24Probe.summary.pooledWeekendP10ReturnPct + "%), median intra-weekend MAE " + bitget7x24Probe.summary.pooledWeekendMedianMaePct + "%, closed-hour volatility " + bitget7x24Probe.summary.medianHourlyStdRatioOutsideOverInside + "x the open-hour level; cross-venue against the Gate.io spot wrappers on " + (bitget7x24Probe.summary.crossVenueCompared || 0) + " symbol(s). Written by scripts/measure-bitget-7x24.mjs to data-cache/bitget-7x24.json."
+    : "The 7x24 closed-session layer was NOT measured on Bitget data on this build: the card says so, falls back to the Gate.io spot-wrapper measurement, and no Bitget figure is estimated."));
+  out.push("  The distinction that matters: Bitget data feeds the 7x24 INSTRUMENT layer and nothing else. No retrieval feature, no conformal scale and no validation figure uses it, so a venue adopted after the validation was frozen cannot move a number a reviewer already read. A perpetual is also not a redeemable spot token - it carries funding and a basis - so every figure is labelled with its instrument class.");
   out.push("");
   out.push("NARRATIVE LAYER: " + (cfg.llm.enabled ? "LIVE via " + cfg.llm.baseUrl + " model " + cfg.llm.model : "TEMPLATE (no LLM_API_KEY set; every figure is engine-computed either way)") + ". Every numeral in generated prose is re-checked against the research card by src/llm/verify-numbers.mjs, and the render falls back to the deterministic template if any numeral cannot be traced.");
   out.push("");

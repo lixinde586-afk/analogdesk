@@ -452,6 +452,7 @@ async function main() {
   const validationResults = readJson(join(ROOT, "research", "validation-results.json"));
   const networkProbe = readJson(join(ROOT, "data-cache", "network-probe.json"));
 const wrapperProbe = readJson(join(ROOT, "data-cache", "wrapper-probe.json"));
+const bitget7x24Probe = readJson(join(ROOT, "data-cache", "bitget-7x24.json"));
 
   log(`loading analog library ...`);
   const t0 = Date.now();
@@ -466,7 +467,7 @@ const wrapperProbe = readJson(join(ROOT, "data-cache", "wrapper-probe.json"));
     } : null,
     validationGeneratedAt: validationResults?.generatedAt || null
   };
-  const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe });
+  const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe, bitget7x24: bitget7x24Probe });
   const engineInitMs = Date.now() - t0;
   log(`engine ready in ${engineInitMs} ms - ${desk.engine.mx.nSym} instruments x ${desk.engine.mx.nDates} sessions (${dataset.meta?.from} .. ${dataset.meta?.to})`);
 

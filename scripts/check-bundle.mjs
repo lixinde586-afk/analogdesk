@@ -170,7 +170,8 @@ assert(!!AD, "window.AnalogDesk exposed", "window.AnalogDesk not set");
 if (AD) {
   const t1 = Date.now();
   assert(!!AD.wrapper, "wrapper measurement baked into the bundle", "window.AnalogDesk.wrapper is missing - the static build would render cards with no 7x24 block while the server renders one, and the two would hash differently");
-  const desk = AD.desk.createDesk({ dataset: AD.dataset, validationResults: AD.validationResults, provenance: AD.provenance, config: {}, wrapper: AD.wrapper || null });
+  assert(!!AD.bitget7x24, "Bitget 7x24 measurement baked into the bundle", "window.AnalogDesk.bitget7x24 is missing - the static build would render cards whose primary 7x24 venue is absent while the server renders one, and the two would hash differently");
+  const desk = AD.desk.createDesk({ dataset: AD.dataset, validationResults: AD.validationResults, provenance: AD.provenance, config: {}, wrapper: AD.wrapper || null, bitget7x24: AD.bitget7x24 || null });
   ok(`engine init in ${Date.now() - t1} ms; ${desk.engine.mx.nSym} instruments x ${desk.engine.mx.nDates} sessions`);
   for (const [sym, H] of [["NVDA", 5], ["BABA", 20], ["SPY", 1], ["KWEB", 10]]) {
     const t2 = Date.now();

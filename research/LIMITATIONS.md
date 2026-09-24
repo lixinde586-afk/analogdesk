@@ -100,49 +100,118 @@ the library are 2020-02-21..2020-03-20 (**-31%**), 2018-12-03..2019-01-03 (-12%)
 (-12%), 2025-03-07..2025-04-04 (-12%). A desk that cannot retrieve the global financial crisis will
 understate worst-case paths for any instrument whose tail behaviour is shaped by credit contagion.
 
-## 9. The 7x24 thesis: the wrapper layer is now measured; the outcome distribution is still 5x24
+## 9. The 7x24 thesis: measured on two venues, Bitget's own first; the outcome distribution is still 5x24
 
 **What used to be true here, and is now fixed.** This section said, correctly, that nothing in the repo
 measured a weekend: every price was a US daily session, so "trades 7x24" was the one headline claim with no
-number behind it. `scripts/measure-wrapper.mjs` now measures it, `data-cache/wrapper-probe.json` commits the
-result, `npm run check:wrapper` gates it, every research card carries it as `card.wrapper`, and the UI has a
-`7x24 wrapper` tab. Measured on Gate.io spot v4 (public, keyless — reachable from this network, unlike the
-Bitget MCP), snapshot `2026-09-23T10:51:11Z`:
+number behind it. It is now measured on **two venues**, under **one shared definition** of "the reference
+market was closed" (`src/data/closed-session.mjs`), because two venues measured under different rules cannot
+be compared — and the comparison is the whole reason there are two. Every research card carries both as
+`card.wrapper` (Gate.io) and `card.wrapper.bitget` (Bitget), the UI renders the primary venue first, and the
+prose in both languages names which venue produced the figures it is quoting.
+
+**Primary venue — Bitget's own data.** `scripts/measure-bitget-7x24.mjs` asks the official Bitget MCP for
+Bitget's own RWA perpetual futures on tokenised US equities, pins `exchange` to `bitget` on every call, and
+asserts the echoed `interval` and `exchange` on every fetch — the upstream accepts a `granularity` parameter,
+ignores it and answers with **daily** bars, which would silently turn a 7x24 measurement into a 5x24 one.
+`data-cache/bitget-7x24.json` commits the result and `npm run check:bitget7x24` re-derives every published
+figure from the rows behind it. Snapshot `2026-09-24T02:04:34Z`, `bitget-mcp-server@4.0.5`:
+
+- **39 Bitget RWA perpetuals verified** against 39 of the 71 library instruments (**54.9%** coverage).
+  **32 candidates refused**, each with its stage and reason: 22 Bitget does not list as a tokenised instrument
+  at all, 8 outside the price tolerance, 1 on correlation, 1 on overlap.
+- Tracking: median daily-return correlation **0.9637** (weakest accepted **0.7037**), median tracking error
+  **47 bp/day**, tiers **23 tight / 12 fair / 4 loose**.
+- **A median 56.08% of the instrument's own realised hourly movement happens while the US cash market is shut**
+  (range 42.95% – 73.82% across 39 instruments, 817–1000 hourly candles each, ~41 days).
+- Liquidity at the snapshot: median spread **14.78 bp** (best 0.13 bp, worst 90.55 bp), median **134,125 USDT**
+  resting within 50 bp of the touch, median 24h quote volume **164,637 USDT**. Basis over the raw close:
+  median **0.09%**, worst p90 **1.44%**.
+- Return layer: **233 weekend closed-market blocks over 6 distinct weekends**, plus 892 overnight blocks —
+  pooled weekend median **-0.02%**, tenth percentile **-1.0066%**, standard deviation **1.1629%**, negative in
+  50.2% of them, median intra-weekend adverse excursion **-0.566%**, and **1.3%** of those weekends traded at
+  least 5% below the pre-weekend close. Hour for hour, closed-session price formation was **0.438x** as
+  volatile as open-session formation.
+- **A perpetual is not a redeemable spot token.** It carries funding and a basis that can diverge, so this is
+  the return of a 7x24 *synthetic* position. Every figure is labelled with that instrument class rather than
+  presented as the underlying's, on the card, in the UI and in the prose.
+
+**Second venue — Gate.io spot wrappers**, an independent measurement of the same premise on a different
+instrument class (redeemable spot tokens, xStocks). `scripts/measure-wrapper.mjs` writes
+`data-cache/wrapper-probe.json`, `npm run check:wrapper` gates it, and the card prints it *beside* the Bitget
+block rather than instead of it. Snapshot `2026-09-23T14:12:46Z` on Gate.io spot v4 (public, keyless,
+reachable on a direct connection):
 
 - **The reference cash market is closed for 81.4% of the week** — 136.67 of 168 hours. Derived from the
-  library's own 2513-session calendar (4.819 sessions/week x 6.5h = 31.33h open), so it needs no venue.
-- **A median 60.9% of a wrapper's own realised hourly price movement happens in those closed hours**
-  (range 46.2% – 79.9% across 33 pairs, 720 hourly candles each). This is the number the thesis needed.
-- **33 tokenised-equity wrappers verified** against 33 of the 71 library instruments (46.5% coverage) out of
-  256 candidates. **192 candidates were refused and every refusal is recorded with its reason.**
-- Tracking: median daily-return correlation **0.9561**, median tracking error **47 bp/day**, tiers
-  **14 tight / 14 fair / 5 loose** — and the tier is printed next to every figure, because a loose tracker
-  must never be read as the underlying.
+  library's own 2513-session calendar (4.819 sessions/week x 6.5h = 31.33h open), so it needs no venue, and
+  both venues quote the identical figure.
+- **A median 59.8% of a wrapper's own realised hourly price movement happens in those closed hours**
+  (range 45.7% – 79.9% across 34 pairs, 720 hourly candles each, ~30 days).
+- **34 tokenised-equity wrappers verified** against 34 of the 71 library instruments (**47.9%** coverage) out
+  of 256 candidates. **191 candidates were refused and every refusal is recorded with its reason.**
+- Tracking: median daily-return correlation **0.9543** (weakest accepted **0.5075**), median tracking error
+  **51 bp/day** (worst 336), tiers **14 tight / 15 fair / 5 loose** — and the tier is printed next to every
+  figure, because a loose tracker must never be read as the underlying.
 - Premium over the raw close: median **0.08%**, but a p90 as wide as **4.09%** on the worst name.
-- Liquidity at the snapshot: median spread **33.13 bp** (best 5 bp, worst 327 bp), median **44,765 USDT**
-  resting within 50 bp of the touch, median 24h quote volume **739,971 USDT**.
+- Liquidity at the snapshot: median spread **19.14 bp** (best 2.97 bp, worst 175.85 bp), median
+  **84,591 USDT** resting within 50 bp of the touch, median 24h quote volume **775,889 USDT**.
+- Return layer: **136 weekend closed-market blocks over 4 distinct weekends**, plus 612 overnight blocks —
+  pooled weekend median **-0.002%**, tenth percentile **-1.461%**, standard deviation **1.2789%**, negative in
+  50% of them, median intra-weekend adverse excursion **-0.713%**, **2.9%** breaching a 5% intra-block
+  drawdown, and closed-session formation **0.5x** as volatile hour for hour.
 
-Verification is **two independent tests, not one**: price within +/-7% of the underlying's **raw** session
-close (never the dividend-adjusted close, which sits below it by the cumulative dividend factor), *and*
-daily-return correlation >= 0.5 over >= 20 overlapping sessions. The price test alone is not enough and was
-caught being not enough — **LINK (Chainlink) trades near LI Auto's share price**, passes the price test, and
-is refused by the correlation test at 0.227. `npm run check:wrapper` asserts that specific rejection by
-name, so quietly loosening the floor fails the build.
+**The two venues agree, and that agreement is the stronger claim.** They are different instrument classes on
+the same underlying — a Bitget perpetual against a Gate.io redeemable spot token — so agreement is evidence
+about the *premise*, not about one issuer's wrapper design. Over the **24 symbols both venues list**, under
+the one shared session convention: the closed-move share differs by a median **-1.59 percentage points**
+(Bitget lower), daily-return correlation differs by a median **+0.0027**, and the Bitget book is tighter by a
+median **10.845 bp** (tighter on 75% of the names). The observed windows are *not* assumed equal and are
+printed per side: ~1000 hourly buckets on Bitget against 720 on Gate.io.
 
-**The return layer is now measured too, and it is smaller than the movement share implies.** A share of
-absolute movement cannot be sized, so `scripts/measure-wrapper.mjs` also reports what the wrapper actually
-*returned* while the reference market was shut. Over **136 weekend closed-market blocks** across 34 wrappers
-— pooled median return **-0.002%**, tenth percentile **-1.461%**, standard deviation **1.2789%**, negative in
-50% of them, median intra-weekend adverse excursion **-0.713%**, and **2.9%** of those weekends traded at
-least 5% below the pre-weekend close. Hour for hour, closed-session price formation was **0.5x** as volatile
-as open-session formation: the movement share above is large because there are far more closed hours than
-open ones, not because each closed hour moves more. Every block recomputes from its own entry and exit prices
-and `npm run check:wrapper` asserts that.
+**Bitget is primary, and the route is part of that label.** Bitget's own venue answers only through a local
+HTTP proxy on the network this was built on — every `*.bitget.com` host resets at the TCP layer on a direct
+connection — so the route travels with every figure (`proxy 127.0.0.1:7890`). On a machine with no such proxy
+the measurement writes a degradation block and **no figures**; the card then marks the primary venue
+`not-measured` with the reason and the Gate.io block stands alone as the venue of record. That fallback is why
+the second venue is kept rather than deleted, and `npm run check:bitget7x24` asserts it explicitly by building
+a card from a synthetic `no-proxy` payload and requiring the card to demote itself, in both languages.
 
-The binding limitation is the sample, and it is stated wherever the number is quoted: 720 hourly candles is
-roughly **four distinct weekends**, so the 136 pooled blocks are 34 wrappers over the same 4 weekends and are
-highly cross-correlated. The pooled `n` is printed next to the distinct-weekend count so the effective sample
-size is visible rather than implied.
+Bitget also lists **15 names Gate.io does not list at all** (ADBE, BA, COP, CRM, IWM, JD, KWEB, MRK, NIO, NKE,
+PDD, TXN, XLE, XLK, XLV), which is the practical reason it is the primary venue and not merely a second
+opinion: between them the two venues cover **49 of the 71** library instruments.
+
+Verification is **two independent tests, not one**, and it is **one rule set for both venues**
+(`ACCEPTANCE` in `src/data/closed-session.mjs`, which both gates compare the committed file against): price
+within +/-7% of the underlying's **raw** session close (never the dividend-adjusted close, which sits below it
+by the cumulative dividend factor), *and* daily-return correlation >= 0.5 over >= 20 overlapping sessions.
+Two venues measured under different thresholds would not be comparable, so the thresholds are not allowed to
+differ and both `npm run check:wrapper` and `npm run check:bitget7x24` fail if they do.
+
+The price test alone is not enough, and it was caught being not enough — on **both** venues. On Gate.io,
+**LINK (Chainlink) trades near LI Auto's share price**, passes the price test, and is refused by the
+correlation test at 0.227. On Bitget, **CAT/USDT** does the same against Caterpillar and is refused at
+**-0.043**. Each gate asserts its own venue's specific rejection **by name**, so quietly loosening the floor
+fails the build on the exact case that motivated the two-test rule.
+
+**Read the movement share together with the volatility ratio, or it will be misread.** A share of absolute
+movement cannot be sized, which is why both scripts also report what the instrument actually *returned* while
+the reference market was shut (the bullets above). The share is large on both venues — 56.08% on Bitget,
+59.8% on Gate.io — while closed-session price formation is *quieter* hour for hour, at **0.438x** the
+open-session level on Bitget and **0.5x** on Gate.io. Both are true and they are not in tension: the closed
+share is large because there are roughly **2.4 times more closed hours than open ones** (81.4% of the week),
+not because each closed hour moves more. Any prose that quotes the share without the ratio would imply a
+weekend volatility spike the data does not show, so the two are printed together on the card, in the UI and
+in both languages of the narrative. Every closed block on both venues recomputes from its own entry and exit
+prices, and both gates assert that recomputation rather than trusting the stored figure.
+
+**The binding limitation is the sample, and adding a second venue does not fix it.** The pooled blocks are
+not independent draws: the whole tokenised-equity complex moves together and every instrument on a venue
+shares the same weekends. On Bitget, ~1000 hourly candles (~41 days) yield **233 weekend blocks but only 6
+distinct weekends** across 39 instruments; on Gate.io, 720 candles (~30 days) yield **136 blocks over 4
+distinct weekends** across 34 wrappers. The effective sample is therefore 6 weekends, not 233 blocks, and 4,
+not 136. Both counts are printed together wherever the figure is quoted, and both gates fail if the
+distinct-weekend bound goes missing. What the second venue adds is *external* validity — the premise reproduces
+on a different venue, a different instrument class and a different issuer — not more independent weekends.
 
 **What is still not measured — and this is the part that matters.**
 
@@ -157,17 +226,23 @@ size is visible rather than implied.
   time and 14:30–21:00 UTC in standard time; the measurement counts every Mon–Fri hourly bucket from 13:00 to
   20:59 UTC as open — 40h/week against the real 32.5h. Any bias in the 60.9% is therefore **downward**: it
   understates the closed-hours share rather than flattering the thesis.
-- **One venue, and not Bitget's.** The Bitget official MCP is still unreachable (§12), so these figures
-  describe Gate.io's tokenised equities. Issuer, custody and redemption design differ between venues, and a
-  Bitget-listed wrapper on the same ticker would not necessarily reproduce them. Three issuer suffix families
-  were found (`G` 27, `ON` 20, `X` 17 candidates); the canonical wrapper reported per underlying is the
-  verified one with the highest 24h quote volume, and the others are recorded as `duplicate` rejections.
-- **38 of 71 instruments have no verified wrapper** — including META, KWEB, PDD, NIO, JD, BIDU and every
-  sector ETF except SPY / QQQ / GLD / TLT. For those the desk reports the calendar figure only and states
-  that no wrapper was verified. It never borrows a sibling instrument's numbers.
-- **A snapshot is a snapshot.** Order books change every second and this one was taken in calm conditions.
+- **Two venues, and the primary one is Bitget's — but only on a proxied route (§12).** Issuer, custody and
+  redemption design still differ between them and a perpetual is not a redeemable spot token, so the two
+  blocks are never merged into one figure: the card prints both, each labelled with its venue, its instrument
+  class and the route it was fetched on. On Gate.io three issuer suffix families were found (`G` 28, `ON` 20,
+  `X` 17 candidates); the canonical wrapper reported per underlying is the verified one with the highest 24h
+  quote volume and the others are recorded as `duplicate` rejections. Bitget lists one perpetual per
+  underlying, so it has no suffix ambiguity — but there are 22 symbols it does not list at all, recorded as
+  `listing` refusals rather than silently skipped.
+- **22 of 71 instruments have no verified instrument on either venue** — META, AMD, INTC, QCOM, MS, BLK, WFC,
+  C, PFE, TMO, SLB, DIS, RTX, BIDU, LI, DIA, XLF, XLI, VIXY, UUP, FXI and EEM. For those the desk reports the
+  calendar figure only, names no venue, and states that nothing was verified; it never borrows a sibling
+  instrument's numbers. (KWEB, PDD, NIO and JD were uncovered by Gate.io alone and *are* covered by Bitget.)
+- **A snapshot is a snapshot.** Order books change every second and both were taken in calm conditions.
   Spreads widen precisely in the liquidity-air-pocket state the stress suite describes, so the measured
-  33 bp median is a floor for that scenario, not an estimate inside it.
+  medians — **14.78 bp** on Bitget, **19.14 bp** on Gate.io — are floors for that scenario, not estimates
+  inside it. The two snapshots were taken about **12 hours apart**, so the cross-venue spread difference is a
+  difference between two calm moments rather than a controlled simultaneous comparison.
 - **Premium is measured against the same calendar date's raw close**, not against the underlying at the hour
   the wrapper traded — a daily-basis comparison, not a point-in-time intraday one.
 - Funding cost, borrow cost and a depeg event study remain **out of scope**.
@@ -175,7 +250,10 @@ size is visible rather than implied.
 The overnight-gap feature (`gap20`) is unchanged: it is raw open[t] / raw close[t-1] on the daily-session
 tape, so it quantifies 5x24 overnight gaps, not continuous weekend repricing. What *is* new is that the
 scenario which always cited that as a limitation — `liquidity-air-pocket` — now carries the measured
-closed-hours figures inside its own caveat instead of only confessing to the gap.
+closed-hours figures inside its own caveat instead of only confessing to the gap, and it quotes whichever
+venue is primary on that build, naming the instrument and its class (`AAPL/USDT, a Bitget RWA perpetual`) so
+a perpetual is never described as a spot wrapper. `npm run check:bitget7x24` asserts that the caveat names the
+primary venue's instrument class.
 
 ## 10. No costs, no execution, no P&L
 
@@ -202,12 +280,15 @@ horizon.
   breaks the build; the raw HTTP cache and the committed `dataset.json` make the shipped artefacts
   reproducible offline regardless.
 
-## 12. Bitget: two integrations, three results, and the route each one needed
+## 12. Bitget: two integrations, a route each one needed, and one place the data is consumed
 
 Bitget appears in this project in two separate places, and the honest summary is neither "0 endpoints" nor
-"Bitget connected" — it is one of each. `probeAllBitget()` reports the two groups separately and `reachable`
-deliberately keeps meaning *the market-data toolkit is reachable*, so no panel can start claiming a Bitget
-data integration that does not exist. The header badge names the route whenever the direct connection was not what produced the answer, for
+"Bitget connected". The market-data group is **route-dependent** — dead on a direct connection, alive through
+a local proxy — and it is consumed in exactly **one** place: as the primary venue of the 7x24 instrument
+layer (§9). The narrative group is reachable on a direct connection and is on the critical path for prose.
+`probeAllBitget()` reports the two groups separately and `reachable` deliberately keeps meaning *the
+market-data toolkit is reachable*, so no panel can claim a broader Bitget data integration than the one that
+exists. The header badge names the route whenever the direct connection was not what produced the answer, for
 exactly that reason.
 
 **Update, measured `2026-09-23T14:07Z`: the market-data result is route-dependent, and the earlier
@@ -239,23 +320,40 @@ demo calls:
   and return HTTP 204 with an empty body. That is recorded rather than retried into a result, and it matters:
   a deep historical price cross-check would have been the strongest test available and it is absent.
 
+**And what that route bought that matters most: the 7x24 layer is now measured on Bitget's own data.** The
+cross-checks above compare Bitget's answers with this project's keyless sources. `scripts/measure-bitget-7x24.mjs`
+goes further and uses the same MCP as a **data venue**: 39 Bitget RWA perpetuals on tokenised US equities,
+verified against the frozen library under the same two tests, with `exchange` pinned to `bitget` and the echoed
+`interval` asserted on every fetch. That is the **primary** venue of the 7x24 layer (§9), with Gate.io's spot
+wrappers kept beside it as an independent second venue and as the fallback on a machine with no proxy. It is
+still keyless, still committed to `data-cache/bitget-7x24.json`, and still gated — `npm run check:bitget7x24`
+re-derives every published figure from the rows behind it, including the pooled weekend distribution and the
+cross-venue block.
+
 **The boundary is unchanged and is the reason this is safe to add.** No Bitget figure enters the retrieval
 features, the frozen conformal scale, or any number in `research/VALIDATION.md`. Those remain reproducible
-from keyless sources alone, on any network, with no proxy. A reviewer who cannot reach Bitget loses the
-cross-check and nothing else.
+from keyless non-Bitget sources alone, on any network, with no proxy — and `npm run check:bitget7x24` asserts
+this directly, by requiring the retrieval, conformal, excursion and validation blocks of a card to be
+byte-identical with and without the Bitget payload loaded. What a reviewer without a proxy loses is the
+**primary 7x24 venue**: the card then says the Bitget venue was not measurable, gives the reason, and quotes
+the Gate.io second venue instead. No figure is estimated to fill the gap.
 
 **And the honest reading of the green badge.** It says the integration works *from a machine with a local
 proxy*. On a plain network it does not, and the badge says so too — `0/3 direct` is carried next to
 `3/3 proxied` in the tooltip and in the provenance panel. Reporting only the proxied success would be the
 same error as reporting only the direct failure, in the opposite direction.
 
-**Market data — 0 of 3 reachable.** `agent.bitget.com/mcp` (JSON-RPC `tools/list`), `www.bitget.com` and
-`api.bitget.com` each fail at the TCP layer: `connection-reset — TCP connection reset by peer before any HTTP
-response`. Re-probed `2026-09-23T11:39Z`, and the same result reproduced from a second independent network,
-so it is not one machine's egress. Consequences, stated plainly: AnalogDesk ships **no Bitget-sourced market
-figure**; every number comes from the keyless sources in `DATA-PROVENANCE.md`; there is no live verification
-of tokenised-instrument quotes or spreads from Bitget; and the §9 wrapper measurement had to be taken on a
-different venue. The connector (`src/data/bitget.mjs`) is implemented, probes at start-up, classifies
+**Market data — 0 of 3 on a direct connection, 3 of 3 through the local proxy, and now consumed.**
+`agent.bitget.com/mcp` (JSON-RPC `tools/list`), `www.bitget.com` and `api.bitget.com` each fail at the TCP
+layer on a direct connection: `connection-reset — TCP connection reset by peer before any HTTP response`.
+Re-probed `2026-09-23T11:39Z`, and the same direct-connection result reproduced from a second independent
+network, so it is not one machine's egress. Through `127.0.0.1:7890` all three answer. Consequences, stated
+plainly: the route is part of every Bitget figure in this project, so a reviewer on a plain network gets the
+direct result and the disclosure that goes with it; the analog library, the retrieval features and every
+validation number still come from the keyless non-Bitget sources in `DATA-PROVENANCE.md`; and the one place
+Bitget data **is** consumed is the 7x24 instrument layer (§9), where it is the primary venue, is labelled with
+its instrument class and its route everywhere it is rendered, and is gated by `npm run check:bitget7x24`. The
+connector (`src/data/bitget.mjs`) is implemented, probes at start-up, classifies
 transport errors precisely by walking the `cause` chain, and renders the degradation in the provenance panel
 of every card and in `demo/RUN-RECORD.md` §8. Where a run has no direct network egress and can only report a
 generic failure, it falls back to the persisted classified probe and labels which run the evidence came from

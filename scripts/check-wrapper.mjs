@@ -34,7 +34,11 @@ import { buildAllowlist, verifyNumbers, defaultAllowance } from "../src/llm/veri
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
 const PROBE = join(ROOT, "data-cache", "wrapper-probe.json");
+const PROBE_BG = join(ROOT, "data-cache", "bitget-7x24.json");
 const readJson = (p) => { try { return JSON.parse(readFileSync(p, "utf8")); } catch { return null; } };
+// The primary venue for this layer. Loaded here so the card assertions see the same payload the server
+// and the bundle see; scripts/check-bitget7x24.mjs gates the file itself.
+const BG7 = readJson(PROBE_BG);
 
 let failures = 0, notes = 0;
 const ok = (m) => console.log(`  ok   ${m}`);
@@ -166,7 +170,7 @@ const dataset = readJson(join(ROOT, "data-cache", "dataset.json"));
 const V = readJson(join(ROOT, "research", "validation-results.json")) || readJson(join(ROOT, "dist", "validation-summary.json"));
 if (!dataset) bad("no data-cache/dataset.json - run npm run build:data");
 else {
-  const desk = createDesk({ dataset, validationResults: V, provenance: {}, wrapper: W });
+  const desk = createDesk({ dataset, validationResults: V, provenance: {}, wrapper: W, bitget7x24: BG7 });
   const measuredSym = pairs[0]?.sym || null;
   const universe = (dataset.meta?.universe || []).map((u) => u.s);
   const uncoveredSym = universe.find((s) => !(W.bySymbol || {})[s]) || null;
@@ -180,9 +184,14 @@ else {
       ok(`${measuredSym} card carries a measured wrapper block (${w.instrument}, ${w.tracking.tier}, closed-hours move ${w.sevenByTwentyFour.closedMoveSharePct}%)`);
       if (w.sevenByTwentyFour.referenceClosedSharePct !== rm?.closedSharePct) bad("the card's closed-share does not match the committed measurement");
       const lap = (card.stress || []).find((x) => x.id === "liquidity-air-pocket");
+      // Whichever venue is primary on this build is the one the scenario caveat must quote, and it must
+      // name the instrument class: a Bitget RWA perpetual is not a Gate.io spot wrapper, and a caveat
+      // that quoted the wrong one would be describing an instrument nobody can buy.
+      const wantClass = w.primaryVenue === "bitget" ? "Bitget RWA perpetual" : "tokenised-equity wrapper";
       if (!lap) note("no liquidity-air-pocket scenario on this card to annotate");
-      else if (!/Measured on the wrapper itself/.test(lap.caveat || "")) bad("the liquidity-air-pocket caveat still only confesses to the gap instead of quoting the measurement");
-      else ok("the liquidity-air-pocket caveat now carries the measured closed-hours figures");
+      else if (!/Measured on the instrument itself/.test(lap.caveat || "")) bad("the liquidity-air-pocket caveat still only confesses to the gap instead of quoting the measurement");
+      else if (!lap.caveat.includes(wantClass)) bad(`the liquidity-air-pocket caveat quotes the measurement but not the primary venue's instrument class (expected "${wantClass}" for primaryVenue=${w.primaryVenue})`);
+      else ok(`the liquidity-air-pocket caveat carries the measured closed-hours figures of the primary venue (${wantClass})`);
     }
     for (const language of ["en", "zh"]) {
       const { card: c2 } = desk.analyze({ symbol: measuredSym, date: "latest", horizon: 5, k: 50, includeStress: true });
@@ -190,8 +199,15 @@ else {
       const gate = verifyNumbers(text, buildAllowlist(c2, defaultAllowance(c2)));
       if (!gate.ok) bad(`${measuredSym} ${language} template cites ${gate.unsupportedCount} numeral(s) not in the card: ${gate.unsupported.map((u) => `"${u.value}"`).join(", ")}`);
       else ok(`${measuredSym} ${language} template passes the numeric gate with the wrapper paragraph (${gate.total} numerals traced)`);
-      const expects = language === "en" ? /measured rather than asserted/ : /被测量出来的/;
-      if (!expects.test(text)) bad(`${measuredSym} ${language} template does not render the wrapper paragraph at all`);
+      // The Gate.io paragraph is the SECOND venue whenever the Bitget block measured anything, so the
+      // prose has to demote it in both languages; when Bitget is absent or degraded it stands alone and
+      // must not be introduced as a second venue.
+      const bitgetPrimary = c2.wrapper?.primaryVenue === "bitget";
+      const expects = language === "en"
+        ? (bitgetPrimary ? /measured primarily on Bitget's own data[\s\S]*Second venue, same premise/ : /measured rather than asserted/)
+        : (bitgetPrimary ? /主要以 Bitget 自家数据测量[\s\S]*第二场地，同一前提/ : /被测量出来的/);
+      if (!expects.test(text)) bad(`${measuredSym} ${language} template does not render the wrapper paragraph as ${bitgetPrimary ? "primary Bitget + second-venue Gate.io" : "the only measured venue"}`);
+      else ok(`${measuredSym} ${language} prose presents the venues in the right order (${bitgetPrimary ? "Bitget primary, Gate.io second" : "Gate.io alone"})`);
     }
   }
 
@@ -216,7 +232,7 @@ else {
   else ok(`the wrapper block is committed data, not a live call: two runs hash to the same card id (${idA})`);
 
   const withWrapper = cardDigest(a, { promptVersion: PROMPT_VERSION, language: "en" });
-  const deskNoW = createDesk({ dataset, validationResults: V, provenance: {}, wrapper: null });
+  const deskNoW = createDesk({ dataset, validationResults: V, provenance: {}, wrapper: null, bitget7x24: null });
   const without = cardDigest(deskNoW.analyze({ symbol: measuredSym || universe[0], date: "latest", horizon: 5, k: 50 }).card, { promptVersion: PROMPT_VERSION, language: "en" });
   if (withWrapper === without) bad("a card built without the wrapper measurement hashes the same as one with it - a runtime that forgets to load the file would serve stale prose undetected");
   else ok("loading the measurement changes the card id, so a runtime that forgets it cannot silently serve another runtime's prose");

@@ -19,9 +19,11 @@ const V = JSON.parse(readFileSync("research/validation-results.json", "utf8"));
 // The wrapper block is part of the card, so the gate grid has to run WITH it: that is the only way
 // to prove the template can quote the measured 7x24 figures without the numeric gate rejecting them.
 const W = (() => { try { return JSON.parse(readFileSync("data-cache/wrapper-probe.json", "utf8")); } catch { return null; } })();
+const BG = (() => { try { return JSON.parse(readFileSync("data-cache/bitget-7x24.json", "utf8")); } catch { return null; } })();
 const prov = { sessions: 2513, symbols: 71, from: dataset.meta.from, to: dataset.meta.to };
-const desk = createDesk({ dataset, validationResults: V, provenance: prov, wrapper: W });
+const desk = createDesk({ dataset, validationResults: V, provenance: prov, wrapper: W, bitget7x24: BG });
 if (!W) console.log("  note  data-cache/wrapper-probe.json is missing, so this grid does not exercise the wrapper block");
+if (!BG) console.log("  note  data-cache/bitget-7x24.json is missing, so this grid does not exercise the Bitget primary-venue block");
 
 const syms = ["NVDA", "BABA", "SPY", "TSLA", "KWEB", "JPM", "GLD", "PDD", "NIO", "QQQ", "XOM", "UNH"];
 const horizons = [1, 5, 10, 20, 40, 60];

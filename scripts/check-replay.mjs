@@ -73,7 +73,16 @@ if (perturbed) {
     run.timing = { ...(run.timing || {}), meanQueryMs: 999.9, coldQueryMs: 1234.5 };
   }
 }
-const browserDesk = createDesk({ dataset, validationResults: perturbed, provenance: browserProvenance, wrapper: readJson(join(ROOT, "data-cache", "wrapper-probe.json")) });
+// The browser gets the TRIMMED copy the bundle ships, so this mirrors compile-bundle.mjs exactly:
+// a field the card reads must never be trimmed away, or the two runtimes would hash differently and
+// every warmed replay record would miss on the static site.
+const browserBitget7x24 = (() => {
+  const full = readJson(join(ROOT, "data-cache", "bitget-7x24.json"));
+  if (!full) return null;
+  const { observedTickerFields, catalog, ...rest } = full;
+  return { ...rest, catalog: catalog ? { rows: catalog.rows, rwaFlagged: catalog.rwaFlagged, exchangesReported: catalog.exchangesReported, note: catalog.note } : null };
+})();
+const browserDesk = createDesk({ dataset, validationResults: perturbed, provenance: browserProvenance, wrapper: readJson(join(ROOT, "data-cache", "wrapper-probe.json")), bitget7x24: browserBitget7x24 });
 const runC = browserDesk.analyze(baseReq).card;
 runC.provenance = {
   ...(runC.provenance || {}), ...browserProvenance,

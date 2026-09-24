@@ -305,7 +305,11 @@ function browserRuntime(mods) {
         // Same committed measurement server.mjs loads from data-cache/wrapper-probe.json. If the two
         // runtimes disagreed here, the card would hash differently in the browser and every warmed
         // replay record would miss - the exact bug class scripts/check-replay.mjs exists to catch.
-        wrapper: mods.wrapper || null
+        wrapper: mods.wrapper || null,
+        // The primary venue for the 7x24 layer, baked into the bundle for the same reason as the
+        // Gate.io measurement: the static package makes no network call after load, and the browser
+        // card has to hash identically to the server card or every warmed replay record would miss.
+        bitget7x24: mods.bitget7x24 || null
       });
       const lib = desk.library();
       const full = { ...lib, horizons: desk.horizons, scenarios: desk.scenarios };
@@ -689,6 +693,66 @@ function renderDist(card, detail) {
  * which the venue was unreachable, which shows the degradation block. A missing measurement is never
  * filled in with an estimate.
  */
+/**
+ * The Bitget venue block, rendered FIRST because it is the primary measurement of the 7x24 layer:
+ * Bitget's own RWA perpetuals, fetched from the official Bitget MCP with the exchange pinned to
+ * bitget. Everything the block quotes carries its instrument class and its route, because a perpetual
+ * is not a redeemable spot token and a proxied answer is not a direct one.
+ */
+function renderBitgetVenue(bg, cross, w) {
+  if (!bg) return "";
+  if (bg.status === "not-measured") {
+    return `<div class="note warn" style="margin-top:10px"><b>Bitget venue not measured on this run.</b> ${esc(bg.caveatNote || "")}
+      <div class="mono small" style="margin-top:6px">${esc(bg.venueName || "")} &middot; ${esc(bg.route || "no route")} &middot; ${esc(bg.degradation?.kind || "")}</div></div>`;
+  }
+  if (bg.status === "no-verified-instrument") {
+    const refs = bg.refusals || [];
+    return `<div class="note warn" style="margin-top:10px"><b>No verified Bitget instrument for ${esc(bg.symbol)}.</b> ${esc(bg.reason || "")}
+      ${refs.length ? `<div class="small" style="margin-top:6px">${refs.map((x) => `<code>${esc(x.pair)}</code> refused at the ${esc(x.stage)} stage: ${esc(x.reason)}`).join("<br>")}</div>` : ""}
+      <div class="small" style="margin-top:6px">${esc(bg.caveatNote || "")}</div></div>`;
+  }
+  const t = bg.tracking || {}, pr = bg.premium || {}, lq = bg.liquidity || {}, s24 = bg.sevenByTwentyFour || {}, cr = bg.closedSessionReturns || {};
+  const wd = cr.weekendReturnDistribution, mae = cr.weekendMaeDistribution, pw = cr.pooledWeekendReturnDistribution, pm = cr.pooledWeekendMaeDistribution;
+  const tierCls = t.tier === "tight" ? "ok" : t.tier === "fair" ? "info" : "warn";
+  const cv = cross ? `
+    <h3 style="margin-top:14px">Cross-venue <span class="sub">one underlying, two venues, two instrument classes, one shared session convention</span></h3>
+    ${kpi("closed-move share, Bitget vs Gate.io", `${pctPlain(cross.closedMoveSharePct?.bitget)} <span class="muted">vs</span> ${pctPlain(cross.closedMoveSharePct?.gateio)}`, "same underlying, same convention")}
+    ${kpi("return correlation, Bitget vs Gate.io", `${num(cross.returnCorrelation?.bitget, 3)} <span class="muted">vs</span> ${num(cross.returnCorrelation?.gateio, 3)}`, "daily returns against the same raw closes")}
+    ${kpi("spread, Bitget vs Gate.io", `${num(cross.spreadBps?.bitget, 2)} <span class="muted">vs</span> ${num(cross.spreadBps?.gateio, 2)} bp`, "order-book snapshot, both sides")}
+    ${kpi("weekend median return, Bitget vs Gate.io", `${pctPlain(cross.weekendMedianReturnPct?.bitget)} <span class="muted">vs</span> ${pctPlain(cross.weekendMedianReturnPct?.gateio)}`, "entry-to-exit across the closed block")}
+    <p class="small" style="margin-top:6px">${esc(cross.note || "")}</p>
+    ${cross.windowHours ? `<div class="note info" style="margin-top:6px"><b>Window, stated because the venues differ:</b> median ${num(cross.windowHours.bitgetMedian, 0)} hourly buckets observed on Bitget against ${num(cross.windowHours.gateioMedian, 0)} on Gate.io. ${esc(cross.windowHours.note || "")}</div>` : ""}` : "";
+  return `
+    <div class="headline" style="margin-bottom:8px;margin-top:12px">
+      <h3 style="margin:0">${esc(bg.instrument || "")} <span class="dim mono" style="font-size:13px">Bitget RWA perpetual, a 7x24 proxy for ${esc(bg.symbol)}</span></h3>
+      <div class="meta">${esc(bg.venueName || "")} &middot; ${esc(bg.route || "")} &middot; snapshot ${esc(bg.measuredAt || "")} &middot; no API key</div>
+    </div>
+    ${badge("ok", "primary venue")}
+    ${badge(tierCls, esc(t.tierLabel || t.tier || "unknown"))}
+    ${badge("info", esc(bg.instrumentClass || "perpetual"))}
+    ${badge(bg.intervalEchoed === "1h" && bg.exchangeEchoed === bg.exchangePinned ? "ok" : "bad", `echo checked: interval ${esc(bg.intervalEchoed || "?")} / exchange ${esc(bg.exchangeEchoed || "?")}`)}
+    <p class="small" style="margin-top:6px">${esc(w?.venueNote || "")}</p>
+
+    <h3 style="margin-top:14px">The measured 7x24 part, on Bitget data <span class="sub">how much of the instrument's own movement lands in the hours the cash market is shut</span></h3>
+    ${kpi("movement outside cash hours", pctPlain(s24.closedMoveSharePct), "of realised hourly moves", (s24.closedMoveSharePct ?? 0) > 50 ? "neg" : "")}
+    ${kpi("hours outside session", pctPlain(s24.closedHoursSharePct), `${num(s24.hoursObserved, 0)} hourly buckets observed`)}
+    ${kpi("traded outside session", pctPlain(s24.tradedOutsideSessionPct), "share of closed hours with a print")}
+    ${kpi("return correlation", num(t.returnCorrelation, 4), `${num(t.trackingErrorBpPerDay, 0)} bp/day tracking error`)}
+    ${kpi("spread", num(lq.spreadBps, 2), `${num(lq.depthWithin50BpsUsdt, 0)} USDT within 50bp`)}
+    <p class="small" style="margin-top:6px">${esc(s24.note || "")}</p>
+
+    <h3 style="margin-top:14px">The return layer, on Bitget data <span class="sub">what the instrument actually did while the cash market was shut</span></h3>
+    ${kpi("median weekend return", pctPlain(wd?.medianPct ?? pw?.medianPct), `${num(cr.weekendBlocks ?? pw?.n, 0)} closed-market block(s)`, Math.abs(wd?.medianPct ?? 0) < 0.5 ? "" : "neg")}
+    ${kpi("p10 weekend return", pctPlain(wd?.p10Pct ?? pw?.p10Pct), "the bad tail of those weekends", "neg")}
+    ${kpi("median intra-weekend MAE", pctPlain(mae?.medianPct ?? pm?.medianPct), "worst point inside the block", "neg")}
+    ${kpi("closed-hour vs open-hour vol", `${num(cr.hourlyStdRatioOutsideOverInside, 2)}<span class="muted">x</span>`, "hourly sd outside / inside")}
+    ${pw ? `<p class="small" style="margin-top:6px">Pooled across ${num(cr.pooledInstruments, 0)} Bitget instruments: ${num(pw.n, 0)} weekend blocks over ${num(cr.pooledDistinctWeekendStarts, 0)} distinct weekend(s), median ${pctPlain(pw.medianPct)}, p10 ${pctPlain(pw.p10Pct)}, sd ${pctPlain(pw.stdPct)}, median MAE ${pctPlain(pm?.medianPct)}, ${pctPlain(cr.pooledWeekendShareBreached5PctDrawdownPct)} of weekends breaching ${num(cr.weekendDrawdownThresholdPct, 0)}% intra-block.</p>` : ""}
+    <p class="small" style="margin-top:6px">${esc(cr.note || "")}</p>
+    ${cr.caveatNote ? `<div class="note warn" style="margin-top:6px"><b>What this pooled figure is not:</b> ${esc(cr.caveatNote)}</div>` : ""}
+    ${cv}
+    <div class="note info" style="margin-top:8px"><b>Instrument class and route, stated rather than implied:</b> ${esc(bg.caveat || "")}</div>`;
+}
+
 function renderWrapper(card) {
   const box = $("wrapper");
   const w = card.wrapper;
@@ -703,16 +767,19 @@ function renderWrapper(card) {
     ${kpi("cash hours / week", num(ref.cashOpenHoursPerWeek, 1), `${num(ref.sessionsPerWeek, 2)} sessions x 6.5h`)}
     ${kpi("sessions measured", num(ref.sessions, 0), `${esc(ref.from || "")} .. ${esc(ref.to || "")}`)}
     <p class="small" style="margin-top:6px">${esc(ref.note || "")}</p>` : "";
+  // The primary venue is rendered first whatever its status: a Bitget block that says "not measured"
+  // is more useful than a card that silently falls back to the second venue without saying so.
+  const bitgetBlock = renderBitgetVenue(w.bitget, w.crossVenue, w);
 
   if (w.status === "not-measured") {
-    box.innerHTML = `${refBlock}
+    box.innerHTML = `${refBlock}${bitgetBlock}
       <div class="note bad" style="margin-top:10px"><b>Wrapper layer not measured on this build.</b> ${esc(w.degradation?.disclosure || w.caveatNote || "")}
       <div class="mono small" style="margin-top:6px">${esc(w.venueName || "")} &middot; ${esc(w.degradation?.kind || "")} &middot; ${esc(w.degradation?.detail || "")} &middot; probed ${esc(w.degradation?.probedAt || "")}</div></div>`;
     return;
   }
 
   if (w.status === "no-verified-wrapper") {
-    box.innerHTML = `${refBlock}
+    box.innerHTML = `${refBlock}${bitgetBlock}
       <div class="note warn" style="margin-top:10px"><b>No verified tokenised wrapper for ${esc(w.symbol)}.</b> ${esc(w.reason || "")}
       <div class="small" style="margin-top:6px">${num(w.candidatesTested, 0)} candidate listing(s) on ${esc(w.venueName || "")} were tested and rejected; every rejection and its reason is in <code>data-cache/wrapper-probe.json</code> and served by <code>/api/wrapper</code>. Measured ${esc(w.measuredAt || "")}.</div>
       <div class="small" style="margin-top:6px">${esc(w.caveatNote || "")}</div></div>`;
@@ -728,6 +795,8 @@ function renderWrapper(card) {
     </div>
     ${badge(tierCls, esc(t.tierLabel || t.tier || "unknown"))}
     ${refBlock}
+    ${bitgetBlock}
+    ${w.primaryVenue === "bitget" ? `<h3 style="margin-top:18px">Second venue <span class="sub">an independent measurement of the same claim, on a different instrument class</span></h3>` : ""}
 
     <h3 style="margin-top:14px">The measured 7x24 part <span class="sub">how much of the wrapper's own movement lands in the hours the cash market is shut</span></h3>
     ${kpi("movement outside cash hours", pctPlain(s24.closedMoveSharePct), `of realised hourly moves`, (s24.closedMoveSharePct ?? 0) > 50 ? "neg" : "")}
