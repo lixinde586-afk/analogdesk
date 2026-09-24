@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T14:01:07.329Z",
+  "generatedAt": "2026-09-24T04:57:05.387Z",
   "primaryHorizon": 5,
   "horizons": [
     1,
@@ -74,7 +74,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 637
+        "initMs": 711
       },
       "grid": {
         "calibration": 1823,
@@ -300,7 +300,7 @@
         },
         "matchedCoverageSharpnessGainPct": -1.1,
         "analogScale": 1.3367893681432808,
-        "meanQueryMs": 8.505930318754633,
+        "meanQueryMs": 9.006671608598962,
         "meanAnalogs": 50,
         "testN": 2698,
         "calibN": 1823
@@ -3375,14 +3375,353 @@
         "selectedTestWidthPct": 4.5,
         "analogTestWidthPct": 4.5
       },
+      "pathRisk": {
+        "protocol": "predicted = share of the k retrieved analogs whose realised MAE breached -L; realised = this query's own path over (q, q+H], measured on the same raw-low-over-raw-close basis; calibration-era rates frozen before the test era was scored; every standard error and the paired-difference bootstrap clustered by query date",
+        "levelsPct": [
+          5,
+          10,
+          20
+        ],
+        "predictors": [
+          "analogMae",
+          "volReflection",
+          "sameNameCalib",
+          "pooledCalib"
+        ],
+        "labels": {
+          "analogMae": "Analog excursion share (this desk)",
+          "volReflection": "Reflection principle on 60d vol",
+          "sameNameCalib": "Same-name calibration-era rate",
+          "pooledCalib": "Pooled calibration-era rate"
+        },
+        "bootstraps": 400,
+        "seed": 20260924,
+        "aucNote": "AUC is a pooled point estimate; its uncertainty is not clustered here, so read a small AUC gap as noise and read the paired Brier intervals, which are date-clustered.",
+        "byLevel": {
+          "5": {
+            "levelPct": 5,
+            "n": 2698,
+            "clusters": 38,
+            "realisedBreachPct": 2.1,
+            "realisedBreachSEPp": 0.4,
+            "calibrationInTheLarge": {
+              "gapPp": 0.27,
+              "sePp": 0.43,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 3.4,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.018714751667902024,
+                "brierSEPp": 0.34,
+                "clusters": 38,
+                "meanPredictedPct": 2.3,
+                "auc": 0.8393228885043797,
+                "meanPredictedWhenBreachedPct": 10,
+                "meanPredictedWhenHeldPct": 2.2
+              },
+              "volReflection": {
+                "brier": 0.021182393508066236,
+                "brierSEPp": 0.28,
+                "clusters": 38,
+                "meanPredictedPct": 3.8,
+                "auc": 0.8439561479398724,
+                "meanPredictedWhenBreachedPct": 16.4,
+                "meanPredictedWhenHeldPct": 3.6
+              },
+              "sameNameCalib": {
+                "brier": 0.021298070041461305,
+                "brierSEPp": 0.35,
+                "clusters": 38,
+                "meanPredictedPct": 3.6,
+                "auc": 0.6995647236941711,
+                "meanPredictedWhenBreachedPct": 7.3,
+                "meanPredictedWhenHeldPct": 3.5
+              },
+              "pooledCalib": {
+                "brier": 0.020500961410946615,
+                "brierSEPp": 0.37,
+                "clusters": 38,
+                "meanPredictedPct": 3.4,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 3.4,
+                "meanPredictedWhenHeldPct": 3.4
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 2290,
+                "meanPredictedPct": 1,
+                "realisedPct": 0.8,
+                "realisedSEPp": 0.24
+              },
+              {
+                "bin": "5-10%",
+                "count": 223,
+                "meanPredictedPct": 6.7,
+                "realisedPct": 5.8,
+                "realisedSEPp": 2.83
+              },
+              {
+                "bin": "10-20%",
+                "count": 157,
+                "meanPredictedPct": 12.4,
+                "realisedPct": 10.2,
+                "realisedSEPp": 3.36
+              },
+              {
+                "bin": "20-35%",
+                "count": 28,
+                "meanPredictedPct": 22.9,
+                "realisedPct": 32.1,
+                "realisedSEPp": 8.77
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.002467641840164212,
+                "ci95Low": -0.00451650158573486,
+                "ci95High": -0.000022637136004426735,
+                "shareAnalogBetterPct": 98,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": -0.002583318373559282,
+                "ci95Low": -0.0035584221948678453,
+                "ci95High": -0.0016148318674784057,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.0017862097430445915,
+                "ci95Low": -0.0030407649467724786,
+                "ci95High": -0.0007978768786925511,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              }
+            }
+          },
+          "10": {
+            "levelPct": 10,
+            "n": 2698,
+            "clusters": 38,
+            "realisedBreachPct": 0.2,
+            "realisedBreachSEPp": 0.08,
+            "calibrationInTheLarge": {
+              "gapPp": 0.01,
+              "sePp": 0.09,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 0.2,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.0022554484803558135,
+                "brierSEPp": 0.08,
+                "clusters": 38,
+                "meanPredictedPct": 0.2,
+                "auc": 0.7019873699851411,
+                "meanPredictedWhenBreachedPct": 1,
+                "meanPredictedWhenHeldPct": 0.2
+              },
+              "volReflection": {
+                "brier": 0.0023852335057983945,
+                "brierSEPp": 0.09,
+                "clusters": 38,
+                "meanPredictedPct": 0.3,
+                "auc": 0.5804234769687965,
+                "meanPredictedWhenBreachedPct": 0,
+                "meanPredictedWhenHeldPct": 0.3
+              },
+              "sameNameCalib": {
+                "brier": 0.002358234471562213,
+                "brierSEPp": 0.08,
+                "clusters": 38,
+                "meanPredictedPct": 0.3,
+                "auc": 0.47176820208023773,
+                "meanPredictedWhenBreachedPct": 0,
+                "meanPredictedWhenHeldPct": 0.3
+              },
+              "pooledCalib": {
+                "brier": 0.0022189248184348856,
+                "brierSEPp": 0.08,
+                "clusters": 38,
+                "meanPredictedPct": 0.2,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 0.2,
+                "meanPredictedWhenHeldPct": 0.2
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 2682,
+                "meanPredictedPct": 0.2,
+                "realisedPct": 0.2,
+                "realisedSEPp": 0.08
+              },
+              {
+                "bin": "5-10%",
+                "count": 15,
+                "meanPredictedPct": 6.1,
+                "realisedPct": 0,
+                "realisedSEPp": null
+              },
+              {
+                "bin": "10-20%",
+                "count": 1,
+                "meanPredictedPct": 12,
+                "realisedPct": 0,
+                "realisedSEPp": null
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.00012978502544258108,
+                "ci95Low": -0.0002297962886636867,
+                "ci95High": -0.00003569283110600222,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": -0.00010278599120639971,
+                "ci95Low": -0.0001550246865362699,
+                "ci95High": -0.00005442053531313725,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": 0.0000365236619209279,
+                "ci95Low": -0.000011243764591550115,
+                "ci95High": 0.00008160292056602492,
+                "shareAnalogBetterPct": 7,
+                "resamples": 400
+              }
+            }
+          },
+          "20": {
+            "levelPct": 20,
+            "n": 2698,
+            "clusters": 38,
+            "realisedBreachPct": 0,
+            "realisedBreachSEPp": 0.04,
+            "calibrationInTheLarge": {
+              "gapPp": -0.02,
+              "sePp": 0.04,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 0,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.0003740548554484801,
+                "brierSEPp": 0.04,
+                "clusters": 38,
+                "meanPredictedPct": 0,
+                "auc": 0.496292176492399,
+                "meanPredictedWhenBreachedPct": 0,
+                "meanPredictedWhenHeldPct": 0
+              },
+              "volReflection": {
+                "brier": 0.0003707878101378199,
+                "brierSEPp": 0.04,
+                "clusters": 38,
+                "meanPredictedPct": 0,
+                "auc": 0.37875417130144606,
+                "meanPredictedWhenBreachedPct": 0,
+                "meanPredictedWhenHeldPct": 0
+              },
+              "sameNameCalib": {
+                "brier": 0.00037064492216456633,
+                "brierSEPp": 0.04,
+                "clusters": 38,
+                "meanPredictedPct": 0,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 0,
+                "meanPredictedWhenHeldPct": 0
+              },
+              "pooledCalib": {
+                "brier": 0.00037064492216456633,
+                "brierSEPp": 0.04,
+                "clusters": 38,
+                "meanPredictedPct": 0,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 0,
+                "meanPredictedWhenHeldPct": 0
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 2698,
+                "meanPredictedPct": 0,
+                "realisedPct": 0,
+                "realisedSEPp": 0.04
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": 0.000003267045310660166,
+                "ci95Low": 0.000001848889891446562,
+                "ci95High": 0.000005028044976271068,
+                "shareAnalogBetterPct": 0,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": 0.0000034099332839137545,
+                "ci95Low": 0.0000019273535952557433,
+                "ci95High": 0.000005048183839881395,
+                "shareAnalogBetterPct": 0,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": 0.0000034099332839137545,
+                "ci95Low": 0.0000019273535952557433,
+                "ci95High": 0.000005048183839881395,
+                "shareAnalogBetterPct": 0,
+                "resamples": 400
+              }
+            }
+          }
+        }
+      },
       "directional": {
         "hitRate": 52.3,
         "n": 2698
       },
       "timing": {
-        "totalMs": 34156,
-        "meanQueryMs": 8.505930318754633,
-        "engineInitMs": 637
+        "totalMs": 36827,
+        "meanQueryMs": 9.006671608598962,
+        "engineInitMs": 711
       },
       "rowsOmitted": 0
     },
@@ -3450,7 +3789,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 637
+        "initMs": 711
       },
       "grid": {
         "calibration": 1823,
@@ -3676,7 +4015,7 @@
         },
         "matchedCoverageSharpnessGainPct": -7.6,
         "analogScale": 1.310234253013022,
-        "meanQueryMs": 8.45774647887324,
+        "meanQueryMs": 8.970719051148999,
         "meanAnalogs": 50,
         "testN": 2698,
         "calibN": 1823
@@ -6751,14 +7090,388 @@
         "selectedTestWidthPct": 9.46,
         "analogTestWidthPct": 10.2
       },
+      "pathRisk": {
+        "protocol": "predicted = share of the k retrieved analogs whose realised MAE breached -L; realised = this query's own path over (q, q+H], measured on the same raw-low-over-raw-close basis; calibration-era rates frozen before the test era was scored; every standard error and the paired-difference bootstrap clustered by query date",
+        "levelsPct": [
+          5,
+          10,
+          20
+        ],
+        "predictors": [
+          "analogMae",
+          "volReflection",
+          "sameNameCalib",
+          "pooledCalib"
+        ],
+        "labels": {
+          "analogMae": "Analog excursion share (this desk)",
+          "volReflection": "Reflection principle on 60d vol",
+          "sameNameCalib": "Same-name calibration-era rate",
+          "pooledCalib": "Pooled calibration-era rate"
+        },
+        "bootstraps": 400,
+        "seed": 20260924,
+        "aucNote": "AUC is a pooled point estimate; its uncertainty is not clustered here, so read a small AUC gap as noise and read the paired Brier intervals, which are date-clustered.",
+        "byLevel": {
+          "5": {
+            "levelPct": 5,
+            "n": 2698,
+            "clusters": 38,
+            "realisedBreachPct": 13.1,
+            "realisedBreachSEPp": 1.37,
+            "calibrationInTheLarge": {
+              "gapPp": 2.83,
+              "sePp": 1.65,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 20.8,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.1066292068198664,
+                "brierSEPp": 0.91,
+                "clusters": 38,
+                "meanPredictedPct": 15.9,
+                "auc": 0.71355303611445,
+                "meanPredictedWhenBreachedPct": 24.6,
+                "meanPredictedWhenHeldPct": 14.6
+              },
+              "volReflection": {
+                "brier": 0.11815138547231314,
+                "brierSEPp": 0.76,
+                "clusters": 38,
+                "meanPredictedPct": 22.2,
+                "auc": 0.7455788640770248,
+                "meanPredictedWhenBreachedPct": 36.6,
+                "meanPredictedWhenHeldPct": 20
+              },
+              "sameNameCalib": {
+                "brier": 0.11556728008751667,
+                "brierSEPp": 0.67,
+                "clusters": 38,
+                "meanPredictedPct": 21.4,
+                "auc": 0.7201634482383711,
+                "meanPredictedWhenBreachedPct": 33.5,
+                "meanPredictedWhenHeldPct": 19.6
+              },
+              "pooledCalib": {
+                "brier": 0.11974247021447615,
+                "brierSEPp": 0.8,
+                "clusters": 38,
+                "meanPredictedPct": 20.8,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 20.8,
+                "meanPredictedWhenHeldPct": 20.8
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 514,
+                "meanPredictedPct": 2.3,
+                "realisedPct": 5.3,
+                "realisedSEPp": 1.5
+              },
+              {
+                "bin": "5-10%",
+                "count": 440,
+                "meanPredictedPct": 7,
+                "realisedPct": 5.9,
+                "realisedSEPp": 1.5
+              },
+              {
+                "bin": "10-20%",
+                "count": 852,
+                "meanPredictedPct": 13.6,
+                "realisedPct": 10.2,
+                "realisedSEPp": 1.98
+              },
+              {
+                "bin": "20-35%",
+                "count": 650,
+                "meanPredictedPct": 25.7,
+                "realisedPct": 19.1,
+                "realisedSEPp": 2.98
+              },
+              {
+                "bin": "35-50%",
+                "count": 205,
+                "meanPredictedPct": 40.3,
+                "realisedPct": 35.1,
+                "realisedSEPp": 5.3
+              },
+              {
+                "bin": "50-70%",
+                "count": 37,
+                "meanPredictedPct": 55.5,
+                "realisedPct": 45.9,
+                "realisedSEPp": 9.64
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.011522178652446743,
+                "ci95Low": -0.02076830550740941,
+                "ci95High": -0.0022955751376403486,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": -0.008938073267650268,
+                "ci95Low": -0.01485393841806909,
+                "ci95High": -0.00222878018119847,
+                "shareAnalogBetterPct": 99,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.013113263394609748,
+                "ci95Low": -0.018349783370195268,
+                "ci95High": -0.007548234700633602,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              }
+            }
+          },
+          "10": {
+            "levelPct": 10,
+            "n": 2698,
+            "clusters": 38,
+            "realisedBreachPct": 2,
+            "realisedBreachSEPp": 0.32,
+            "calibrationInTheLarge": {
+              "gapPp": 1.4,
+              "sePp": 0.48,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 5.7,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.01958191252779824,
+                "brierSEPp": 0.27,
+                "clusters": 38,
+                "meanPredictedPct": 3.4,
+                "auc": 0.8109696307502662,
+                "meanPredictedWhenBreachedPct": 11.1,
+                "meanPredictedWhenHeldPct": 3.2
+              },
+              "volReflection": {
+                "brier": 0.024127191250176254,
+                "brierSEPp": 0.25,
+                "clusters": 38,
+                "meanPredictedPct": 5.2,
+                "auc": 0.8008138622737715,
+                "meanPredictedWhenBreachedPct": 17.6,
+                "meanPredictedWhenHeldPct": 5
+              },
+              "sameNameCalib": {
+                "brier": 0.02404235331263032,
+                "brierSEPp": 0.25,
+                "clusters": 38,
+                "meanPredictedPct": 6.1,
+                "auc": 0.721703927831008,
+                "meanPredictedWhenBreachedPct": 15.4,
+                "meanPredictedWhenHeldPct": 5.9
+              },
+              "pooledCalib": {
+                "brier": 0.020985749318159636,
+                "brierSEPp": 0.28,
+                "clusters": 38,
+                "meanPredictedPct": 5.7,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 5.7,
+                "meanPredictedWhenHeldPct": 5.7
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 2066,
+                "meanPredictedPct": 1,
+                "realisedPct": 0.6,
+                "realisedSEPp": 0.22
+              },
+              {
+                "bin": "5-10%",
+                "count": 280,
+                "meanPredictedPct": 6.8,
+                "realisedPct": 5.7,
+                "realisedSEPp": 2.97
+              },
+              {
+                "bin": "10-20%",
+                "count": 292,
+                "meanPredictedPct": 13,
+                "realisedPct": 4.8,
+                "realisedSEPp": 3.2
+              },
+              {
+                "bin": "20-35%",
+                "count": 56,
+                "meanPredictedPct": 23.1,
+                "realisedPct": 17.9,
+                "realisedSEPp": 6.82
+              },
+              {
+                "bin": "35-50%",
+                "count": 4,
+                "meanPredictedPct": 41.5,
+                "realisedPct": 25,
+                "realisedSEPp": 16.67
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.004545278722378015,
+                "ci95Low": -0.007060968528238292,
+                "ci95High": -0.002233634228054653,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": -0.004460440784832081,
+                "ci95Low": -0.005948947642442387,
+                "ci95High": -0.0029185582887765182,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.0014038367903613964,
+                "ci95Low": -0.0023248909305456813,
+                "ci95High": -0.000482668445594089,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              }
+            }
+          },
+          "20": {
+            "levelPct": 20,
+            "n": 2698,
+            "clusters": 38,
+            "realisedBreachPct": 0.1,
+            "realisedBreachSEPp": 0.07,
+            "calibrationInTheLarge": {
+              "gapPp": 0.13,
+              "sePp": 0.09,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 1.2,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.001531801334321713,
+                "brierSEPp": 0.07,
+                "clusters": 38,
+                "meanPredictedPct": 0.3,
+                "auc": 0.7049461766889383,
+                "meanPredictedWhenBreachedPct": 1.5,
+                "meanPredictedWhenHeldPct": 0.3
+              },
+              "volReflection": {
+                "brier": 0.0016789583406749348,
+                "brierSEPp": 0.07,
+                "clusters": 38,
+                "meanPredictedPct": 0.5,
+                "auc": 0.7603934669636229,
+                "meanPredictedWhenBreachedPct": 5.1,
+                "meanPredictedWhenHeldPct": 0.4
+              },
+              "sameNameCalib": {
+                "brier": 0.002650944844918414,
+                "brierSEPp": 0.07,
+                "clusters": 38,
+                "meanPredictedPct": 1.3,
+                "auc": 0.5370267260579065,
+                "meanPredictedWhenBreachedPct": 1.9,
+                "meanPredictedWhenHeldPct": 1.3
+              },
+              "pooledCalib": {
+                "brier": 0.0015811208814074161,
+                "brierSEPp": 0.07,
+                "clusters": 38,
+                "meanPredictedPct": 1.2,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 1.2,
+                "meanPredictedWhenHeldPct": 1.2
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 2679,
+                "meanPredictedPct": 0.2,
+                "realisedPct": 0.1,
+                "realisedSEPp": 0.07
+              },
+              {
+                "bin": "5-10%",
+                "count": 19,
+                "meanPredictedPct": 6.5,
+                "realisedPct": 0,
+                "realisedSEPp": null
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.00014715700635322174,
+                "ci95Low": -0.00036347294465643976,
+                "ci95High": 0.00013990647733273554,
+                "shareAnalogBetterPct": 88,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": -0.001119143510596701,
+                "ci95Low": -0.0012335453467146066,
+                "ci95High": -0.000952550307654336,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.000049319547085703054,
+                "ci95Low": -0.00010740852179207916,
+                "ci95High": -3.462436859905497e-7,
+                "shareAnalogBetterPct": 98,
+                "resamples": 400
+              }
+            }
+          }
+        }
+      },
       "directional": {
         "hitRate": 50.1,
         "n": 2698
       },
       "timing": {
-        "totalMs": 33753,
-        "meanQueryMs": 8.45774647887324,
-        "engineInitMs": 637
+        "totalMs": 36142,
+        "meanQueryMs": 8.970719051148999,
+        "engineInitMs": 711
       },
       "rowsOmitted": 0
     },
@@ -6826,7 +7539,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 637
+        "initMs": 711
       },
       "grid": {
         "calibration": 1823,
@@ -7052,7 +7765,7 @@
         },
         "matchedCoverageSharpnessGainPct": -2.4,
         "analogScale": 1.4924341728583514,
-        "meanQueryMs": 8.285496764370004,
+        "meanQueryMs": 8.830605253140465,
         "meanAnalogs": 50,
         "testN": 2627,
         "calibN": 1823
@@ -10127,14 +10840,416 @@
         "selectedTestWidthPct": 14.36,
         "analogTestWidthPct": 15.24
       },
+      "pathRisk": {
+        "protocol": "predicted = share of the k retrieved analogs whose realised MAE breached -L; realised = this query's own path over (q, q+H], measured on the same raw-low-over-raw-close basis; calibration-era rates frozen before the test era was scored; every standard error and the paired-difference bootstrap clustered by query date",
+        "levelsPct": [
+          5,
+          10,
+          20
+        ],
+        "predictors": [
+          "analogMae",
+          "volReflection",
+          "sameNameCalib",
+          "pooledCalib"
+        ],
+        "labels": {
+          "analogMae": "Analog excursion share (this desk)",
+          "volReflection": "Reflection principle on 60d vol",
+          "sameNameCalib": "Same-name calibration-era rate",
+          "pooledCalib": "Pooled calibration-era rate"
+        },
+        "bootstraps": 400,
+        "seed": 20260924,
+        "aucNote": "AUC is a pooled point estimate; its uncertainty is not clustered here, so read a small AUC gap as noise and read the paired Brier intervals, which are date-clustered.",
+        "byLevel": {
+          "5": {
+            "levelPct": 5,
+            "n": 2627,
+            "clusters": 37,
+            "realisedBreachPct": 24.5,
+            "realisedBreachSEPp": 2.38,
+            "calibrationInTheLarge": {
+              "gapPp": 4.37,
+              "sePp": 2.87,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 32.7,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.17954883897982504,
+                "brierSEPp": 1.03,
+                "clusters": 37,
+                "meanPredictedPct": 28.9,
+                "auc": 0.6502225437961806,
+                "meanPredictedWhenBreachedPct": 34.9,
+                "meanPredictedWhenHeldPct": 26.9
+              },
+              "volReflection": {
+                "brier": 0.18463955193111975,
+                "brierSEPp": 0.81,
+                "clusters": 37,
+                "meanPredictedPct": 35.1,
+                "auc": 0.7000740768582642,
+                "meanPredictedWhenBreachedPct": 45.8,
+                "meanPredictedWhenHeldPct": 31.7
+              },
+              "sameNameCalib": {
+                "brier": 0.1828344690610612,
+                "brierSEPp": 0.68,
+                "clusters": 37,
+                "meanPredictedPct": 33.2,
+                "auc": 0.6604378678393675,
+                "meanPredictedWhenBreachedPct": 41.1,
+                "meanPredictedWhenHeldPct": 30.7
+              },
+              "pooledCalib": {
+                "brier": 0.19182887544047109,
+                "brierSEPp": 0.82,
+                "clusters": 37,
+                "meanPredictedPct": 32.7,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 32.7,
+                "meanPredictedWhenHeldPct": 32.7
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 70,
+                "meanPredictedPct": 2.6,
+                "realisedPct": 8.6,
+                "realisedSEPp": 2.53
+              },
+              {
+                "bin": "5-10%",
+                "count": 113,
+                "meanPredictedPct": 7.2,
+                "realisedPct": 10.6,
+                "realisedSEPp": 4.58
+              },
+              {
+                "bin": "10-20%",
+                "count": 562,
+                "meanPredictedPct": 14.3,
+                "realisedPct": 13.9,
+                "realisedSEPp": 2.21
+              },
+              {
+                "bin": "20-35%",
+                "count": 1032,
+                "meanPredictedPct": 26.7,
+                "realisedPct": 23.4,
+                "realisedSEPp": 3.43
+              },
+              {
+                "bin": "35-50%",
+                "count": 574,
+                "meanPredictedPct": 41.1,
+                "realisedPct": 32.1,
+                "realisedSEPp": 4.26
+              },
+              {
+                "bin": "50-70%",
+                "count": 259,
+                "meanPredictedPct": 55.7,
+                "realisedPct": 43.6,
+                "realisedSEPp": 5.04
+              },
+              {
+                "bin": "70-100%",
+                "count": 17,
+                "meanPredictedPct": 73.6,
+                "realisedPct": 52.9,
+                "realisedSEPp": 13.84
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.005090712951294707,
+                "ci95Low": -0.020744279538418887,
+                "ci95High": 0.009571848680424638,
+                "shareAnalogBetterPct": 79,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": -0.0032856300812361683,
+                "ci95Low": -0.012883358363610627,
+                "ci95High": 0.006832264688632182,
+                "shareAnalogBetterPct": 75,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.012280036460646043,
+                "ci95Low": -0.02061995673037128,
+                "ci95High": -0.004037373492586372,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              }
+            }
+          },
+          "10": {
+            "levelPct": 10,
+            "n": 2627,
+            "clusters": 37,
+            "realisedBreachPct": 5.6,
+            "realisedBreachSEPp": 0.67,
+            "calibrationInTheLarge": {
+              "gapPp": 3.15,
+              "sePp": 1.12,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 12.5,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.05336170536733906,
+                "brierSEPp": 0.49,
+                "clusters": 37,
+                "meanPredictedPct": 8.7,
+                "auc": 0.7505623217028747,
+                "meanPredictedWhenBreachedPct": 17.3,
+                "meanPredictedWhenHeldPct": 8.2
+              },
+              "volReflection": {
+                "brier": 0.059086134082489805,
+                "brierSEPp": 0.41,
+                "clusters": 37,
+                "meanPredictedPct": 11.8,
+                "auc": 0.8038429888084266,
+                "meanPredictedWhenBreachedPct": 27.9,
+                "meanPredictedWhenHeldPct": 10.8
+              },
+              "sameNameCalib": {
+                "brier": 0.058669643278837065,
+                "brierSEPp": 0.41,
+                "clusters": 37,
+                "meanPredictedPct": 12.9,
+                "auc": 0.7342947662936142,
+                "meanPredictedWhenBreachedPct": 23.1,
+                "meanPredictedWhenHeldPct": 12.3
+              },
+              "pooledCalib": {
+                "brier": 0.057602497335285684,
+                "brierSEPp": 0.51,
+                "clusters": 37,
+                "meanPredictedPct": 12.5,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 12.5,
+                "meanPredictedWhenHeldPct": 12.5
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 1251,
+                "meanPredictedPct": 1.6,
+                "realisedPct": 2,
+                "realisedSEPp": 0.52
+              },
+              {
+                "bin": "5-10%",
+                "count": 427,
+                "meanPredictedPct": 7,
+                "realisedPct": 2.6,
+                "realisedSEPp": 1.01
+              },
+              {
+                "bin": "10-20%",
+                "count": 568,
+                "meanPredictedPct": 13.1,
+                "realisedPct": 9.9,
+                "realisedSEPp": 2.73
+              },
+              {
+                "bin": "20-35%",
+                "count": 326,
+                "meanPredictedPct": 25.5,
+                "realisedPct": 13.8,
+                "realisedSEPp": 4.28
+              },
+              {
+                "bin": "35-50%",
+                "count": 47,
+                "meanPredictedPct": 39,
+                "realisedPct": 14.9,
+                "realisedSEPp": 7.59
+              },
+              {
+                "bin": "50-70%",
+                "count": 8,
+                "meanPredictedPct": 51.8,
+                "realisedPct": 37.5,
+                "realisedSEPp": 18.09
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.005724428715150748,
+                "ci95Low": -0.011453989787871315,
+                "ci95High": 0.0003831379494400884,
+                "shareAnalogBetterPct": 96,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": -0.005307937911498008,
+                "ci95Low": -0.009725636312576414,
+                "ci95High": -0.0011855714605397175,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.004240791967946626,
+                "ci95Low": -0.007976254470613857,
+                "ci95High": -0.0005790425728167824,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              }
+            }
+          },
+          "20": {
+            "levelPct": 20,
+            "n": 2627,
+            "clusters": 37,
+            "realisedBreachPct": 0.6,
+            "realisedBreachSEPp": 0.15,
+            "calibrationInTheLarge": {
+              "gapPp": 0.41,
+              "sePp": 0.23,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 2,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.006428321279025549,
+                "brierSEPp": 0.13,
+                "clusters": 37,
+                "meanPredictedPct": 1.1,
+                "auc": 0.7973968897903989,
+                "meanPredictedWhenBreachedPct": 5.5,
+                "meanPredictedWhenHeldPct": 1
+              },
+              "volReflection": {
+                "brier": 0.0071574822498381195,
+                "brierSEPp": 0.12,
+                "clusters": 37,
+                "meanPredictedPct": 1.8,
+                "auc": 0.8877394636015326,
+                "meanPredictedWhenBreachedPct": 14.2,
+                "meanPredictedWhenHeldPct": 1.7
+              },
+              "sameNameCalib": {
+                "brier": 0.007378822803679663,
+                "brierSEPp": 0.13,
+                "clusters": 37,
+                "meanPredictedPct": 2.1,
+                "auc": 0.7885282848771693,
+                "meanPredictedWhenBreachedPct": 8.4,
+                "meanPredictedWhenHeldPct": 2.1
+              },
+              "pooledCalib": {
+                "brier": 0.006605645814084633,
+                "brierSEPp": 0.14,
+                "clusters": 37,
+                "meanPredictedPct": 2,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 2,
+                "meanPredictedWhenHeldPct": 2
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 2433,
+                "meanPredictedPct": 0.5,
+                "realisedPct": 0.4,
+                "realisedSEPp": 0.13
+              },
+              {
+                "bin": "5-10%",
+                "count": 145,
+                "meanPredictedPct": 6.7,
+                "realisedPct": 2.8,
+                "realisedSEPp": 1.31
+              },
+              {
+                "bin": "10-20%",
+                "count": 47,
+                "meanPredictedPct": 11.5,
+                "realisedPct": 6.4,
+                "realisedSEPp": 5.35
+              },
+              {
+                "bin": "20-35%",
+                "count": 2,
+                "meanPredictedPct": 21,
+                "realisedPct": 50,
+                "realisedSEPp": 50
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.0007291609708125705,
+                "ci95Low": -0.0015563575106644564,
+                "ci95High": 0.00002180808564089567,
+                "shareAnalogBetterPct": 97,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": -0.0009505015246541139,
+                "ci95Low": -0.001569113278336311,
+                "ci95High": -0.00023677958107303664,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.00017732453505908425,
+                "ci95Low": -0.0007000849468432324,
+                "ci95High": 0.00023811037533222036,
+                "shareAnalogBetterPct": 77,
+                "resamples": 400
+              }
+            }
+          }
+        }
+      },
       "directional": {
         "hitRate": 49.8,
         "n": 2627
       },
       "timing": {
-        "totalMs": 32524,
-        "meanQueryMs": 8.285496764370004,
-        "engineInitMs": 637
+        "totalMs": 34875,
+        "meanQueryMs": 8.830605253140465,
+        "engineInitMs": 711
       },
       "rowsOmitted": 0
     },
@@ -10202,7 +11317,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 637
+        "initMs": 711
       },
       "grid": {
         "calibration": 1823,
@@ -10428,7 +11543,7 @@
         },
         "matchedCoverageSharpnessGainPct": -3.4,
         "analogScale": 1.7677363165745443,
-        "meanQueryMs": 8.275980205557671,
+        "meanQueryMs": 8.633422154548915,
         "meanAnalogs": 50,
         "testN": 2627,
         "calibN": 1823
@@ -13503,14 +14618,423 @@
         "selectedTestWidthPct": 22.02,
         "analogTestWidthPct": 23.42
       },
+      "pathRisk": {
+        "protocol": "predicted = share of the k retrieved analogs whose realised MAE breached -L; realised = this query's own path over (q, q+H], measured on the same raw-low-over-raw-close basis; calibration-era rates frozen before the test era was scored; every standard error and the paired-difference bootstrap clustered by query date",
+        "levelsPct": [
+          5,
+          10,
+          20
+        ],
+        "predictors": [
+          "analogMae",
+          "volReflection",
+          "sameNameCalib",
+          "pooledCalib"
+        ],
+        "labels": {
+          "analogMae": "Analog excursion share (this desk)",
+          "volReflection": "Reflection principle on 60d vol",
+          "sameNameCalib": "Same-name calibration-era rate",
+          "pooledCalib": "Pooled calibration-era rate"
+        },
+        "bootstraps": 400,
+        "seed": 20260924,
+        "aucNote": "AUC is a pooled point estimate; its uncertainty is not clustered here, so read a small AUC gap as noise and read the paired Brier intervals, which are date-clustered.",
+        "byLevel": {
+          "5": {
+            "levelPct": 5,
+            "n": 2627,
+            "clusters": 37,
+            "realisedBreachPct": 38.1,
+            "realisedBreachSEPp": 3.25,
+            "calibrationInTheLarge": {
+              "gapPp": 4.59,
+              "sePp": 3.75,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 43.4,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.23345900266463546,
+                "brierSEPp": 0.75,
+                "clusters": 37,
+                "meanPredictedPct": 42.7,
+                "auc": 0.6094179498238539,
+                "meanPredictedWhenBreachedPct": 46.4,
+                "meanPredictedWhenHeldPct": 40.4
+              },
+              "volReflection": {
+                "brier": 0.2337105901384724,
+                "brierSEPp": 0.85,
+                "clusters": 37,
+                "meanPredictedPct": 48.8,
+                "auc": 0.6586506973960848,
+                "meanPredictedWhenBreachedPct": 55.5,
+                "meanPredictedWhenHeldPct": 44.7
+              },
+              "sameNameCalib": {
+                "brier": 0.22288734720866052,
+                "brierSEPp": 0.51,
+                "clusters": 37,
+                "meanPredictedPct": 43.9,
+                "auc": 0.6477498516243904,
+                "meanPredictedWhenBreachedPct": 49.2,
+                "meanPredictedWhenHeldPct": 40.7
+              },
+              "pooledCalib": {
+                "brier": 0.23870140405578233,
+                "brierSEPp": 0.43,
+                "clusters": 37,
+                "meanPredictedPct": 43.4,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 43.4,
+                "meanPredictedWhenHeldPct": 43.4
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 3,
+                "meanPredictedPct": 3.3,
+                "realisedPct": 0,
+                "realisedSEPp": null
+              },
+              {
+                "bin": "5-10%",
+                "count": 8,
+                "meanPredictedPct": 6.3,
+                "realisedPct": 37.5,
+                "realisedSEPp": null
+              },
+              {
+                "bin": "10-20%",
+                "count": 128,
+                "meanPredictedPct": 14.9,
+                "realisedPct": 21.1,
+                "realisedSEPp": 6.01
+              },
+              {
+                "bin": "20-35%",
+                "count": 745,
+                "meanPredictedPct": 28.4,
+                "realisedPct": 27.8,
+                "realisedSEPp": 3.56
+              },
+              {
+                "bin": "35-50%",
+                "count": 882,
+                "meanPredictedPct": 42,
+                "realisedPct": 40.1,
+                "realisedSEPp": 4.52
+              },
+              {
+                "bin": "50-70%",
+                "count": 727,
+                "meanPredictedPct": 57.7,
+                "realisedPct": 45.3,
+                "realisedSEPp": 4.31
+              },
+              {
+                "bin": "70-100%",
+                "count": 134,
+                "meanPredictedPct": 75.2,
+                "realisedPct": 60.4,
+                "realisedSEPp": 6.06
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.00025158747383693947,
+                "ci95Low": -0.016995617901935933,
+                "ci95High": 0.013148433047241425,
+                "shareAnalogBetterPct": 48,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": 0.010571655455974938,
+                "ci95Low": -0.00011271785248110689,
+                "ci95High": 0.02470510523294773,
+                "shareAnalogBetterPct": 3,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.0052424013911468725,
+                "ci95Low": -0.016073254137454737,
+                "ci95High": 0.008057404901208962,
+                "shareAnalogBetterPct": 79,
+                "resamples": 400
+              }
+            }
+          },
+          "10": {
+            "levelPct": 10,
+            "n": 2627,
+            "clusters": 37,
+            "realisedBreachPct": 16.2,
+            "realisedBreachSEPp": 2.47,
+            "calibrationInTheLarge": {
+              "gapPp": 1.03,
+              "sePp": 2.85,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 20.8,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.13349813475447328,
+                "brierSEPp": 1.72,
+                "clusters": 37,
+                "meanPredictedPct": 17.2,
+                "auc": 0.649936421435059,
+                "meanPredictedWhenBreachedPct": 23.2,
+                "meanPredictedWhenHeldPct": 16.1
+              },
+              "volReflection": {
+                "brier": 0.13602873985404199,
+                "brierSEPp": 1.27,
+                "clusters": 37,
+                "meanPredictedPct": 22.1,
+                "auc": 0.7065416466314046,
+                "meanPredictedWhenBreachedPct": 33.5,
+                "meanPredictedWhenHeldPct": 19.9
+              },
+              "sameNameCalib": {
+                "brier": 0.13329042266667973,
+                "brierSEPp": 1.33,
+                "clusters": 37,
+                "meanPredictedPct": 21.4,
+                "auc": 0.6785654752364161,
+                "meanPredictedWhenBreachedPct": 29.9,
+                "meanPredictedWhenHeldPct": 19.8
+              },
+              "pooledCalib": {
+                "brier": 0.13778597232613968,
+                "brierSEPp": 1.44,
+                "clusters": 37,
+                "meanPredictedPct": 20.8,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 20.8,
+                "meanPredictedWhenHeldPct": 20.8
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 440,
+                "meanPredictedPct": 2.4,
+                "realisedPct": 7.5,
+                "realisedSEPp": 3.12
+              },
+              {
+                "bin": "5-10%",
+                "count": 386,
+                "meanPredictedPct": 7.1,
+                "realisedPct": 9.1,
+                "realisedSEPp": 2.62
+              },
+              {
+                "bin": "10-20%",
+                "count": 861,
+                "meanPredictedPct": 13.7,
+                "realisedPct": 15,
+                "realisedSEPp": 2.88
+              },
+              {
+                "bin": "20-35%",
+                "count": 641,
+                "meanPredictedPct": 25.5,
+                "realisedPct": 21.2,
+                "realisedSEPp": 4.13
+              },
+              {
+                "bin": "35-50%",
+                "count": 226,
+                "meanPredictedPct": 40.8,
+                "realisedPct": 27,
+                "realisedSEPp": 5.15
+              },
+              {
+                "bin": "50-70%",
+                "count": 72,
+                "meanPredictedPct": 55,
+                "realisedPct": 43.1,
+                "realisedSEPp": 7.77
+              },
+              {
+                "bin": "70-100%",
+                "count": 1,
+                "meanPredictedPct": 70,
+                "realisedPct": 0,
+                "realisedSEPp": null
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.0025306050995687057,
+                "ci95Low": -0.014446826683364533,
+                "ci95High": 0.010166174908508845,
+                "shareAnalogBetterPct": 64,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": 0.000207712087793549,
+                "ci95Low": -0.00872440242882897,
+                "ci95High": 0.009744731166924304,
+                "shareAnalogBetterPct": 48,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.0042878375716663975,
+                "ci95Low": -0.012812277431089935,
+                "ci95High": 0.004144657176212851,
+                "shareAnalogBetterPct": 82,
+                "resamples": 400
+              }
+            }
+          },
+          "20": {
+            "levelPct": 20,
+            "n": 2627,
+            "clusters": 37,
+            "realisedBreachPct": 2.8,
+            "realisedBreachSEPp": 0.97,
+            "calibrationInTheLarge": {
+              "gapPp": 0.1,
+              "sePp": 1.04,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 7.4,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.026488161400837394,
+                "brierSEPp": 0.87,
+                "clusters": 37,
+                "meanPredictedPct": 2.9,
+                "auc": 0.7432988217359545,
+                "meanPredictedWhenBreachedPct": 8.5,
+                "meanPredictedWhenHeldPct": 2.8
+              },
+              "volReflection": {
+                "brier": 0.028671910593092508,
+                "brierSEPp": 0.73,
+                "clusters": 37,
+                "meanPredictedPct": 5.2,
+                "auc": 0.8405108986777612,
+                "meanPredictedWhenBreachedPct": 18.9,
+                "meanPredictedWhenHeldPct": 4.8
+              },
+              "sameNameCalib": {
+                "brier": 0.031754060851723866,
+                "brierSEPp": 0.72,
+                "clusters": 37,
+                "meanPredictedPct": 7.7,
+                "auc": 0.740403446925186,
+                "meanPredictedWhenBreachedPct": 17.3,
+                "meanPredictedWhenHeldPct": 7.5
+              },
+              "pooledCalib": {
+                "brier": 0.029480930412221346,
+                "brierSEPp": 0.83,
+                "clusters": 37,
+                "meanPredictedPct": 7.4,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 7.4,
+                "meanPredictedWhenHeldPct": 7.4
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 2068,
+                "meanPredictedPct": 0.8,
+                "realisedPct": 1.5,
+                "realisedSEPp": 0.68
+              },
+              {
+                "bin": "5-10%",
+                "count": 242,
+                "meanPredictedPct": 6.9,
+                "realisedPct": 5.4,
+                "realisedSEPp": 2.95
+              },
+              {
+                "bin": "10-20%",
+                "count": 280,
+                "meanPredictedPct": 12.6,
+                "realisedPct": 7.1,
+                "realisedSEPp": 4.41
+              },
+              {
+                "bin": "20-35%",
+                "count": 37,
+                "meanPredictedPct": 22.3,
+                "realisedPct": 27,
+                "realisedSEPp": 11.61
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.0021837491922551133,
+                "ci95Low": -0.0051763068355269665,
+                "ci95High": 0.0020083343004518484,
+                "shareAnalogBetterPct": 86,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": -0.0052658994508864715,
+                "ci95Low": -0.008065126092789011,
+                "ci95High": -0.0011988741947061314,
+                "shareAnalogBetterPct": 99,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.002992769011383952,
+                "ci95Low": -0.004252709690282069,
+                "ci95High": -0.0012830027856767276,
+                "shareAnalogBetterPct": 100,
+                "resamples": 400
+              }
+            }
+          }
+        }
+      },
       "directional": {
         "hitRate": 54,
         "n": 2627
       },
       "timing": {
-        "totalMs": 32184,
-        "meanQueryMs": 8.275980205557671,
-        "engineInitMs": 637
+        "totalMs": 33753,
+        "meanQueryMs": 8.633422154548915,
+        "engineInitMs": 711
       },
       "rowsOmitted": 0
     },
@@ -13578,7 +15102,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 637
+        "initMs": 711
       },
       "grid": {
         "calibration": 1823,
@@ -13804,7 +15328,7 @@
         },
         "matchedCoverageSharpnessGainPct": -4.9,
         "analogScale": 1.6157427584905268,
-        "meanQueryMs": 8.166666666666666,
+        "meanQueryMs": 8.881064162754303,
         "meanAnalogs": 50,
         "testN": 2556,
         "calibN": 1823
@@ -16879,14 +18403,423 @@
         "selectedTestWidthPct": 29.97,
         "analogTestWidthPct": 33.59
       },
+      "pathRisk": {
+        "protocol": "predicted = share of the k retrieved analogs whose realised MAE breached -L; realised = this query's own path over (q, q+H], measured on the same raw-low-over-raw-close basis; calibration-era rates frozen before the test era was scored; every standard error and the paired-difference bootstrap clustered by query date",
+        "levelsPct": [
+          5,
+          10,
+          20
+        ],
+        "predictors": [
+          "analogMae",
+          "volReflection",
+          "sameNameCalib",
+          "pooledCalib"
+        ],
+        "labels": {
+          "analogMae": "Analog excursion share (this desk)",
+          "volReflection": "Reflection principle on 60d vol",
+          "sameNameCalib": "Same-name calibration-era rate",
+          "pooledCalib": "Pooled calibration-era rate"
+        },
+        "bootstraps": 400,
+        "seed": 20260924,
+        "aucNote": "AUC is a pooled point estimate; its uncertainty is not clustered here, so read a small AUC gap as noise and read the paired Brier intervals, which are date-clustered.",
+        "byLevel": {
+          "5": {
+            "levelPct": 5,
+            "n": 2556,
+            "clusters": 36,
+            "realisedBreachPct": 50.2,
+            "realisedBreachSEPp": 3.5,
+            "calibrationInTheLarge": {
+              "gapPp": 6.35,
+              "sePp": 4,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 54.2,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.25411189358372416,
+                "brierSEPp": 0.91,
+                "clusters": 36,
+                "meanPredictedPct": 56.5,
+                "auc": 0.5715605154818437,
+                "meanPredictedWhenBreachedPct": 58.5,
+                "meanPredictedWhenHeldPct": 54.5
+              },
+              "volReflection": {
+                "brier": 0.24879380683519253,
+                "brierSEPp": 1.17,
+                "clusters": 36,
+                "meanPredictedPct": 61,
+                "auc": 0.6356488953435688,
+                "meanPredictedWhenBreachedPct": 65.2,
+                "meanPredictedWhenHeldPct": 56.9
+              },
+              "sameNameCalib": {
+                "brier": 0.2399029580255395,
+                "brierSEPp": 0.47,
+                "clusters": 36,
+                "meanPredictedPct": 54.6,
+                "auc": 0.6250315318735198,
+                "meanPredictedWhenBreachedPct": 58.4,
+                "meanPredictedWhenHeldPct": 50.8
+              },
+              "pooledCalib": {
+                "brier": 0.25162961808543227,
+                "brierSEPp": 0.29,
+                "clusters": 36,
+                "meanPredictedPct": 54.2,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 54.2,
+                "meanPredictedWhenHeldPct": 54.2
+              }
+            },
+            "reliability": [
+              {
+                "bin": "10-20%",
+                "count": 3,
+                "meanPredictedPct": 18,
+                "realisedPct": 0,
+                "realisedSEPp": null
+              },
+              {
+                "bin": "20-35%",
+                "count": 174,
+                "meanPredictedPct": 28.9,
+                "realisedPct": 35.6,
+                "realisedSEPp": 6.14
+              },
+              {
+                "bin": "35-50%",
+                "count": 567,
+                "meanPredictedPct": 43.4,
+                "realisedPct": 41.1,
+                "realisedSEPp": 4.48
+              },
+              {
+                "bin": "50-70%",
+                "count": 1307,
+                "meanPredictedPct": 58.4,
+                "realisedPct": 53,
+                "realisedSEPp": 4.22
+              },
+              {
+                "bin": "70-100%",
+                "count": 505,
+                "meanPredictedPct": 76.2,
+                "realisedPct": 58.2,
+                "realisedSEPp": 3.99
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": 0.005318086748531625,
+                "ci95Low": -0.014655117809797407,
+                "ci95High": 0.021802721429108253,
+                "shareAnalogBetterPct": 29,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": 0.014208935558184671,
+                "ci95Low": 0.00021357288356164573,
+                "ci95High": 0.027076278504753064,
+                "shareAnalogBetterPct": 2,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": 0.002482275498291886,
+                "ci95Low": -0.011797344983178647,
+                "ci95High": 0.017408225543657632,
+                "shareAnalogBetterPct": 36,
+                "resamples": 400
+              }
+            }
+          },
+          "10": {
+            "levelPct": 10,
+            "n": 2556,
+            "clusters": 36,
+            "realisedBreachPct": 26.4,
+            "realisedBreachSEPp": 3.14,
+            "calibrationInTheLarge": {
+              "gapPp": 3.47,
+              "sePp": 3.52,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 30.8,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.19021361502347459,
+                "brierSEPp": 1.38,
+                "clusters": 36,
+                "meanPredictedPct": 29.8,
+                "auc": 0.63416105096857,
+                "meanPredictedWhenBreachedPct": 35.2,
+                "meanPredictedWhenHeldPct": 27.9
+              },
+              "volReflection": {
+                "brier": 0.19162066272051537,
+                "brierSEPp": 1.07,
+                "clusters": 36,
+                "meanPredictedPct": 34.9,
+                "auc": 0.6824129579934219,
+                "meanPredictedWhenBreachedPct": 44.4,
+                "meanPredictedWhenHeldPct": 31.5
+              },
+              "sameNameCalib": {
+                "brier": 0.18291646374915327,
+                "brierSEPp": 1.09,
+                "clusters": 36,
+                "meanPredictedPct": 31.4,
+                "auc": 0.6843751675249198,
+                "meanPredictedWhenBreachedPct": 39.7,
+                "meanPredictedWhenHeldPct": 28.4
+              },
+              "pooledCalib": {
+                "brier": 0.19614737811185218,
+                "brierSEPp": 1.2,
+                "clusters": 36,
+                "meanPredictedPct": 30.8,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 30.8,
+                "meanPredictedWhenHeldPct": 30.8
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 77,
+                "meanPredictedPct": 2.5,
+                "realisedPct": 7.8,
+                "realisedSEPp": 5.1
+              },
+              {
+                "bin": "5-10%",
+                "count": 104,
+                "meanPredictedPct": 7,
+                "realisedPct": 7.7,
+                "realisedSEPp": 3.59
+              },
+              {
+                "bin": "10-20%",
+                "count": 460,
+                "meanPredictedPct": 14.5,
+                "realisedPct": 16.3,
+                "realisedSEPp": 4.33
+              },
+              {
+                "bin": "20-35%",
+                "count": 1079,
+                "meanPredictedPct": 26.8,
+                "realisedPct": 26.2,
+                "realisedSEPp": 3.78
+              },
+              {
+                "bin": "35-50%",
+                "count": 525,
+                "meanPredictedPct": 41.2,
+                "realisedPct": 32.6,
+                "realisedSEPp": 4.4
+              },
+              {
+                "bin": "50-70%",
+                "count": 287,
+                "meanPredictedPct": 56.8,
+                "realisedPct": 40.1,
+                "realisedSEPp": 5.11
+              },
+              {
+                "bin": "70-100%",
+                "count": 24,
+                "meanPredictedPct": 73.5,
+                "realisedPct": 66.7,
+                "realisedSEPp": 10.45
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.0014070476970407808,
+                "ci95Low": -0.018044529765003474,
+                "ci95High": 0.01591382994487261,
+                "shareAnalogBetterPct": 52,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": 0.007297151274321317,
+                "ci95Low": -0.003431827383952393,
+                "ci95High": 0.018638194628463958,
+                "shareAnalogBetterPct": 8,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.005933763088377592,
+                "ci95Low": -0.017808810500285627,
+                "ci95High": 0.007853390054784956,
+                "shareAnalogBetterPct": 82,
+                "resamples": 400
+              }
+            }
+          },
+          "20": {
+            "levelPct": 20,
+            "n": 2556,
+            "clusters": 36,
+            "realisedBreachPct": 6.9,
+            "realisedBreachSEPp": 1.38,
+            "calibrationInTheLarge": {
+              "gapPp": 1.22,
+              "sePp": 1.6,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 11.1,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.06263380281690138,
+                "brierSEPp": 1.13,
+                "clusters": 36,
+                "meanPredictedPct": 8.1,
+                "auc": 0.687081881719281,
+                "meanPredictedWhenBreachedPct": 14.8,
+                "meanPredictedWhenHeldPct": 7.7
+              },
+              "volReflection": {
+                "brier": 0.06547198977855907,
+                "brierSEPp": 0.9,
+                "clusters": 36,
+                "meanPredictedPct": 11.7,
+                "auc": 0.7890463400327251,
+                "meanPredictedWhenBreachedPct": 27.2,
+                "meanPredictedWhenHeldPct": 10.5
+              },
+              "sameNameCalib": {
+                "brier": 0.06425618801566628,
+                "brierSEPp": 0.98,
+                "clusters": 36,
+                "meanPredictedPct": 11.6,
+                "auc": 0.755669309851027,
+                "meanPredictedWhenBreachedPct": 24.2,
+                "meanPredictedWhenHeldPct": 10.7
+              },
+              "pooledCalib": {
+                "brier": 0.0662263485907282,
+                "brierSEPp": 1.07,
+                "clusters": 36,
+                "meanPredictedPct": 11.1,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 11.1,
+                "meanPredictedWhenHeldPct": 11.1
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 1219,
+                "meanPredictedPct": 1.8,
+                "realisedPct": 3.4,
+                "realisedSEPp": 1.13
+              },
+              {
+                "bin": "5-10%",
+                "count": 475,
+                "meanPredictedPct": 7,
+                "realisedPct": 7.6,
+                "realisedSEPp": 2.14
+              },
+              {
+                "bin": "10-20%",
+                "count": 546,
+                "meanPredictedPct": 13.1,
+                "realisedPct": 6.6,
+                "realisedSEPp": 3.18
+              },
+              {
+                "bin": "20-35%",
+                "count": 288,
+                "meanPredictedPct": 24.5,
+                "realisedPct": 18.4,
+                "realisedSEPp": 3.6
+              },
+              {
+                "bin": "35-50%",
+                "count": 27,
+                "meanPredictedPct": 40.6,
+                "realisedPct": 37,
+                "realisedSEPp": 11.03
+              },
+              {
+                "bin": "50-70%",
+                "count": 1,
+                "meanPredictedPct": 50,
+                "realisedPct": 0,
+                "realisedSEPp": null
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.0028381869616576905,
+                "ci95Low": -0.009022979283885532,
+                "ci95High": 0.004517918327974119,
+                "shareAnalogBetterPct": 75,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": -0.0016223851987648974,
+                "ci95Low": -0.005965630453772403,
+                "ci95High": 0.0031038848144752415,
+                "shareAnalogBetterPct": 73,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.0035925457738268246,
+                "ci95Low": -0.006475089625344662,
+                "ci95High": -0.0006790216210490206,
+                "shareAnalogBetterPct": 98,
+                "resamples": 400
+              }
+            }
+          }
+        }
+      },
       "directional": {
         "hitRate": 54.7,
         "n": 2556
       },
       "timing": {
-        "totalMs": 31564,
-        "meanQueryMs": 8.166666666666666,
-        "engineInitMs": 637
+        "totalMs": 33641,
+        "meanQueryMs": 8.881064162754303,
+        "engineInitMs": 711
       },
       "rowsOmitted": 0
     },
@@ -16954,7 +18887,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 637
+        "initMs": 711
       },
       "grid": {
         "calibration": 1823,
@@ -17180,7 +19113,7 @@
         },
         "matchedCoverageSharpnessGainPct": -0.7,
         "analogScale": 1.4943814995810776,
-        "meanQueryMs": 8.039034205231388,
+        "meanQueryMs": 8.836619718309858,
         "meanAnalogs": 50,
         "testN": 2485,
         "calibN": 1823
@@ -20255,14 +22188,416 @@
         "selectedTestWidthPct": 35.72,
         "analogTestWidthPct": 40.32
       },
+      "pathRisk": {
+        "protocol": "predicted = share of the k retrieved analogs whose realised MAE breached -L; realised = this query's own path over (q, q+H], measured on the same raw-low-over-raw-close basis; calibration-era rates frozen before the test era was scored; every standard error and the paired-difference bootstrap clustered by query date",
+        "levelsPct": [
+          5,
+          10,
+          20
+        ],
+        "predictors": [
+          "analogMae",
+          "volReflection",
+          "sameNameCalib",
+          "pooledCalib"
+        ],
+        "labels": {
+          "analogMae": "Analog excursion share (this desk)",
+          "volReflection": "Reflection principle on 60d vol",
+          "sameNameCalib": "Same-name calibration-era rate",
+          "pooledCalib": "Pooled calibration-era rate"
+        },
+        "bootstraps": 400,
+        "seed": 20260924,
+        "aucNote": "AUC is a pooled point estimate; its uncertainty is not clustered here, so read a small AUC gap as noise and read the paired Brier intervals, which are date-clustered.",
+        "byLevel": {
+          "5": {
+            "levelPct": 5,
+            "n": 2485,
+            "clusters": 35,
+            "realisedBreachPct": 57.4,
+            "realisedBreachSEPp": 3.54,
+            "calibrationInTheLarge": {
+              "gapPp": 6.26,
+              "sePp": 4.1,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 62,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.25362285714285604,
+                "brierSEPp": 1.28,
+                "clusters": 35,
+                "meanPredictedPct": 63.7,
+                "auc": 0.5561666509909483,
+                "meanPredictedWhenBreachedPct": 64.9,
+                "meanPredictedWhenHeldPct": 62
+              },
+              "volReflection": {
+                "brier": 0.2404802929449677,
+                "brierSEPp": 1.5,
+                "clusters": 35,
+                "meanPredictedPct": 67.2,
+                "auc": 0.6302685316797437,
+                "meanPredictedWhenBreachedPct": 70.3,
+                "meanPredictedWhenHeldPct": 62.9
+              },
+              "sameNameCalib": {
+                "brier": 0.23021258763249272,
+                "brierSEPp": 0.9,
+                "clusters": 35,
+                "meanPredictedPct": 62.4,
+                "auc": 0.6442293044087627,
+                "meanPredictedWhenBreachedPct": 65.7,
+                "meanPredictedWhenHeldPct": 58
+              },
+              "pooledCalib": {
+                "brier": 0.24661839704253563,
+                "brierSEPp": 0.85,
+                "clusters": 35,
+                "meanPredictedPct": 62,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 62,
+                "meanPredictedWhenHeldPct": 62
+              }
+            },
+            "reliability": [
+              {
+                "bin": "20-35%",
+                "count": 72,
+                "meanPredictedPct": 29.2,
+                "realisedPct": 51.4,
+                "realisedSEPp": 11.42
+              },
+              {
+                "bin": "35-50%",
+                "count": 294,
+                "meanPredictedPct": 43.6,
+                "realisedPct": 44.6,
+                "realisedSEPp": 5.98
+              },
+              {
+                "bin": "50-70%",
+                "count": 1220,
+                "meanPredictedPct": 60,
+                "realisedPct": 58.7,
+                "realisedSEPp": 3.97
+              },
+              {
+                "bin": "70-100%",
+                "count": 899,
+                "meanPredictedPct": 78,
+                "realisedPct": 60.4,
+                "realisedSEPp": 3.93
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": 0.01314256419788834,
+                "ci95Low": -0.010301279397727023,
+                "ci95High": 0.0303407920952279,
+                "shareAnalogBetterPct": 12,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": 0.02341026951036332,
+                "ci95Low": 0.009017337397542007,
+                "ci95High": 0.040017350501808435,
+                "shareAnalogBetterPct": 0,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": 0.007004460100320409,
+                "ci95Low": -0.0062909667117784455,
+                "ci95High": 0.022841531324160662,
+                "shareAnalogBetterPct": 17,
+                "resamples": 400
+              }
+            }
+          },
+          "10": {
+            "levelPct": 10,
+            "n": 2485,
+            "clusters": 35,
+            "realisedBreachPct": 34.6,
+            "realisedBreachSEPp": 3.28,
+            "calibrationInTheLarge": {
+              "gapPp": 3.54,
+              "sePp": 3.85,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 39.3,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.2249337625754525,
+                "brierSEPp": 1.05,
+                "clusters": 35,
+                "meanPredictedPct": 38.1,
+                "auc": 0.6132223458439474,
+                "meanPredictedWhenBreachedPct": 42.6,
+                "meanPredictedWhenHeldPct": 35.7
+              },
+              "volReflection": {
+                "brier": 0.21710927351513057,
+                "brierSEPp": 0.9,
+                "clusters": 35,
+                "meanPredictedPct": 42.8,
+                "auc": 0.675250262397851,
+                "meanPredictedWhenBreachedPct": 50.8,
+                "meanPredictedWhenHeldPct": 38.5
+              },
+              "sameNameCalib": {
+                "brier": 0.20735885775817897,
+                "brierSEPp": 0.7,
+                "clusters": 35,
+                "meanPredictedPct": 39.8,
+                "auc": 0.6865978060246261,
+                "meanPredictedWhenBreachedPct": 47.7,
+                "meanPredictedWhenHeldPct": 35.6
+              },
+              "pooledCalib": {
+                "brier": 0.22840051016141105,
+                "brierSEPp": 0.7,
+                "clusters": 35,
+                "meanPredictedPct": 39.3,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 39.3,
+                "meanPredictedWhenHeldPct": 39.3
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 17,
+                "meanPredictedPct": 2.6,
+                "realisedPct": 11.8,
+                "realisedSEPp": 5
+              },
+              {
+                "bin": "5-10%",
+                "count": 52,
+                "meanPredictedPct": 7.1,
+                "realisedPct": 23.1,
+                "realisedSEPp": 12.67
+              },
+              {
+                "bin": "10-20%",
+                "count": 252,
+                "meanPredictedPct": 14.4,
+                "realisedPct": 19.4,
+                "realisedSEPp": 3.3
+              },
+              {
+                "bin": "20-35%",
+                "count": 803,
+                "meanPredictedPct": 27.8,
+                "realisedPct": 29.6,
+                "realisedSEPp": 4.51
+              },
+              {
+                "bin": "35-50%",
+                "count": 738,
+                "meanPredictedPct": 41.1,
+                "realisedPct": 35.2,
+                "realisedSEPp": 4.34
+              },
+              {
+                "bin": "50-70%",
+                "count": 494,
+                "meanPredictedPct": 57.4,
+                "realisedPct": 46,
+                "realisedSEPp": 4.02
+              },
+              {
+                "bin": "70-100%",
+                "count": 129,
+                "meanPredictedPct": 75,
+                "realisedPct": 55,
+                "realisedSEPp": 4.83
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": 0.007824489060321932,
+                "ci95Low": -0.013069438374509947,
+                "ci95High": 0.025824821220433104,
+                "shareAnalogBetterPct": 22,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": 0.01757490481727353,
+                "ci95Low": 0.006004478714874058,
+                "ci95High": 0.02926517738307363,
+                "shareAnalogBetterPct": 0,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.0034667475859585517,
+                "ci95Low": -0.015974189635952506,
+                "ci95High": 0.010016832518918644,
+                "shareAnalogBetterPct": 68,
+                "resamples": 400
+              }
+            }
+          },
+          "20": {
+            "levelPct": 20,
+            "n": 2485,
+            "clusters": 35,
+            "realisedBreachPct": 10.3,
+            "realisedBreachSEPp": 1.84,
+            "calibrationInTheLarge": {
+              "gapPp": 3.37,
+              "sePp": 2.21,
+              "note": "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached"
+            },
+            "dropped": {
+              "noMeasurablePath": 0,
+              "noAnalogExcursion": 0,
+              "noVolHarness": 0
+            },
+            "nameFallbackRows": 0,
+            "calibrationEra": {
+              "pooledBreachPct": 16.9,
+              "pooledRows": 1823,
+              "symbolsWithOwnRate": 71
+            },
+            "predictors": {
+              "analogMae": {
+                "brier": 0.09208659959758532,
+                "brierSEPp": 1.36,
+                "clusters": 35,
+                "meanPredictedPct": 13.6,
+                "auc": 0.6672417128286292,
+                "meanPredictedWhenBreachedPct": 20.8,
+                "meanPredictedWhenHeldPct": 12.8
+              },
+              "volReflection": {
+                "brier": 0.09298652869176384,
+                "brierSEPp": 1.08,
+                "clusters": 35,
+                "meanPredictedPct": 17.1,
+                "auc": 0.7729253495120021,
+                "meanPredictedWhenBreachedPct": 32.7,
+                "meanPredictedWhenHeldPct": 15.3
+              },
+              "sameNameCalib": {
+                "brier": 0.09310849222317819,
+                "brierSEPp": 1.1,
+                "clusters": 35,
+                "meanPredictedPct": 17.5,
+                "auc": 0.743796711509716,
+                "meanPredictedWhenBreachedPct": 32.3,
+                "meanPredictedWhenHeldPct": 15.8
+              },
+              "pooledCalib": {
+                "brier": 0.09648625562758746,
+                "brierSEPp": 1.22,
+                "clusters": 35,
+                "meanPredictedPct": 16.9,
+                "auc": 0.5,
+                "meanPredictedWhenBreachedPct": 16.9,
+                "meanPredictedWhenHeldPct": 16.9
+              }
+            },
+            "reliability": [
+              {
+                "bin": "0-5%",
+                "count": 632,
+                "meanPredictedPct": 2.2,
+                "realisedPct": 4.9,
+                "realisedSEPp": 1.36
+              },
+              {
+                "bin": "5-10%",
+                "count": 449,
+                "meanPredictedPct": 6.9,
+                "realisedPct": 7.3,
+                "realisedSEPp": 2.48
+              },
+              {
+                "bin": "10-20%",
+                "count": 780,
+                "meanPredictedPct": 13.4,
+                "realisedPct": 8.8,
+                "realisedSEPp": 3.12
+              },
+              {
+                "bin": "20-35%",
+                "count": 447,
+                "meanPredictedPct": 25.5,
+                "realisedPct": 16.8,
+                "realisedSEPp": 4.45
+              },
+              {
+                "bin": "35-50%",
+                "count": 151,
+                "meanPredictedPct": 40.8,
+                "realisedPct": 24.5,
+                "realisedSEPp": 4.42
+              },
+              {
+                "bin": "50-70%",
+                "count": 26,
+                "meanPredictedPct": 53.8,
+                "realisedPct": 38.5,
+                "realisedSEPp": 10.62
+              }
+            ],
+            "pairedBrierVs": {
+              "volReflection": {
+                "deltaBrier": -0.0008999290941785199,
+                "ci95Low": -0.011337830933466173,
+                "ci95High": 0.009937856616224887,
+                "shareAnalogBetterPct": 49,
+                "resamples": 400
+              },
+              "sameNameCalib": {
+                "deltaBrier": -0.0010218926255928656,
+                "ci95Low": -0.007714653100532415,
+                "ci95High": 0.006498653360947064,
+                "shareAnalogBetterPct": 55,
+                "resamples": 400
+              },
+              "pooledCalib": {
+                "deltaBrier": -0.0043996560300021414,
+                "ci95Low": -0.0092001759658532,
+                "ci95High": 0.0015255200290962268,
+                "shareAnalogBetterPct": 92,
+                "resamples": 400
+              }
+            }
+          }
+        }
+      },
       "directional": {
         "hitRate": 55.2,
         "n": 2485
       },
       "timing": {
-        "totalMs": 30210,
-        "meanQueryMs": 8.039034205231388,
-        "engineInitMs": 637
+        "totalMs": 32737,
+        "meanQueryMs": 8.836619718309858,
+        "engineInitMs": 711
       },
       "rowsOmitted": 0
     }
