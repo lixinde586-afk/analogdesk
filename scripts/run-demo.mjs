@@ -88,8 +88,10 @@ function renderMarkdown(ctx) {
   L.push(`| Numeric gate | ${gate.ok ? "**PASS" : "**FAIL"} - ${gate.total - gate.unsupportedCount}/${gate.total} numerals traced to the research card |`);
   // The 7x24 premise used to be the one row this table could not fill. It is a measurement now, so it
   // gets a row: which instrument was verified, and how much of its own movement landed outside cash hours.
-  L.push(`| 7x24 wrapper layer | ${card.wrapper?.status === "measured"
-    ? `**measured** - ${mdEsc(card.wrapper.instrument)} (${mdEsc(card.wrapper.tracking.tierLabel)}), reference market closed ${pl(card.wrapper.sevenByTwentyFour.referenceClosedSharePct)} of the week, ${pl(card.wrapper.sevenByTwentyFour.closedMoveSharePct)} of the wrapper's own hourly movement landed in those closed hours`
+  L.push(`| 7x24 layer | ${card.wrapper?.status === "measured"
+    ? (card.wrapper.primaryVenue === "bitget" && card.wrapper.bitget?.status === "measured"
+      ? `**measured on two venues** - primary ${mdEsc(card.wrapper.bitget.instrument)} on Bitget (${mdEsc(card.wrapper.bitget.tracking?.tierLabel)}), ${pl(card.wrapper.bitget.sevenByTwentyFour?.closedMoveSharePct)} of its own hourly movement while the cash market was shut; second venue ${mdEsc(card.wrapper.instrument)} wrapper, ${pl(card.wrapper.sevenByTwentyFour.closedMoveSharePct)}; reference market closed ${pl(card.wrapper.sevenByTwentyFour.referenceClosedSharePct)} of the week`
+      : `**measured** - ${mdEsc(card.wrapper.instrument)} (${mdEsc(card.wrapper.tracking.tierLabel)}), reference market closed ${pl(card.wrapper.sevenByTwentyFour.referenceClosedSharePct)} of the week, ${pl(card.wrapper.sevenByTwentyFour.closedMoveSharePct)} of the wrapper's own hourly movement landed in those closed hours`)
     : card.wrapper?.status === "no-verified-wrapper"
       ? `**no verified wrapper for ${mdEsc(i.symbol)}** - reference market closed ${pl(card.wrapper.referenceMarket?.closedSharePct)} of the week; no wrapper figure reported and none estimated`
       : `**not measured on this build**`} |`);
@@ -315,7 +317,9 @@ function renderMarkdownPart2(ctx) {
     L.push(`Not probed for this run.`);
   }
   L.push(``);
-  L.push(`### 7x24 wrapper layer, as measured`);
+  L.push(card.wrapper?.primaryVenue === "bitget" && card.wrapper.bitget?.status === "measured"
+    ? `### 7x24 layer, as measured on two venues`
+    : `### 7x24 wrapper layer, as measured`);
   L.push(``);
   const w = card.wrapper;
   if (!w || w.status === "not-measured") {
@@ -326,6 +330,48 @@ function renderMarkdownPart2(ctx) {
     if (w.status === "measured") {
       const t = w.tracking, s24 = w.sevenByTwentyFour, lq = w.liquidity, pr = w.premium;
       L.push(``);
+      // The primary venue of the same layer: Bitget's own RWA perpetuals, fetched through the official
+      // MCP. The card heads the 7x24 figures with it whenever it is verified, so the run record must
+      // too - a record that only prints the second venue describes a card the demo no longer renders.
+      const b = w.bitget;
+      if (w.primaryVenue === "bitget" && b && b.status === "measured") {
+        const bt = b.tracking || {}, bs = b.sevenByTwentyFour || {}, bl = b.liquidity || {}, bp = b.premium || {};
+        L.push(`**Primary venue - Bitget RWA perpetuals.** Verified for ${mdEsc(card.idea.symbol)}: \`${mdEsc(b.instrument)}\` on ${mdEsc(b.venueName)} via ${mdEsc(b.route)}, snapshot ${mdEsc(b.measuredAt)}; interval echoed \`${mdEsc(b.intervalEchoed)}\`, exchange echoed \`${mdEsc(b.exchangeEchoed)}\`, ${n(b.hourlyCandles, 0)} hourly candles. ${mdEsc(b.instrumentClass || "")}`);
+        L.push(``);
+        L.push(`| measured on Bitget | value |`);
+        L.push(`|---|---|`);
+        if (bs.closedMoveSharePct != null) L.push(`| movement outside the cash session | **${pl(bs.closedMoveSharePct)}** of realised hourly moves, over ${n(bs.hoursObserved, 0)} hourly candles |`);
+        if (bs.closedHoursSharePct != null) L.push(`| hours outside the session | ${pl(bs.closedHoursSharePct)}, with a print in ${pl(bs.tradedOutsideSessionPct)} of them |`);
+        if (bt.returnCorrelation != null) L.push(`| tracking | correlation ${n(bt.returnCorrelation, 4)}, error ${n(bt.trackingErrorBpPerDay, 0)} bp/day over ${n(bt.overlapSessions, 0)} sessions - **${mdEsc(bt.tierLabel)}** |`);
+        if (bp.medianPct != null) L.push(`| premium to the raw close | median ${pl(bp.medianPct)}, p10..p90 ${pl(bp.p10Pct)}..${pl(bp.p90Pct)} |`);
+        if (bl.spreadBps != null) L.push(`| liquidity at the snapshot | spread ${n(bl.spreadBps)} bp, ${n(bl.depthWithin50BpsUsdt, 0)} USDT within 50 bp, 24h quote volume ${n(bl.quoteVolume24hUsdt, 0)} USDT |`);
+        const bcr = b.closedSessionReturns;
+        if (bcr && bcr.weekendReturnDistribution) {
+          const wd = bcr.weekendReturnDistribution, mae = bcr.weekendMaeDistribution || {};
+          L.push(`| weekend block return | median ${pl(wd.medianPct)}, p10 ${pl(wd.p10Pct)}, p90 ${pl(wd.p90Pct)}, sd ${pl(wd.stdPct)}, negative in ${pl(wd.shareNegativePct)} of ${n(wd.n, 0)} |`);
+          L.push(`| intra-weekend adverse excursion | median ${pl(mae.medianPct)}, p10 ${pl(mae.p10Pct)}, worst ${pl(mae.minPct)} |`);
+          L.push(`| breached -5% inside the block | ${pl(bcr.weekendShareBreached5PctDrawdownPct)} of weekends |`);
+          L.push(`| closed-hour vs open-hour volatility | ${n(bcr.hourlyStdRatioOutsideOverInside, 2)}x per hour |`);
+          if (bcr.pooledWeekendReturnDistribution) L.push(`| pooled across every verified perpetual | ${n(bcr.pooledWeekendReturnDistribution.n, 0)} blocks over ${n(bcr.pooledPairs, 0)} perpetuals and **${n(bcr.pooledDistinctWeekendStarts, 0)} distinct weekends** - median ${pl(bcr.pooledWeekendReturnDistribution.medianPct)}, p10 ${pl(bcr.pooledWeekendReturnDistribution.p10Pct)}, median MAE ${pl(bcr.pooledWeekendMaeDistribution?.medianPct)} |`);
+        }
+        L.push(``);
+        L.push(`> ${mdEsc(b.caveat || "")}`);
+        const cv = w.crossVenue;
+        if (cv) {
+          L.push(``);
+          L.push(`**Cross-venue, this symbol.** \`${mdEsc(cv.bitgetPair)}\` (perpetual) against \`${mdEsc(cv.gatePair)}\` (spot wrapper), each over its own observed window (${n(cv.bitgetHoursObserved, 0)} vs ${n(cv.gateHoursObserved, 0)} hourly buckets - ${mdEsc(cv.windowHours?.note || "the venues do not serve the same hours")}):`);
+          L.push(``);
+          L.push(`| | Bitget | Gate.io |`);
+          L.push(`|---|---|---|`);
+          L.push(`| closed-move share | ${pl(cv.closedMoveSharePct?.bitget)} | ${pl(cv.closedMoveSharePct?.gateio)} |`);
+          L.push(`| closed-hour vs open-hour vol | ${n(cv.hourlyStdRatio?.bitget, 3)}x | ${n(cv.hourlyStdRatio?.gateio, 3)}x |`);
+          L.push(`| weekend median block return | ${pl(cv.weekendMedianReturnPct?.bitget)} | ${pl(cv.weekendMedianReturnPct?.gateio)} |`);
+          L.push(`| spread | ${n(cv.spreadBps?.bitget)} bp | ${n(cv.spreadBps?.gateio)} bp |`);
+          L.push(``);
+          L.push(`The Gate.io block below is the **second venue** of the same layer, on a different instrument class (redeemable spot tokens). Its caveat text predates the Bitget primary measurement and describes only its own block.`);
+          L.push(``);
+        }
+      }
       L.push(`Wrapper verified for ${mdEsc(card.idea.symbol)}: \`${mdEsc(w.instrument)}\` on ${mdEsc(w.venueName)}, snapshot ${mdEsc(w.measuredAt)}.`);
       L.push(``);
       L.push(`| measured | value |`);
@@ -370,7 +416,7 @@ function renderMarkdownPart2(ctx) {
       L.push(`**No verified wrapper for ${mdEsc(card.idea.symbol)}.** ${mdEsc(w.reason || "")} ${n(w.candidatesTested, 0)} candidate listing(s) were tested and refused; every refusal and its reason is in \`data-cache/wrapper-probe.json\`. No wrapper spread, premium or closed-hours figure is reported for this instrument, and none is estimated.`);
     }
     L.push(``);
-    L.push(`Produced by \`scripts/measure-wrapper.mjs\`, committed as \`data-cache/wrapper-probe.json\`, gated by \`npm run check:wrapper\`. It is a measurement of the instrument layer: no retrieval, conformal or validation figure above uses any of it.`);
+    L.push(`Produced by \`scripts/measure-wrapper.mjs\` (Gate.io) and \`scripts/measure-bitget-7x24.mjs\` (Bitget), committed as \`data-cache/wrapper-probe.json\` and \`data-cache/bitget-7x24.json\`, gated by \`npm run check:wrapper\` and \`npm run check:bitget7x24\`. It is a measurement of the instrument layer: no retrieval, conformal or validation figure above uses any of it.`);
   }
   L.push(``);
   L.push(`## 9. Reproducing this run`);
@@ -381,9 +427,10 @@ function renderMarkdownPart2(ctx) {
   L.push(`npm run verify         # re-fit and re-score the frozen validation -> research/VALIDATION.md`);
   L.push(`npm run demo           # regenerate this file and demo/run-record.json
 npm run measure:wrapper# re-measure the 7x24 wrapper layer -> data-cache/wrapper-probe.json
-npm run measure:bitget # re-measure the official Bitget MCP on both routes -> data-cache/bitget-probe.json`);
-  L.push(`npm run check          # ten gates: numeric grid, LUI, markup, bundle-in-a-DOM-stub, wrapper
-                       # measurement, Bitget cross-check, replay cache, MCP, server, real headless Chrome`);
+npm run measure:bitget # re-measure the official Bitget MCP on both routes -> data-cache/bitget-probe.json
+npm run measure:bitget7x24 # re-measure the 7x24 PRIMARY venue on Bitget's own data -> data-cache/bitget-7x24.json`);
+    L.push(`npm run check          # eleven gates: numeric grid, LUI, markup, bundle-in-a-DOM-stub, both 7x24
+                       # venue measurements, Bitget cross-check, replay cache, MCP, server, headless Chrome`);
   L.push(`npm start              # the interactive desk at http://127.0.0.1:3000`);
   L.push("```");
   L.push(``);

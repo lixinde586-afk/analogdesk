@@ -1,6 +1,6 @@
 {
   "schema": "analogdesk.run-record/1",
-  "generatedAt": "2026-09-23T15:35:04.150Z",
+  "generatedAt": "2026-09-24T04:04:36.894Z",
   "generatedBy": "scripts/run-demo.mjs",
   "track": {
     "hackathon": "Bitget AI Base Camp Hackathon S2",
@@ -167,32 +167,32 @@
     "mode": "LIVE",
     "model": "qwen3.8-max",
     "promptVersion": "4",
-    "cardId": "53b445c4",
-    "latencyMs": 47195,
+    "cardId": "379321e7",
+    "latencyMs": 46187,
     "usage": {
-      "completion_tokens": 2230,
-      "prompt_tokens": 19750,
+      "completion_tokens": 2372,
+      "prompt_tokens": 22332,
       "prompt_tokens_details": {
         "cached_tokens": 0,
-        "text_tokens": 19750
+        "text_tokens": 22332
       },
-      "total_tokens": 21980
+      "total_tokens": 24704
     },
     "warnings": [],
     "numericGate": {
       "ok": true,
-      "total": 146,
+      "total": 159,
       "unsupportedCount": 0,
       "relTol": 0.005,
       "structuralPasses": 1
     },
     "sections": {
-      "verdict": "In the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the median realised return over the next 5 sessions was 0.86%, with a standard deviation of 3.8%. The distribution is slightly right-skewed (skew 0.214), but the left tail contains drawdowns as deep as -7.34%, meaning the path risk matters more than the central tendency for sizing.",
-      "state": "The engine pulled these 50 analogs from 31 distinct sessions and 33 distinct symbols because the current feature vector has a specific shape. NVDA is sitting -6.03% from its 52-week high (z-score 0.564) after a 60-session return of 11.82% (z-score 0.39). Its 20-session realised volatility is elevated at 45.77% (z-score 0.824), while the benchmark's 20-session volatility is unusually quiet at 9.16% (z-score -0.574). The most distinctive macro feature dragging the retrieval toward energy names is WTI crude change over 20 days at 19.24% (z-score 1.124). Dollar volume is below average (dv20z z-score -0.62), mean absolute overnight/weekend gaps are 1.28% (z-score 0.718), and there are 45 calendar days to the next earnings release (z-score 0.663) with 0 scheduled events in the next 5 sessions. This combination of high idiosyncratic vol, low market vol, an oil spike, and proximity to highs pulls in a mix of Technology names (9 analogs) alongside Energy (4) and broad sector ETFs.",
-      "history": "Over the 5-session horizon, the 50 analogs produced a mean return of 0.65% and a median of 0.86%. The spread is wide: the 10th percentile is -4.04%, the 25th percentile is -2.03%, the 75th percentile is 3.07%, and the 90th percentile is 4.68%. The extremes range from -7.34% to 10.25%. In 56% of the episodes the return was above zero; in 44% it was below. The bad tail is dominated by two specific episodes. The closest analog overall is NVDA itself on 2026-09-08 (distance 0.2999), which went on to lose -5.9% over 5 sessions with a max adverse excursion of -7.44% and almost no favourable upside (0.2%). The second worst outcome comes from XLK on 2026-08-13 (distance 0.4178), which returned -4.02% with a max adverse excursion of -4.38%. On the upside, NVDA on 2025-06-20 (distance 0.4317) returned 9.66%, and MU on 2024-01-16 (distance 0.4111) returned 3.45%. The histogram shows mass clustered near flat (10% of observations in the -0.38% bin) and a secondary cluster around 1.82% (12%), but the -4.04% bin alone holds 8% of the probability mass.",
-      "tails": "A position can end the week near the median and still be un-holdable through the middle. Across the 50 analogs, the median max adverse excursion during the 5 sessions was -2.01%. The 25th percentile of max adverse excursion was -3.77%, and the 10th percentile was -4.38%. Looking at specific drawdown thresholds, the probability of breaching a 5% drawdown intra-horizon was 8 out of 50 episodes. The probability of breaching a 10%, 15%, or 20% drawdown was 0 out of 50 in each case. The median max favourable excursion was 2.55%, with the 75th percentile at 4.39% and the 90th percentile at 6.71%, giving a reward-risk ratio of 1.27 based on the medians.",
-      "stress": "The stress scenarios that materially worsen the baseline picture are led by the 2020-02/03 liquidity crash window. There, the median forward return was -5.4% (a delta of -6.26% versus baseline), the 10th percentile was -14.14%, and the probability of breaching a 10% drawdown was 58.3%. The caveat is that central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns; it is a sample of one regime, not a forecast of the next one. The 2018-Q4 tightening scare produced a median of -3.02% (delta -3.88%) and a 10th percentile of -6.18%, with a 4% probability of a 10% drawdown. Its caveat is that it ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs. The 2022 inflation/rate bear scenario showed a median of -2.42% (delta -3.28%) and a 10th percentile of -8.44%; its caveat is that a nine-month window means the per-date cap of 2 analogs samples it repeatedly, so treat it as a regime description, not 50 independent events. The 2024-08-05 carry unwind had a median of -2.11% (delta -2.97%) and a 10th percentile of -8.61%, but the caveat notes the reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not. The 2025-04 tariff shock yielded a median of -2.7% (delta -3.56%) and a 10th percentile of -8.21%; its caveat is that policy reversals inside the window make the tail asymmetric in a way specific to that episode. A +2 sigma VIX spike gave a median of -0.18% (delta -1.04%) and a 10th percentile of -7.47%, carrying the caveat that VIX shocks mean-revert quickly, stressing entry timing more than terminal value. The liquidity air pocket scenario produced a median of 0.83% (delta -0.03%) and a 10th percentile of -6.64%. Its caveat is critical: gap20 is measured on the underlying exchange session, but for the tokenised wrapper NVDAG_USDT, the reference market is closed for 81.4% of the week and 55.21% of the wrapper's realised hourly movement happened in those closed hours, so the gap risk is not hypothetical. The 2023-03 regional bank stress actually improved the median to 1.51% (delta 0.65%), with the caveat that the very short window means the analog set is dominated by a handful of sessions. None of the 12 defined scenarios were skipped.",
-      "limits": "This analysis has concrete limits. The engine's own validation states: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" The directional hit rate is 50.1%. At matched coverage, the analog conformal interval is 10.2% wide, while the unconditional same-name interval is 9.48% wide, meaning the retrieval adds -7.6% sharpness versus just using the name's own history. The conformal scale of 1.31 was fitted on 2019-2022 data and frozen; the 80.8% out-of-sample coverage is measured on 2023 onward over 2698 queries. Earnings dates for foreign private issuers come from 6-K full-text search and are noisier than domestic 8-K Item 2.02 dates.\n\nRegarding the instrument you would actually trade: the wrapper status is \"measured\" on Gate.io spot v4 (public, keyless) as NVDAG_USDT. The reference cash market is shut for 81.4% of the week, and 55.21% of the wrapper's own realised hourly movement landed in those shut hours. It is classified as a \"fair tracker\" with a return correlation of 0.8971 and a tracking error of 114 bp/day. The premium band over the underlying's raw close is -0.44% to 0.65%, and the spread is 7.94 bps. The wrapper caveat applies: a fair tracker is not the underlying, and at 114 bp/day of tracking error the wrapper carries its own idiosyncratic risk; nothing here feeds the retrieval engine or the conformal scale.\n\nFor the return layer that can actually be sized, across 4 weekend blocks observed in the measurement window, the median weekend block return was 0.569%, the 10th percentile was -1.8803%, and the standard deviation was 1.7703%. The median intra-weekend adverse excursion was -0.7295%. Zero percent of those 4 weekend blocks breached a 5% drawdown threshold. These are wrapper returns measured while the reference market was shut and are NOT the retrieved outcome distribution above, which is built on 5x24 daily sessions of the underlying."
+      "verdict": "In the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the median realised return over the next 5 sessions was 0.86%. The distribution is wide and slightly right-skewed, with a standard deviation of 3.8%, meaning the path over one trading week has historically been volatile enough to swing several percent in either direction from that modest median.",
+      "state": "The engine pulled these 50 analogs because the current state combines a few distinctive features. NVDA sits -6.03% from its 52-week high (z-score 0.564) after a 60-session return of 11.82% (z-score 0.39). Its own 20-session realised volatility is elevated at 45.77% (z-score 0.824), while the benchmark 20-session volatility is unusually compressed at 9.16% (z-score -0.574). WTI crude oil has surged 19.24% over 20 days (z-score 1.124), the most extreme feature in the vector. Meanwhile, dollar volume is below average with a 20-session regime z-score of -0.62, mean absolute overnight gaps are 1.28% (z-score 0.718), and there are 0 scheduled events in the next 5 sessions (z-score -0.496) with earnings capped at 45 days away (z-score 0.663). This mix of high idiosyncratic vol, low market vol, an oil shock, and thin near-term event load defines the neighbourhood.",
+      "history": "Over the 5-session horizon, the 50 analogs produced a mean return of 0.65% and a median of 0.86%. The spread is substantial: the 10th percentile is -4.04% and the 90th percentile is 4.68%, with a full range from -7.34% to 10.25%. The skew is 0.214, indicating a slightly fatter right tail. In 56% of the episodes the 5-session return was above zero, and in 44% it was below. The bad tail is dominated by specific names. The closest analog is NVDA itself on 2026-09-08 (distance 0.2999), which went on to lose -5.9% over five sessions with a max adverse excursion of -7.44%. Another NVDA episode on 2025-06-20 (distance 0.4317) did the opposite, returning 9.66%. XLK on 2026-08-13 (distance 0.4178) returned -4.02% with a max adverse excursion of -4.38%. On the upside, MU on 2024-01-16 (distance 0.4111) returned 3.45%, and LLY on 2026-08-13 (distance 0.4066) returned 3.08%. Only 6% of the 50 analogs fell below -5%, and none fell below -10%.",
+      "tails": "A position can end the week near flat but still be un-holdable through the middle. Across the 50 analogs, the median maximum adverse excursion was -2.01%. At the 25th percentile, the worst intra-week drawdown reached -3.77%, and at the 10th percentile it hit -4.38%. Conversely, the median maximum favourable excursion was 2.55%, reaching 4.39% at the 75th percentile and 6.71% at the 90th percentile, giving a reward-to-risk ratio of 1.27. Looking at specific drawdown thresholds, the probability of breaching a 5% drawdown during the 5 sessions was 8 out of 50. The probability of breaching a 10%, 15%, or 20% drawdown was 0 out of 50 for each level.",
+      "stress": "When conditioned on historical stress regimes, the baseline picture deteriorates materially in some cases. The 2020-02/03 liquidity crash scenario (48 analogs) produces a median forward return of -5.4%, which is -6.26% worse than the baseline, with a 10th percentile of -14.14%. The caveat is that central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns; it is a sample of one regime, not a forecast of the next one. The 2018-Q4 tightening scare (50 analogs) yields a median of -3.02% (-3.88% vs baseline) and a 10th percentile of -6.18%; this ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs. The 2022 inflation/rate bear (50 analogs) shows a median of -2.42% (-3.28% vs baseline) and a 10th percentile of -8.44%; a nine-month window means the per-date cap of 2 analogs samples it repeatedly, so treat it as a regime description, not 50 independent events. The 2024-08-05 carry unwind (36 analogs) gives a median of -2.11% (-2.97% vs baseline) and a 10th percentile of -8.61%; the reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not. The 2025-04 tariff shock (26 analogs) produces a median of -2.7% (-3.56% vs baseline) and a 10th percentile of -8.21%; policy reversals inside the window make the tail asymmetric in a way specific to that episode. A +2 sigma VIX spike (50 analogs) results in a median of -0.18% (-1.04% vs baseline) and a 10th percentile of -7.47%; VIX shocks mean-revert quickly, so this stresses entry timing more than terminal value. The liquidity air pocket scenario (50 analogs) yields a median of 0.83% (-0.03% vs baseline) and a 10th percentile of -6.64%; gap20 is measured on the underlying exchange session, not on a 7x24 venue, bounding reference-market gap risk only. The 2023-03 regional bank stress (36 analogs) actually improves the median to 1.51% (+0.65% vs baseline); the window is very short, so the analog set is dominated by a handful of sessions. Earnings release day (50 analogs) lifts the median to 1.61% (+0.75% vs baseline); earnings dates for foreign private issuers come from 6-K full-text search and are noisier than 8-K Item 2.02 dates. FOMC decision day (50 analogs) drops the median to 0.07% (-0.79% vs baseline); only 92 decision days exist in the calendar, so the analog set is small and highly overlapping. Crypto drawdown contagion (50 analogs) leaves the median at 0.8% (-0.06% vs baseline); the BTC feature is a market-wide regime proxy and any name-level linkage to crypto flows is not identified here. China ADR de-rating (50 analogs) pushes the median to -0.06% (-0.92% vs baseline); delisting and audit-access risks are structural and will not appear in a price/vol feature space at all. Policy-rate path re-pricing (50 analogs) gives a median of -0.39% (-1.25% vs baseline); it uses DGS3MO/T10Y2Y levels as proxies, and transmission to a single name depends on duration and balance sheet, which are not features here. No scenarios were skipped.",
+      "limits": "This analysis has concrete limits. The engine's own validation states: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" The conformal interval achieves 80.8% out-of-sample coverage with a width of 9.95%, but the matched coverage sharpness versus the same-name unconditional benchmark is -7.6%, meaning the naive benchmark is tighter at the same coverage. The directional hit rate is 50.1%. The PIT chi-square statistic is 208.6 against a 5% critical value of 16.92, confirming the failure of the uniformity test.\n\nRegarding the wrapper: the card measures the tokenised instrument this would actually trade through. Status is measured. For the primary Bitget NVDA/USDT perpetual, the reference cash market is shut for 81.4% of the week, and 54.59% of the wrapper's own realised hourly movement landed in those closed hours. It is classified as a fair tracker with a return correlation of 0.8988 and a tracking error of 111 bp/day. The basis band is -0.37% to 0.66%, and the spread is 0.44 bps. The caveat is that this is measured via a local proxy (127.0.0.1:7890), a fair perpetual is not the underlying and carries funding and idiosyncratic risk, and nothing here feeds the retrieval engine or conformal scale.\n\nFor the return layer, across 6 weekend blocks observed over 1000 hours, the median weekend block return was 0.428%, the 10th percentile was -1.3695%, and the standard deviation was 1.4103%. The median intra-weekend adverse excursion was -0.8185%. Zero out of 6 weekends breached a 5% drawdown threshold. These are wrapper returns measured while the reference market was shut and are NOT the retrieved outcome distribution above, which is built on 5x24 daily sessions. Pooled across 39 instruments, the effective sample size is 6 distinct weekends, not 233 blocks."
     },
     "order": [
       "verdict",
@@ -202,11 +202,11 @@
       "stress",
       "limits"
     ],
-    "text": "[verdict]\nIn the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the median realised return over the next 5 sessions was 0.86%, with a standard deviation of 3.8%. The distribution is slightly right-skewed (skew 0.214), but the left tail contains drawdowns as deep as -7.34%, meaning the path risk matters more than the central tendency for sizing.\n\n[state]\nThe engine pulled these 50 analogs from 31 distinct sessions and 33 distinct symbols because the current feature vector has a specific shape. NVDA is sitting -6.03% from its 52-week high (z-score 0.564) after a 60-session return of 11.82% (z-score 0.39). Its 20-session realised volatility is elevated at 45.77% (z-score 0.824), while the benchmark's 20-session volatility is unusually quiet at 9.16% (z-score -0.574). The most distinctive macro feature dragging the retrieval toward energy names is WTI crude change over 20 days at 19.24% (z-score 1.124). Dollar volume is below average (dv20z z-score -0.62), mean absolute overnight/weekend gaps are 1.28% (z-score 0.718), and there are 45 calendar days to the next earnings release (z-score 0.663) with 0 scheduled events in the next 5 sessions. This combination of high idiosyncratic vol, low market vol, an oil spike, and proximity to highs pulls in a mix of Technology names (9 analogs) alongside Energy (4) and broad sector ETFs.\n\n[history]\nOver the 5-session horizon, the 50 analogs produced a mean return of 0.65% and a median of 0.86%. The spread is wide: the 10th percentile is -4.04%, the 25th percentile is -2.03%, the 75th percentile is 3.07%, and the 90th percentile is 4.68%. The extremes range from -7.34% to 10.25%. In 56% of the episodes the return was above zero; in 44% it was below. The bad tail is dominated by two specific episodes. The closest analog overall is NVDA itself on 2026-09-08 (distance 0.2999), which went on to lose -5.9% over 5 sessions with a max adverse excursion of -7.44% and almost no favourable upside (0.2%). The second worst outcome comes from XLK on 2026-08-13 (distance 0.4178), which returned -4.02% with a max adverse excursion of -4.38%. On the upside, NVDA on 2025-06-20 (distance 0.4317) returned 9.66%, and MU on 2024-01-16 (distance 0.4111) returned 3.45%. The histogram shows mass clustered near flat (10% of observations in the -0.38% bin) and a secondary cluster around 1.82% (12%), but the -4.04% bin alone holds 8% of the probability mass.\n\n[tails]\nA position can end the week near the median and still be un-holdable through the middle. Across the 50 analogs, the median max adverse excursion during the 5 sessions was -2.01%. The 25th percentile of max adverse excursion was -3.77%, and the 10th percentile was -4.38%. Looking at specific drawdown thresholds, the probability of breaching a 5% drawdown intra-horizon was 8 out of 50 episodes. The probability of breaching a 10%, 15%, or 20% drawdown was 0 out of 50 in each case. The median max favourable excursion was 2.55%, with the 75th percentile at 4.39% and the 90th percentile at 6.71%, giving a reward-risk ratio of 1.27 based on the medians.\n\n[stress]\nThe stress scenarios that materially worsen the baseline picture are led by the 2020-02/03 liquidity crash window. There, the median forward return was -5.4% (a delta of -6.26% versus baseline), the 10th percentile was -14.14%, and the probability of breaching a 10% drawdown was 58.3%. The caveat is that central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns; it is a sample of one regime, not a forecast of the next one. The 2018-Q4 tightening scare produced a median of -3.02% (delta -3.88%) and a 10th percentile of -6.18%, with a 4% probability of a 10% drawdown. Its caveat is that it ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs. The 2022 inflation/rate bear scenario showed a median of -2.42% (delta -3.28%) and a 10th percentile of -8.44%; its caveat is that a nine-month window means the per-date cap of 2 analogs samples it repeatedly, so treat it as a regime description, not 50 independent events. The 2024-08-05 carry unwind had a median of -2.11% (delta -2.97%) and a 10th percentile of -8.61%, but the caveat notes the reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not. The 2025-04 tariff shock yielded a median of -2.7% (delta -3.56%) and a 10th percentile of -8.21%; its caveat is that policy reversals inside the window make the tail asymmetric in a way specific to that episode. A +2 sigma VIX spike gave a median of -0.18% (delta -1.04%) and a 10th percentile of -7.47%, carrying the caveat that VIX shocks mean-revert quickly, stressing entry timing more than terminal value. The liquidity air pocket scenario produced a median of 0.83% (delta -0.03%) and a 10th percentile of -6.64%. Its caveat is critical: gap20 is measured on the underlying exchange session, but for the tokenised wrapper NVDAG_USDT, the reference market is closed for 81.4% of the week and 55.21% of the wrapper's realised hourly movement happened in those closed hours, so the gap risk is not hypothetical. The 2023-03 regional bank stress actually improved the median to 1.51% (delta 0.65%), with the caveat that the very short window means the analog set is dominated by a handful of sessions. None of the 12 defined scenarios were skipped.\n\n[limits]\nThis analysis has concrete limits. The engine's own validation states: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" The directional hit rate is 50.1%. At matched coverage, the analog conformal interval is 10.2% wide, while the unconditional same-name interval is 9.48% wide, meaning the retrieval adds -7.6% sharpness versus just using the name's own history. The conformal scale of 1.31 was fitted on 2019-2022 data and frozen; the 80.8% out-of-sample coverage is measured on 2023 onward over 2698 queries. Earnings dates for foreign private issuers come from 6-K full-text search and are noisier than domestic 8-K Item 2.02 dates.\n\nRegarding the instrument you would actually trade: the wrapper status is \"measured\" on Gate.io spot v4 (public, keyless) as NVDAG_USDT. The reference cash market is shut for 81.4% of the week, and 55.21% of the wrapper's own realised hourly movement landed in those shut hours. It is classified as a \"fair tracker\" with a return correlation of 0.8971 and a tracking error of 114 bp/day. The premium band over the underlying's raw close is -0.44% to 0.65%, and the spread is 7.94 bps. The wrapper caveat applies: a fair tracker is not the underlying, and at 114 bp/day of tracking error the wrapper carries its own idiosyncratic risk; nothing here feeds the retrieval engine or the conformal scale.\n\nFor the return layer that can actually be sized, across 4 weekend blocks observed in the measurement window, the median weekend block return was 0.569%, the 10th percentile was -1.8803%, and the standard deviation was 1.7703%. The median intra-weekend adverse excursion was -0.7295%. Zero percent of those 4 weekend blocks breached a 5% drawdown threshold. These are wrapper returns measured while the reference market was shut and are NOT the retrieved outcome distribution above, which is built on 5x24 daily sessions of the underlying."
+    "text": "[verdict]\nIn the 50 retrieved historical episodes where the tape looked like NVDA on 2026-09-18, the median realised return over the next 5 sessions was 0.86%. The distribution is wide and slightly right-skewed, with a standard deviation of 3.8%, meaning the path over one trading week has historically been volatile enough to swing several percent in either direction from that modest median.\n\n[state]\nThe engine pulled these 50 analogs because the current state combines a few distinctive features. NVDA sits -6.03% from its 52-week high (z-score 0.564) after a 60-session return of 11.82% (z-score 0.39). Its own 20-session realised volatility is elevated at 45.77% (z-score 0.824), while the benchmark 20-session volatility is unusually compressed at 9.16% (z-score -0.574). WTI crude oil has surged 19.24% over 20 days (z-score 1.124), the most extreme feature in the vector. Meanwhile, dollar volume is below average with a 20-session regime z-score of -0.62, mean absolute overnight gaps are 1.28% (z-score 0.718), and there are 0 scheduled events in the next 5 sessions (z-score -0.496) with earnings capped at 45 days away (z-score 0.663). This mix of high idiosyncratic vol, low market vol, an oil shock, and thin near-term event load defines the neighbourhood.\n\n[history]\nOver the 5-session horizon, the 50 analogs produced a mean return of 0.65% and a median of 0.86%. The spread is substantial: the 10th percentile is -4.04% and the 90th percentile is 4.68%, with a full range from -7.34% to 10.25%. The skew is 0.214, indicating a slightly fatter right tail. In 56% of the episodes the 5-session return was above zero, and in 44% it was below. The bad tail is dominated by specific names. The closest analog is NVDA itself on 2026-09-08 (distance 0.2999), which went on to lose -5.9% over five sessions with a max adverse excursion of -7.44%. Another NVDA episode on 2025-06-20 (distance 0.4317) did the opposite, returning 9.66%. XLK on 2026-08-13 (distance 0.4178) returned -4.02% with a max adverse excursion of -4.38%. On the upside, MU on 2024-01-16 (distance 0.4111) returned 3.45%, and LLY on 2026-08-13 (distance 0.4066) returned 3.08%. Only 6% of the 50 analogs fell below -5%, and none fell below -10%.\n\n[tails]\nA position can end the week near flat but still be un-holdable through the middle. Across the 50 analogs, the median maximum adverse excursion was -2.01%. At the 25th percentile, the worst intra-week drawdown reached -3.77%, and at the 10th percentile it hit -4.38%. Conversely, the median maximum favourable excursion was 2.55%, reaching 4.39% at the 75th percentile and 6.71% at the 90th percentile, giving a reward-to-risk ratio of 1.27. Looking at specific drawdown thresholds, the probability of breaching a 5% drawdown during the 5 sessions was 8 out of 50. The probability of breaching a 10%, 15%, or 20% drawdown was 0 out of 50 for each level.\n\n[stress]\nWhen conditioned on historical stress regimes, the baseline picture deteriorates materially in some cases. The 2020-02/03 liquidity crash scenario (48 analogs) produces a median forward return of -5.4%, which is -6.26% worse than the baseline, with a 10th percentile of -14.14%. The caveat is that central-bank backstops arrived inside the window, so the realised rebound is baked into the forward returns; it is a sample of one regime, not a forecast of the next one. The 2018-Q4 tightening scare (50 analogs) yields a median of -3.02% (-3.88% vs baseline) and a 10th percentile of -6.18%; this ended with a policy pivot in January 2019, which flatters the forward returns of late-window analogs. The 2022 inflation/rate bear (50 analogs) shows a median of -2.42% (-3.28% vs baseline) and a 10th percentile of -8.44%; a nine-month window means the per-date cap of 2 analogs samples it repeatedly, so treat it as a regime description, not 50 independent events. The 2024-08-05 carry unwind (36 analogs) gives a median of -2.11% (-2.97% vs baseline) and a 10th percentile of -8.61%; the reversal was almost as fast as the drawdown, so H-day forward returns look benign even though the intra-horizon excursion did not. The 2025-04 tariff shock (26 analogs) produces a median of -2.7% (-3.56% vs baseline) and a 10th percentile of -8.21%; policy reversals inside the window make the tail asymmetric in a way specific to that episode. A +2 sigma VIX spike (50 analogs) results in a median of -0.18% (-1.04% vs baseline) and a 10th percentile of -7.47%; VIX shocks mean-revert quickly, so this stresses entry timing more than terminal value. The liquidity air pocket scenario (50 analogs) yields a median of 0.83% (-0.03% vs baseline) and a 10th percentile of -6.64%; gap20 is measured on the underlying exchange session, not on a 7x24 venue, bounding reference-market gap risk only. The 2023-03 regional bank stress (36 analogs) actually improves the median to 1.51% (+0.65% vs baseline); the window is very short, so the analog set is dominated by a handful of sessions. Earnings release day (50 analogs) lifts the median to 1.61% (+0.75% vs baseline); earnings dates for foreign private issuers come from 6-K full-text search and are noisier than 8-K Item 2.02 dates. FOMC decision day (50 analogs) drops the median to 0.07% (-0.79% vs baseline); only 92 decision days exist in the calendar, so the analog set is small and highly overlapping. Crypto drawdown contagion (50 analogs) leaves the median at 0.8% (-0.06% vs baseline); the BTC feature is a market-wide regime proxy and any name-level linkage to crypto flows is not identified here. China ADR de-rating (50 analogs) pushes the median to -0.06% (-0.92% vs baseline); delisting and audit-access risks are structural and will not appear in a price/vol feature space at all. Policy-rate path re-pricing (50 analogs) gives a median of -0.39% (-1.25% vs baseline); it uses DGS3MO/T10Y2Y levels as proxies, and transmission to a single name depends on duration and balance sheet, which are not features here. No scenarios were skipped.\n\n[limits]\nThis analysis has concrete limits. The engine's own validation states: \"Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source.\" The conformal interval achieves 80.8% out-of-sample coverage with a width of 9.95%, but the matched coverage sharpness versus the same-name unconditional benchmark is -7.6%, meaning the naive benchmark is tighter at the same coverage. The directional hit rate is 50.1%. The PIT chi-square statistic is 208.6 against a 5% critical value of 16.92, confirming the failure of the uniformity test.\n\nRegarding the wrapper: the card measures the tokenised instrument this would actually trade through. Status is measured. For the primary Bitget NVDA/USDT perpetual, the reference cash market is shut for 81.4% of the week, and 54.59% of the wrapper's own realised hourly movement landed in those closed hours. It is classified as a fair tracker with a return correlation of 0.8988 and a tracking error of 111 bp/day. The basis band is -0.37% to 0.66%, and the spread is 0.44 bps. The caveat is that this is measured via a local proxy (127.0.0.1:7890), a fair perpetual is not the underlying and carries funding and idiosyncratic risk, and nothing here feeds the retrieval engine or conformal scale.\n\nFor the return layer, across 6 weekend blocks observed over 1000 hours, the median weekend block return was 0.428%, the 10th percentile was -1.3695%, and the standard deviation was 1.4103%. The median intra-weekend adverse excursion was -0.8185%. Zero out of 6 weekends breached a 5% drawdown threshold. These are wrapper returns measured while the reference market was shut and are NOT the retrieved outcome distribution above, which is built on 5x24 daily sessions. Pooled across 39 instruments, the effective sample size is 6 distinct weekends, not 233 blocks."
   },
   "card": {
     "schema": "analogdesk.research-card/1",
-    "generatedAt": "2026-09-23T15:35:14.167Z",
+    "generatedAt": "2026-09-24T04:04:41.487Z",
     "idea": {
       "symbol": "NVDA",
       "name": "NVIDIA",
@@ -1302,7 +1302,7 @@
           "7x24"
         ],
         "why": "Wide realised gaps plus a falling, more volatile tape: the state in which a tokenized-stock wrapper is hardest to exit, because the underlying reference market is closed while the wrapper still trades.",
-        "caveat": "gap20 is measured on the underlying exchange session, not on a 7x24 venue. It bounds the reference-market gap risk only. The wrapper layer is measured separately: when a tokenised wrapper for this instrument was verified, the desk appends the measured closed-hours figures to this caveat rather than leaving the gap merely confessed to. Measured on the wrapper itself (NVDAG_USDT, Gate.io spot v4 (public, keyless)): the reference market is closed for 81.4% of the week and 55.21% of the wrapper's realised hourly movement happened in those closed hours, so the gap risk this scenario describes is not hypothetical for the instrument a trader would hold.",
+        "caveat": "gap20 is measured on the underlying exchange session, not on a 7x24 venue. It bounds the reference-market gap risk only. The wrapper layer is measured separately: when a tokenised wrapper for this instrument was verified, the desk appends the measured closed-hours figures to this caveat rather than leaving the gap merely confessed to. Measured on the instrument itself (NVDA/USDT, a Bitget RWA perpetual on Bitget official MCP (agent.bitget.com/mcp)): the reference market is closed for 81.4% of the week and 54.59% of its realised hourly movement happened in those closed hours, so the gap risk this scenario describes is not hypothetical for the instrument a trader would hold.",
         "skipped": null,
         "analogsUsed": 50,
         "medianForwardPct": 0.83,
@@ -1885,7 +1885,7 @@
       "earningsSource": "efts.sec.gov full-text search (keyless, contact UA): forms=8-K q=\"Item 2.02\" for domestic filers; forms=6-K q=\"unaudited\" / q=\"financial results\" fallback for foreign private issuers; filing dates clustered at 6 calendar days",
       "horizonLabel": "5 sessions (one trading week)",
       "bitget": {
-        "probedAt": "2026-09-23T15:35:13.974Z",
+        "probedAt": "2026-09-24T04:04:41.322Z",
         "reachable": true,
         "reachableCount": 3,
         "reachableDirectCount": 0,
@@ -1899,8 +1899,8 @@
           {
             "url": "https://agent.bitget.com/mcp",
             "name": "Bitget official MCP (US stocks / ETF, read-only)",
-            "probedAt": "2026-09-23T15:35:04.865Z",
-            "latencyMs": 1020,
+            "probedAt": "2026-09-24T04:04:37.644Z",
+            "latencyMs": 318,
             "ok": true,
             "status": 400,
             "kind": "http-400",
@@ -1915,10 +1915,10 @@
               "name": "Bitget official MCP (US stocks / ETF, read-only)",
               "group": "market-data",
               "route": "proxy 127.0.0.1:7890",
-              "probedAt": "2026-09-23T15:35:08.431Z",
+              "probedAt": "2026-09-24T04:04:38.355Z",
               "ok": true,
               "status": 400,
-              "latencyMs": 2546,
+              "latencyMs": 393,
               "kind": "http-400",
               "detail": "reachable through the local proxy, responded 400"
             }
@@ -1926,8 +1926,8 @@
           {
             "url": "https://www.bitget.com",
             "name": "Bitget web (www)",
-            "probedAt": "2026-09-23T15:35:08.431Z",
-            "latencyMs": 1291,
+            "probedAt": "2026-09-24T04:04:38.355Z",
+            "latencyMs": 320,
             "ok": true,
             "status": 200,
             "kind": "ok",
@@ -1941,10 +1941,10 @@
               "name": "Bitget web (www)",
               "group": "market-data",
               "route": "proxy 127.0.0.1:7890",
-              "probedAt": "2026-09-23T15:35:11.316Z",
+              "probedAt": "2026-09-24T04:04:39.311Z",
               "ok": true,
               "status": 200,
-              "latencyMs": 1594,
+              "latencyMs": 636,
               "kind": "ok",
               "detail": "reachable through the local proxy, responded 200"
             }
@@ -1952,8 +1952,8 @@
           {
             "url": "https://api.bitget.com",
             "name": "Bitget public REST (api)",
-            "probedAt": "2026-09-23T15:35:11.316Z",
-            "latencyMs": 731,
+            "probedAt": "2026-09-24T04:04:39.311Z",
+            "latencyMs": 300,
             "ok": true,
             "status": 404,
             "kind": "http-404",
@@ -1967,10 +1967,10 @@
               "name": "Bitget public REST (api)",
               "group": "market-data",
               "route": "proxy 127.0.0.1:7890",
-              "probedAt": "2026-09-23T15:35:12.540Z",
+              "probedAt": "2026-09-24T04:04:39.997Z",
               "ok": true,
               "status": 404,
-              "latencyMs": 493,
+              "latencyMs": 386,
               "kind": "http-404",
               "detail": "reachable through the local proxy, responded 404"
             }
@@ -1985,8 +1985,8 @@
             {
               "url": "https://agent.bitget.com/mcp",
               "name": "Bitget official MCP (US stocks / ETF, read-only)",
-              "probedAt": "2026-09-23T15:35:04.865Z",
-              "latencyMs": 1020,
+              "probedAt": "2026-09-24T04:04:37.644Z",
+              "latencyMs": 318,
               "ok": true,
               "status": 400,
               "kind": "http-400",
@@ -2001,10 +2001,10 @@
                 "name": "Bitget official MCP (US stocks / ETF, read-only)",
                 "group": "market-data",
                 "route": "proxy 127.0.0.1:7890",
-                "probedAt": "2026-09-23T15:35:08.431Z",
+                "probedAt": "2026-09-24T04:04:38.355Z",
                 "ok": true,
                 "status": 400,
-                "latencyMs": 2546,
+                "latencyMs": 393,
                 "kind": "http-400",
                 "detail": "reachable through the local proxy, responded 400"
               }
@@ -2012,8 +2012,8 @@
             {
               "url": "https://www.bitget.com",
               "name": "Bitget web (www)",
-              "probedAt": "2026-09-23T15:35:08.431Z",
-              "latencyMs": 1291,
+              "probedAt": "2026-09-24T04:04:38.355Z",
+              "latencyMs": 320,
               "ok": true,
               "status": 200,
               "kind": "ok",
@@ -2027,10 +2027,10 @@
                 "name": "Bitget web (www)",
                 "group": "market-data",
                 "route": "proxy 127.0.0.1:7890",
-                "probedAt": "2026-09-23T15:35:11.316Z",
+                "probedAt": "2026-09-24T04:04:39.311Z",
                 "ok": true,
                 "status": 200,
-                "latencyMs": 1594,
+                "latencyMs": 636,
                 "kind": "ok",
                 "detail": "reachable through the local proxy, responded 200"
               }
@@ -2038,8 +2038,8 @@
             {
               "url": "https://api.bitget.com",
               "name": "Bitget public REST (api)",
-              "probedAt": "2026-09-23T15:35:11.316Z",
-              "latencyMs": 731,
+              "probedAt": "2026-09-24T04:04:39.311Z",
+              "latencyMs": 300,
               "ok": true,
               "status": 404,
               "kind": "http-404",
@@ -2053,10 +2053,10 @@
                 "name": "Bitget public REST (api)",
                 "group": "market-data",
                 "route": "proxy 127.0.0.1:7890",
-                "probedAt": "2026-09-23T15:35:12.540Z",
+                "probedAt": "2026-09-24T04:04:39.997Z",
                 "ok": true,
                 "status": 404,
-                "latencyMs": 493,
+                "latencyMs": 386,
                 "kind": "http-404",
                 "detail": "reachable through the local proxy, responded 404"
               }
@@ -2070,8 +2070,8 @@
           "endpoint": {
             "url": "https://hackathon.bitgetops.com/v1/chat/completions",
             "name": "Bitget hackathon LLM gateway (OpenAI-compatible /v1/chat/completions)",
-            "probedAt": "2026-09-23T15:35:12.540Z",
-            "latencyMs": 1434,
+            "probedAt": "2026-09-24T04:04:39.997Z",
+            "latencyMs": 1325,
             "ok": true,
             "status": 401,
             "kind": "http-401",
@@ -2085,7 +2085,7 @@
             "answeredOn": "direct",
             "viaProxy": null
           },
-          "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 1434ms, direct) - this is the endpoint the narrative layer calls",
+          "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 1325ms, direct) - this is the endpoint the narrative layer calls",
           "model": "qwen3.8-max",
           "transport": "openai-compatible chat/completions"
         },
@@ -2348,7 +2348,7 @@
           }
         },
         "measurementSummary": "Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md.",
-        "summary": "3/3 Bitget market-data endpoints reachable (0/3 on a direct connection; the rest via 127.0.0.1:7890); Bitget hackathon LLM gateway reachable (HTTP 401, 1434ms, direct) - this is the endpoint the narrative layer calls; Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md.",
+        "summary": "3/3 Bitget market-data endpoints reachable (0/3 on a direct connection; the rest via 127.0.0.1:7890); Bitget hackathon LLM gateway reachable (HTTP 401, 1325ms, direct) - this is the endpoint the narrative layer calls; Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md.",
         "disclosure": "Bitget market data IS reachable, and the route matters: 0/3 endpoints answer on a direct connection from this machine and 3/3 answer through a local HTTP proxy (127.0.0.1:7890). Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md. A reviewer on a network without that proxy will get the direct result, so both are reported rather than the more flattering one."
       },
       "bitgetMcp": {
@@ -2504,7 +2504,195 @@
         "caveatNote": "These are wrapper returns measured on a tokenised-equity venue while the reference cash market was shut. They are NOT the outcome distribution AnalogDesk retrieves, which is built on 5x24 daily sessions of the underlying and is validated as published in research/VALIDATION.md. A weekend block return is a single draw per wrapper per weekend, the blocks are highly cross-correlated across wrappers, and 720 hourly candles is roughly four weekends per pair - so the pooled n overstates the number of independent observations and the distinct weekend starts are the honest bound."
       },
       "interpretation": "NVDAG_USDT is a fair tracker for NVDA: daily returns correlate at 0.8971 with a tracking error of 114 bp/day, and it prices within 2.09% of the underlying's last raw close. It is the instrument a trader would actually hold outside cash hours - and outside those hours is where 55.21% of its own movement happens.",
-      "caveat": "Measured on Gate.io spot v4 (public, keyless), which is where these tokenised-equity wrappers are listed and tradeable; the official Bitget MCP is probed and cross-checked separately in the provenance panel, on both a direct and a proxied route, and neither route is the source of the figures on this card. A fair tracker is not the underlying - at 114 bp/day of tracking error the wrapper carries its own idiosyncratic risk, and a premium band of -0.44% to 0.65% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure."
+      "caveat": "Measured on Gate.io spot v4 (public, keyless), which is where these tokenised-equity wrappers are listed and tradeable; the official Bitget MCP is probed and cross-checked separately in the provenance panel, on both a direct and a proxied route, and neither route is the source of the figures in this block. A fair tracker is not the underlying - at 114 bp/day of tracking error the wrapper carries its own idiosyncratic risk, and a premium band of -0.44% to 0.65% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure.",
+      "primaryVenue": "bitget",
+      "primaryStatus": "measured",
+      "venueNote": "The 7x24 figures headed on this card are measured on Bitget's own data - Bitget RWA perpetuals fetched through the official Bitget MCP with the exchange pinned to bitget. The Gate.io spot-wrapper measurement is kept beside it as an independent second venue on a different instrument class, not as a duplicate.",
+      "bitget": {
+        "status": "measured",
+        "symbol": "NVDA",
+        "venueName": "Bitget official MCP (agent.bitget.com/mcp)",
+        "route": "proxy 127.0.0.1:7890",
+        "measuredAt": "2026-09-24T02:04:34.831Z",
+        "primary": true,
+        "instrumentClass": "RWA perpetual futures on tokenised US equities, trading 24/7",
+        "productType": "perpetual",
+        "exchangePinned": "bitget",
+        "keyRequired": false,
+        "instrument": "NVDA/USDT",
+        "exchange": "bitget",
+        "tier": "fair",
+        "tierLabel": "fair tracker",
+        "intervalEchoed": "1h",
+        "exchangeEchoed": "bitget",
+        "hourlyCandles": 1000,
+        "hourlyFrom": "2026-08-13T11:00:00.000Z",
+        "hourlyTo": "2026-09-24T02:00:00.000Z",
+        "flaggedRwaInCatalog": false,
+        "tracking": {
+          "returnCorrelation": 0.8988,
+          "trackingErrorBpPerDay": 111,
+          "tier": "fair",
+          "tierLabel": "fair tracker",
+          "overlapSessions": 59,
+          "from": "2026-06-26",
+          "to": "2026-09-18",
+          "note": "Daily returns of the Bitget NVDA/USDT perpetual against NVDA raw session closes over 59 overlapping sessions (2026-06-26 to 2026-09-18). Tracking error is the standard deviation of the daily return difference, in basis points per day."
+        },
+        "premium": {
+          "medianPct": 0.07,
+          "p10Pct": -0.37,
+          "p90Pct": 0.66,
+          "priceDeviationPct": 1.29,
+          "perpLast": 225.13,
+          "lastRawClose": 222.27,
+          "lastRawCloseDate": "2026-09-18",
+          "note": "Basis of the perpetual against the underlying's RAW session close - a traded price against a traded price. On a perpetual this is a basis that funding pulls back toward the mark, not a redeemable premium, so it is labelled basis rather than premium."
+        },
+        "liquidity": {
+          "spreadBps": 0.44,
+          "bestBid": 225.1,
+          "bestAsk": 225.11,
+          "mid": 225.10500000000002,
+          "depthWithin50BpsUsdt": 1037004.48,
+          "levels": {
+            "bids": 50,
+            "asks": 50
+          },
+          "quoteVolume24hUsdt": 9515753,
+          "medianDailyVolumeBase": 53464,
+          "note": "Bitget order-book snapshot at 2026-09-24T02:06:01.794000Z. Resting depth is notional USDT within 50 bp of the touch, both sides combined. It changes every second; this is the state at that timestamp, not a standing figure."
+        },
+        "sevenByTwentyFour": {
+          "closedMoveSharePct": 54.59,
+          "closedHoursSharePct": 75.98,
+          "tradedOutsideSessionPct": 100,
+          "hoursObserved": 1000,
+          "conventionNote": "Mon-Fri hourly buckets 13:00-20:59 UTC counted as reference-session OPEN (conservative: the real US cash session is 32.5h/week, this counts 40h)",
+          "note": "The measured core of the 7x24 claim, on Bitget's own candles: 54.59% of this perpetual's realised hourly price movement over 1000 observed hours landed outside the US cash session, and it traded in 100% of those hours."
+        },
+        "closedSessionReturns": {
+          "weekendBlocks": 6,
+          "overnightBlocks": 23,
+          "weekendReturnDistribution": {
+            "n": 6,
+            "meanPct": -0.0275,
+            "medianPct": 0.428,
+            "stdPct": 1.4103,
+            "p10Pct": -1.3695,
+            "p90Pct": 0.859,
+            "minPct": -2.832,
+            "maxPct": 0.93,
+            "shareNegativePct": 16.7
+          },
+          "weekendMaeDistribution": {
+            "n": 6,
+            "meanPct": -1.0773,
+            "medianPct": -0.8185,
+            "stdPct": 1.1698,
+            "p10Pct": -2.1825,
+            "p90Pct": -0.231,
+            "minPct": -3.371,
+            "maxPct": -0.178,
+            "shareNegativePct": 100
+          },
+          "weekendShareBreached5PctDrawdownPct": 0,
+          "weekendDrawdownThresholdPct": -5,
+          "hourlyStdRatioOutsideOverInside": 0.475,
+          "hourlyInsideSession": {
+            "n": 240,
+            "meanPct": -0.0271,
+            "medianPct": -0.0262,
+            "stdPct": 0.5291,
+            "p10Pct": -0.6094,
+            "p90Pct": 0.5121,
+            "minPct": -2.5902,
+            "maxPct": 1.7425,
+            "shareNegativePct": 53.8
+          },
+          "hourlyOutsideSession": {
+            "n": 759,
+            "meanPct": 0.01,
+            "medianPct": 0.0089,
+            "stdPct": 0.2513,
+            "p10Pct": -0.213,
+            "p90Pct": 0.1959,
+            "minPct": -0.9356,
+            "maxPct": 3.9597,
+            "shareNegativePct": 44.3
+          },
+          "pooledWeekendReturnDistribution": {
+            "n": 233,
+            "meanPct": 0.0119,
+            "medianPct": -0.02,
+            "stdPct": 1.1629,
+            "p10Pct": -1.0066,
+            "p90Pct": 1.25,
+            "minPct": -6.186,
+            "maxPct": 3.274,
+            "shareNegativePct": 50.2
+          },
+          "pooledWeekendMaeDistribution": {
+            "n": 233,
+            "meanPct": -0.9017,
+            "medianPct": -0.566,
+            "stdPct": 0.9796,
+            "p10Pct": -1.8338,
+            "p90Pct": -0.1864,
+            "minPct": -6.331,
+            "maxPct": 0,
+            "shareNegativePct": 98.3
+          },
+          "pooledWeekendShareBreached5PctDrawdownPct": 1.3,
+          "pooledWeekendShareBreached10PctDrawdownPct": 0,
+          "pooledInstruments": 39,
+          "pooledDistinctWeekendStarts": 6,
+          "conventionNote": "hourly buckets; reference session = Mon-Fri 13:00-20:59 UTC (40h/week, deliberately wider than the real 32.5h cash session so closed-hours figures are understated rather than flattered); a block is a maximal run of consecutive closed candles of at least 12h, weekend if at least 48h; MAE uses the intra-block candle low against the pre-block close",
+          "note": "The return layer, measured on Bitget data. Across 6 weekend block(s) in the observed 1000-hour window, NVDA/USDT went from the pre-weekend close to the reopen with a median return of 0.428% (p10 -1.3695%, p90 0.859%, sd 1.4103%), and its median intra-weekend adverse excursion was -0.8185%. Hour for hour, closed-session price formation was 0.475x as volatile as open-session formation.",
+          "caveatNote": "Pooled across 39 Bitget RWA perpetuals. These blocks are NOT independent draws: the whole tokenised-equity complex moves together and every instrument shares the same 6 weekend(s), so the effective sample size is 6 weekend(s), not 233 blocks. Both counts are printed wherever this is quoted. A perpetual also carries funding and a basis, so its closed-session return is the return of a 7x24 SYNTHETIC position, not of a redeemable spot token."
+        },
+        "interpretation": "NVDA/USDT is a fair tracker for NVDA on Bitget's own venue: daily returns correlate at 0.8988 with a tracking error of 111 bp/day, and it prices within 1.29% of the underlying's last raw close. It is a 24/7 perpetual, so it is the instrument a trader would actually hold outside cash hours - and outside those hours is where 54.59% of its own movement happens.",
+        "caveat": "Measured on Bitget official MCP (agent.bitget.com/mcp) through the official Bitget MCP on the proxy 127.0.0.1:7890 route, with the exchange pinned to \"bitget\" and the echoed interval (1h) and exchange (bitget) asserted on every fetch - the upstream accepts a granularity parameter and silently ignores it, returning daily bars, so the echo is checked rather than trusted. A fair perpetual is not the underlying and not a redeemable spot token: at 111 bp/day of tracking error it carries its own idiosyncratic risk, funding applies, and a basis band of -0.37% to 0.66% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure."
+      },
+      "crossVenue": {
+        "sym": "NVDA",
+        "bitgetPair": "NVDA/USDT",
+        "gatePair": "NVDAG_USDT",
+        "bitgetHoursObserved": 1000,
+        "gateHoursObserved": 720,
+        "bitgetInstrument": "perpetual",
+        "gateInstrument": "spot tokenised-equity wrapper",
+        "closedMoveSharePct": {
+          "bitget": 54.59,
+          "gateio": 55.21
+        },
+        "hourlyStdRatio": {
+          "bitget": 0.475,
+          "gateio": 0.519
+        },
+        "returnCorrelation": {
+          "bitget": 0.8988,
+          "gateio": 0.8971
+        },
+        "trackingErrorBpPerDay": {
+          "bitget": 111,
+          "gateio": 114
+        },
+        "spreadBps": {
+          "bitget": 0.44,
+          "gateio": 7.94
+        },
+        "weekendMedianReturnPct": {
+          "bitget": 0.428,
+          "gateio": 0.569
+        },
+        "windowHours": {
+          "bitgetMedian": 1000,
+          "gateioMedian": 720,
+          "note": "the venues do not serve the same hourly depth, so the observed window is reported for each side rather than assumed equal"
+        },
+        "note": "Two venues, two instrument classes, one underlying, one shared definition of the reference session (src/data/closed-session.mjs). Agreement between a Bitget perpetual and a Gate.io spot token is stronger evidence than the same instrument measured twice, and disagreement is reported rather than averaged away."
+      }
     }
   },
   "detail": {
@@ -11866,9 +12054,9 @@
       }
     ],
     "timing": {
-      "analyzeMs": 193,
-      "retrievalMs": 39,
-      "engineInitMs": 579
+      "analyzeMs": 165,
+      "retrievalMs": 31,
+      "engineInitMs": 609
     }
   },
   "validation": {
@@ -12195,7 +12383,7 @@
     "earningsSource": "efts.sec.gov full-text search (keyless, contact UA): forms=8-K q=\"Item 2.02\" for domestic filers; forms=6-K q=\"unaudited\" / q=\"financial results\" fallback for foreign private issuers; filing dates clustered at 6 calendar days",
     "horizonLabel": "5 sessions (one trading week)",
     "bitget": {
-      "probedAt": "2026-09-23T15:35:13.974Z",
+      "probedAt": "2026-09-24T04:04:41.322Z",
       "reachable": true,
       "reachableCount": 3,
       "reachableDirectCount": 0,
@@ -12209,8 +12397,8 @@
         {
           "url": "https://agent.bitget.com/mcp",
           "name": "Bitget official MCP (US stocks / ETF, read-only)",
-          "probedAt": "2026-09-23T15:35:04.865Z",
-          "latencyMs": 1020,
+          "probedAt": "2026-09-24T04:04:37.644Z",
+          "latencyMs": 318,
           "ok": true,
           "status": 400,
           "kind": "http-400",
@@ -12225,10 +12413,10 @@
             "name": "Bitget official MCP (US stocks / ETF, read-only)",
             "group": "market-data",
             "route": "proxy 127.0.0.1:7890",
-            "probedAt": "2026-09-23T15:35:08.431Z",
+            "probedAt": "2026-09-24T04:04:38.355Z",
             "ok": true,
             "status": 400,
-            "latencyMs": 2546,
+            "latencyMs": 393,
             "kind": "http-400",
             "detail": "reachable through the local proxy, responded 400"
           }
@@ -12236,8 +12424,8 @@
         {
           "url": "https://www.bitget.com",
           "name": "Bitget web (www)",
-          "probedAt": "2026-09-23T15:35:08.431Z",
-          "latencyMs": 1291,
+          "probedAt": "2026-09-24T04:04:38.355Z",
+          "latencyMs": 320,
           "ok": true,
           "status": 200,
           "kind": "ok",
@@ -12251,10 +12439,10 @@
             "name": "Bitget web (www)",
             "group": "market-data",
             "route": "proxy 127.0.0.1:7890",
-            "probedAt": "2026-09-23T15:35:11.316Z",
+            "probedAt": "2026-09-24T04:04:39.311Z",
             "ok": true,
             "status": 200,
-            "latencyMs": 1594,
+            "latencyMs": 636,
             "kind": "ok",
             "detail": "reachable through the local proxy, responded 200"
           }
@@ -12262,8 +12450,8 @@
         {
           "url": "https://api.bitget.com",
           "name": "Bitget public REST (api)",
-          "probedAt": "2026-09-23T15:35:11.316Z",
-          "latencyMs": 731,
+          "probedAt": "2026-09-24T04:04:39.311Z",
+          "latencyMs": 300,
           "ok": true,
           "status": 404,
           "kind": "http-404",
@@ -12277,10 +12465,10 @@
             "name": "Bitget public REST (api)",
             "group": "market-data",
             "route": "proxy 127.0.0.1:7890",
-            "probedAt": "2026-09-23T15:35:12.540Z",
+            "probedAt": "2026-09-24T04:04:39.997Z",
             "ok": true,
             "status": 404,
-            "latencyMs": 493,
+            "latencyMs": 386,
             "kind": "http-404",
             "detail": "reachable through the local proxy, responded 404"
           }
@@ -12295,8 +12483,8 @@
           {
             "url": "https://agent.bitget.com/mcp",
             "name": "Bitget official MCP (US stocks / ETF, read-only)",
-            "probedAt": "2026-09-23T15:35:04.865Z",
-            "latencyMs": 1020,
+            "probedAt": "2026-09-24T04:04:37.644Z",
+            "latencyMs": 318,
             "ok": true,
             "status": 400,
             "kind": "http-400",
@@ -12311,10 +12499,10 @@
               "name": "Bitget official MCP (US stocks / ETF, read-only)",
               "group": "market-data",
               "route": "proxy 127.0.0.1:7890",
-              "probedAt": "2026-09-23T15:35:08.431Z",
+              "probedAt": "2026-09-24T04:04:38.355Z",
               "ok": true,
               "status": 400,
-              "latencyMs": 2546,
+              "latencyMs": 393,
               "kind": "http-400",
               "detail": "reachable through the local proxy, responded 400"
             }
@@ -12322,8 +12510,8 @@
           {
             "url": "https://www.bitget.com",
             "name": "Bitget web (www)",
-            "probedAt": "2026-09-23T15:35:08.431Z",
-            "latencyMs": 1291,
+            "probedAt": "2026-09-24T04:04:38.355Z",
+            "latencyMs": 320,
             "ok": true,
             "status": 200,
             "kind": "ok",
@@ -12337,10 +12525,10 @@
               "name": "Bitget web (www)",
               "group": "market-data",
               "route": "proxy 127.0.0.1:7890",
-              "probedAt": "2026-09-23T15:35:11.316Z",
+              "probedAt": "2026-09-24T04:04:39.311Z",
               "ok": true,
               "status": 200,
-              "latencyMs": 1594,
+              "latencyMs": 636,
               "kind": "ok",
               "detail": "reachable through the local proxy, responded 200"
             }
@@ -12348,8 +12536,8 @@
           {
             "url": "https://api.bitget.com",
             "name": "Bitget public REST (api)",
-            "probedAt": "2026-09-23T15:35:11.316Z",
-            "latencyMs": 731,
+            "probedAt": "2026-09-24T04:04:39.311Z",
+            "latencyMs": 300,
             "ok": true,
             "status": 404,
             "kind": "http-404",
@@ -12363,10 +12551,10 @@
               "name": "Bitget public REST (api)",
               "group": "market-data",
               "route": "proxy 127.0.0.1:7890",
-              "probedAt": "2026-09-23T15:35:12.540Z",
+              "probedAt": "2026-09-24T04:04:39.997Z",
               "ok": true,
               "status": 404,
-              "latencyMs": 493,
+              "latencyMs": 386,
               "kind": "http-404",
               "detail": "reachable through the local proxy, responded 404"
             }
@@ -12380,8 +12568,8 @@
         "endpoint": {
           "url": "https://hackathon.bitgetops.com/v1/chat/completions",
           "name": "Bitget hackathon LLM gateway (OpenAI-compatible /v1/chat/completions)",
-          "probedAt": "2026-09-23T15:35:12.540Z",
-          "latencyMs": 1434,
+          "probedAt": "2026-09-24T04:04:39.997Z",
+          "latencyMs": 1325,
           "ok": true,
           "status": 401,
           "kind": "http-401",
@@ -12395,7 +12583,7 @@
           "answeredOn": "direct",
           "viaProxy": null
         },
-        "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 1434ms, direct) - this is the endpoint the narrative layer calls",
+        "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 1325ms, direct) - this is the endpoint the narrative layer calls",
         "model": "qwen3.8-max",
         "transport": "openai-compatible chat/completions"
       },
@@ -12658,7 +12846,7 @@
         }
       },
       "measurementSummary": "Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md.",
-      "summary": "3/3 Bitget market-data endpoints reachable (0/3 on a direct connection; the rest via 127.0.0.1:7890); Bitget hackathon LLM gateway reachable (HTTP 401, 1434ms, direct) - this is the endpoint the narrative layer calls; Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md.",
+      "summary": "3/3 Bitget market-data endpoints reachable (0/3 on a direct connection; the rest via 127.0.0.1:7890); Bitget hackathon LLM gateway reachable (HTTP 401, 1325ms, direct) - this is the endpoint the narrative layer calls; Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md.",
       "disclosure": "Bitget market data IS reachable, and the route matters: 0/3 endpoints answer on a direct connection from this machine and 3/3 answer through a local HTTP proxy (127.0.0.1:7890). Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md. A reviewer on a network without that proxy will get the direct result, so both are reported rather than the more flattering one."
     },
     "bitgetMcp": {
@@ -12674,7 +12862,7 @@
     }
   },
   "bitget": {
-    "probedAt": "2026-09-23T15:35:13.974Z",
+    "probedAt": "2026-09-24T04:04:41.322Z",
     "reachable": true,
     "reachableCount": 3,
     "reachableDirectCount": 0,
@@ -12688,8 +12876,8 @@
       {
         "url": "https://agent.bitget.com/mcp",
         "name": "Bitget official MCP (US stocks / ETF, read-only)",
-        "probedAt": "2026-09-23T15:35:04.865Z",
-        "latencyMs": 1020,
+        "probedAt": "2026-09-24T04:04:37.644Z",
+        "latencyMs": 318,
         "ok": true,
         "status": 400,
         "kind": "http-400",
@@ -12704,10 +12892,10 @@
           "name": "Bitget official MCP (US stocks / ETF, read-only)",
           "group": "market-data",
           "route": "proxy 127.0.0.1:7890",
-          "probedAt": "2026-09-23T15:35:08.431Z",
+          "probedAt": "2026-09-24T04:04:38.355Z",
           "ok": true,
           "status": 400,
-          "latencyMs": 2546,
+          "latencyMs": 393,
           "kind": "http-400",
           "detail": "reachable through the local proxy, responded 400"
         }
@@ -12715,8 +12903,8 @@
       {
         "url": "https://www.bitget.com",
         "name": "Bitget web (www)",
-        "probedAt": "2026-09-23T15:35:08.431Z",
-        "latencyMs": 1291,
+        "probedAt": "2026-09-24T04:04:38.355Z",
+        "latencyMs": 320,
         "ok": true,
         "status": 200,
         "kind": "ok",
@@ -12730,10 +12918,10 @@
           "name": "Bitget web (www)",
           "group": "market-data",
           "route": "proxy 127.0.0.1:7890",
-          "probedAt": "2026-09-23T15:35:11.316Z",
+          "probedAt": "2026-09-24T04:04:39.311Z",
           "ok": true,
           "status": 200,
-          "latencyMs": 1594,
+          "latencyMs": 636,
           "kind": "ok",
           "detail": "reachable through the local proxy, responded 200"
         }
@@ -12741,8 +12929,8 @@
       {
         "url": "https://api.bitget.com",
         "name": "Bitget public REST (api)",
-        "probedAt": "2026-09-23T15:35:11.316Z",
-        "latencyMs": 731,
+        "probedAt": "2026-09-24T04:04:39.311Z",
+        "latencyMs": 300,
         "ok": true,
         "status": 404,
         "kind": "http-404",
@@ -12756,10 +12944,10 @@
           "name": "Bitget public REST (api)",
           "group": "market-data",
           "route": "proxy 127.0.0.1:7890",
-          "probedAt": "2026-09-23T15:35:12.540Z",
+          "probedAt": "2026-09-24T04:04:39.997Z",
           "ok": true,
           "status": 404,
-          "latencyMs": 493,
+          "latencyMs": 386,
           "kind": "http-404",
           "detail": "reachable through the local proxy, responded 404"
         }
@@ -12774,8 +12962,8 @@
         {
           "url": "https://agent.bitget.com/mcp",
           "name": "Bitget official MCP (US stocks / ETF, read-only)",
-          "probedAt": "2026-09-23T15:35:04.865Z",
-          "latencyMs": 1020,
+          "probedAt": "2026-09-24T04:04:37.644Z",
+          "latencyMs": 318,
           "ok": true,
           "status": 400,
           "kind": "http-400",
@@ -12790,10 +12978,10 @@
             "name": "Bitget official MCP (US stocks / ETF, read-only)",
             "group": "market-data",
             "route": "proxy 127.0.0.1:7890",
-            "probedAt": "2026-09-23T15:35:08.431Z",
+            "probedAt": "2026-09-24T04:04:38.355Z",
             "ok": true,
             "status": 400,
-            "latencyMs": 2546,
+            "latencyMs": 393,
             "kind": "http-400",
             "detail": "reachable through the local proxy, responded 400"
           }
@@ -12801,8 +12989,8 @@
         {
           "url": "https://www.bitget.com",
           "name": "Bitget web (www)",
-          "probedAt": "2026-09-23T15:35:08.431Z",
-          "latencyMs": 1291,
+          "probedAt": "2026-09-24T04:04:38.355Z",
+          "latencyMs": 320,
           "ok": true,
           "status": 200,
           "kind": "ok",
@@ -12816,10 +13004,10 @@
             "name": "Bitget web (www)",
             "group": "market-data",
             "route": "proxy 127.0.0.1:7890",
-            "probedAt": "2026-09-23T15:35:11.316Z",
+            "probedAt": "2026-09-24T04:04:39.311Z",
             "ok": true,
             "status": 200,
-            "latencyMs": 1594,
+            "latencyMs": 636,
             "kind": "ok",
             "detail": "reachable through the local proxy, responded 200"
           }
@@ -12827,8 +13015,8 @@
         {
           "url": "https://api.bitget.com",
           "name": "Bitget public REST (api)",
-          "probedAt": "2026-09-23T15:35:11.316Z",
-          "latencyMs": 731,
+          "probedAt": "2026-09-24T04:04:39.311Z",
+          "latencyMs": 300,
           "ok": true,
           "status": 404,
           "kind": "http-404",
@@ -12842,10 +13030,10 @@
             "name": "Bitget public REST (api)",
             "group": "market-data",
             "route": "proxy 127.0.0.1:7890",
-            "probedAt": "2026-09-23T15:35:12.540Z",
+            "probedAt": "2026-09-24T04:04:39.997Z",
             "ok": true,
             "status": 404,
-            "latencyMs": 493,
+            "latencyMs": 386,
             "kind": "http-404",
             "detail": "reachable through the local proxy, responded 404"
           }
@@ -12859,8 +13047,8 @@
       "endpoint": {
         "url": "https://hackathon.bitgetops.com/v1/chat/completions",
         "name": "Bitget hackathon LLM gateway (OpenAI-compatible /v1/chat/completions)",
-        "probedAt": "2026-09-23T15:35:12.540Z",
-        "latencyMs": 1434,
+        "probedAt": "2026-09-24T04:04:39.997Z",
+        "latencyMs": 1325,
         "ok": true,
         "status": 401,
         "kind": "http-401",
@@ -12874,7 +13062,7 @@
         "answeredOn": "direct",
         "viaProxy": null
       },
-      "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 1434ms, direct) - this is the endpoint the narrative layer calls",
+      "summary": "Bitget hackathon LLM gateway reachable (HTTP 401, 1325ms, direct) - this is the endpoint the narrative layer calls",
       "model": "qwen3.8-max",
       "transport": "openai-compatible chat/completions"
     },
@@ -13137,14 +13325,14 @@
       }
     },
     "measurementSummary": "Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md.",
-    "summary": "3/3 Bitget market-data endpoints reachable (0/3 on a direct connection; the rest via 127.0.0.1:7890); Bitget hackathon LLM gateway reachable (HTTP 401, 1434ms, direct) - this is the endpoint the narrative layer calls; Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md.",
+    "summary": "3/3 Bitget market-data endpoints reachable (0/3 on a direct connection; the rest via 127.0.0.1:7890); Bitget hackathon LLM gateway reachable (HTTP 401, 1325ms, direct) - this is the endpoint the narrative layer calls; Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md.",
     "disclosure": "Bitget market data IS reachable, and the route matters: 0/3 endpoints answer on a direct connection from this machine and 3/3 answer through a local HTTP proxy (127.0.0.1:7890). Official Bitget MCP measured 2026-09-23T14:07:46.571Z: bitget-mcp-server@4.0.5, 67 catalog entries in 5 categories, fetched on the proxy 127.0.0.1:7890 route. Cross-checks against this project's own keyless data: 396/396 overlapping crypto fear-&-greed readings identical (mean absolute difference 0 index points); 1826 earnings-disclosure dates compared against the EDGAR-derived calendar, 69.44% within three days; 68/71 live equity quotes and 24/24 company profiles answered. None of it feeds the retrieval engine, the frozen conformal scale or research/VALIDATION.md. A reviewer on a network without that proxy will get the direct result, so both are reported rather than the more flattering one."
   },
-  "bitgetProbeSource": "live probe 2026-09-23T15:35:13.974Z",
+  "bitgetProbeSource": "live probe 2026-09-24T04:04:41.322Z",
   "timing": {
-    "engineInitMs": 579,
-    "analyzeMs": 194,
-    "retrievalMs": 39,
-    "totalMs": 57095
+    "engineInitMs": 609,
+    "analyzeMs": 166,
+    "retrievalMs": 31,
+    "totalMs": 50659
   }
 }
