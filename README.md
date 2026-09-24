@@ -29,8 +29,9 @@ the run record. Nothing was tuned away to look better. See **[Honest results](#h
 **Or locally:** `dist/` is a **fully static deployment**: the entire analog library (2513 sessions x 71 instruments), the
 retrieval engine, the stress engine and the narrative renderer are compiled into one classic `<script>`
 bundle that runs **in the browser** with **zero `fetch` calls**. Judges without any API key get the complete
-product, model-written narrative included: seven canonical research cards ship with cached `qwen3.8-max`
-generations baked into that bundle, so the language layer is visible with no key, no server and no network.
+product, model-written narrative included: eight canonical research cards - every auto-run deep link and
+every one-click example the page offers - ship as eleven cached `qwen3.8-max` generations, one per language,
+baked into that bundle, so the language layer is visible with no key, no server and no network.
 
 ```
 # option A - literally open the file

@@ -379,7 +379,7 @@ const TOOLS = [
   {
     name: "analogdesk_stress",
     title: "The 14 named stress scenarios for one idea",
-    description: "Re-runs the same retrieval under six named crisis windows drawn from the library own worst benchmark episodes and seven shock overlays, and returns each scenario median, tail, delta versus the baseline, loss and drawdown-breach probabilities, plus the caveat the engine attaches to it. Rows are directly comparable because the settings are identical.",
+    description: "Re-runs the same retrieval under six named crisis windows drawn from the library own worst benchmark episodes, seven shock overlays, and one measured 7x24 venue overlay that composes each retrieved path with the instrument own closed-market weekend blocks (14 scenarios; the venue row is skipped, with its reason, for an instrument no verified venue lists). Returns each scenario median, tail, delta versus the baseline, loss and drawdown-breach probabilities, plus the caveat the engine attaches to it. Rows are directly comparable because the settings are identical.",
     inputSchema: { type: "object", properties: REQUEST_SCHEMA, required: [] }
   },
   {

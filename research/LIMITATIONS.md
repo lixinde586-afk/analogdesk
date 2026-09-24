@@ -451,10 +451,13 @@ in the sentence is correct. Mitigations: the template renderer is deterministic 
 the card always states which mode produced the text; the verdict and caveats panels are engine-rendered, not
 LLM-rendered, so the honest verdict cannot be talked out of. The replay cache is keyed to exact research
 cards and to the prompt version that produced them, so an unseen query with no key falls back to the template
-rather than to a stale generation, and bumping `PROMPT_VERSION` invalidates the whole cache by design. Seven
-canonical cards - the two `check:browser` auto-loads, the `npm run demo` default, the stated-drawdown-tolerance
-variant, SPY and TSLA at H=20 - ship with cached `qwen3.8-max` generations, so a reviewer with no key at all
-still reads model-written prose at every documented entry point. The digest deliberately excludes clocks,
+rather than to a stale generation, and bumping `PROMPT_VERSION` invalidates the whole cache by design. Eight
+canonical cards, as eleven cached generations (one per language) - the two `check:browser` auto-loads, the
+`npm run demo` default, the stated-drawdown-tolerance variant, SPY and TSLA at H=20, and the four remaining
+one-click example chips the static page offers (BABA into earnings, TSLA in Chinese, SPY as of 2020-03-16 and
+QQQ under a two-sigma volatility spike) - ship with cached `qwen3.8-max` prose, so a reviewer with no key at
+all still reads model-written narrative at every documented entry point and at every example the page offers.
+A question outside that set still falls back to the template, and the card says so. The digest deliberately excludes clocks,
 provenance and machine timings; while it did not, no cached record could ever be found again and every
 published build silently rendered the template instead. `npm run check:replay` now asserts both the digest
 invariants and the coverage, so that failure mode stops the build rather than reaching a judge.
@@ -471,9 +474,10 @@ without a key or a network — reproducible and complete — but it is not a liv
 Mean **9.0 ms** per query measured across the 2698-query validation sweep (warm, amortised); **14.4 ms** mean
 / 13.5 ms median / 15.1 ms p95 in the dedicated 108-query latency harness; **39 ms** for the single cold
 retrieval in the demo run record (a single cold call on a loaded laptop moves by tens of milliseconds, which
-is exactly why the amortised sweep figure is the one worth quoting). Full engine build 506-711 ms depending on
-the harness on this machine (in-browser 506 ms, node demo 593 ms, validation harness 711 ms), full research
-card including the 14-scenario stress suite 202-246 ms in node and 155-230 ms in the browser, peak RSS 374 MB.
+is exactly why the amortised sweep figure is the one worth quoting). Full engine build 501-711 ms depending on
+the harness on this machine (in-browser 501-514 ms across runs, node demo 593 ms, validation harness 711 ms),
+full research card including the 14-scenario stress suite 202-246 ms in node and 146-237 ms in the browser,
+peak RSS 374 MB.
 The honest summary is "tens of milliseconds per retrieval, sub-second for a full card".
 Retrieval is an exact scan over ~178k library rows x 25 features with no ANN index; at this size an exact
 scan beats building an index. That stops being true past roughly 10^6 rows.

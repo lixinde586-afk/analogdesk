@@ -123,7 +123,7 @@ section("canonical replay records: what a judge with no API key will read");
 const onDiskIds = new Set(existsSync(REPLAY_DIR) ? readdirSync(REPLAY_DIR).filter((f) => f.endsWith(".json")).map((f) => f.replace(/\.json$/, "")) : []);
 let cached = 0, optionalMissing = 0;
 const requiredEntries = entries.filter((e) => e.required);
-console.log("  (" + requiredEntries.length + " required: the auto-run deep links a reviewer reaches without typing; " + (entries.length - requiredEntries.length) + " optional)");
+console.log("  (" + requiredEntries.length + " required: the auto-run deep links a reviewer reaches without typing, plus every example chip a reviewer clicks; " + (entries.length - requiredEntries.length) + " optional)");
 for (const e of entries) {
   const rec = readJson(join(REPLAY_DIR, `${e.id}.json`));
   const label = `${e.key.padEnd(20)} ${e.id}  (${e.spec.symbol} H=${e.spec.horizon})`;

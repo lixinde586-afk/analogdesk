@@ -77,9 +77,51 @@ export const CANONICAL_REQUESTS = [
   },
   {
     id: "tsla-h20", symbol: "TSLA", date: "latest", horizon: 20, k: 50,
-    label: "longer horizon, where the analog band holds coverage and the unconditional one collapses",
+    label: "longer horizon, where the analog band holds coverage and the unconditional one collapses; also example chip #3",
     questions: [
-      { language: "en", question: "TSLA over the next 20 sessions: the realised distribution of the closest historical analogs, and the stress scenarios worth naming." }
+      { language: "en", question: "TSLA over the next 20 sessions: the realised distribution of the closest historical analogs, and the stress scenarios worth naming." },
+      {
+        language: "zh", required: true,
+        question: "特斯拉未来一个月，类比历史上相似状态的分布，最大回撤有多深？"
+      }
+    ]
+  },
+  /*
+   * The remaining example chips. web/app.js offers six one-click questions, and a click is the first
+   * thing a reviewer does on a static demo with no key: if the card behind a chip is not cached, that
+   * reviewer's first contact with the "AI Trading Desk" track is the template renderer saying model
+   * reasoning is unavailable. So every chip is a canonical card, and check:replay fails the build
+   * rather than let one of them quietly degrade to TEMPLATE. The question text is copied verbatim from
+   * EXAMPLES in web/app.js; only the parsed spec and the language enter the digest.
+   */
+  {
+    id: "baba-h5", symbol: "BABA", date: "latest", horizon: 5, k: 50,
+    label: "example chip #2 (an earnings-week question on a China ADR, where the 6-K fallback is what makes the event feature exist)",
+    questions: [
+      {
+        language: "en", required: true,
+        question: "Should I buy BABA into earnings this week? What did similar states do next?"
+      }
+    ]
+  },
+  {
+    id: "spy-h5-2020-03-16", symbol: "SPY", date: "2020-03-16", horizon: 5, k: 50,
+    label: "example chip #5 (an as-of date inside the worst window in the library, so the card describes a known crash rather than forecasting one)",
+    questions: [
+      {
+        language: "en", required: true,
+        question: "What does the analog set say about SPY as of 2020-03-16 over 5 sessions?"
+      }
+    ]
+  },
+  {
+    id: "qqq-h5", symbol: "QQQ", date: "latest", horizon: 5, k: 50,
+    label: "example chip #6 (an index card no verified 7x24 venue lists, so the venue overlay is skipped and the suite says why)",
+    questions: [
+      {
+        language: "en", required: true,
+        question: "QQQ next week if volatility spikes two sigma - how un-holdable does the path get?"
+      }
     ]
   }
 ];
