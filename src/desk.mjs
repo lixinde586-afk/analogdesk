@@ -221,7 +221,7 @@ export function createWrapperView(probe) {
         };
       })(),
       interpretation: `${a.pair} is a ${a.tierLabel} for ${symbol}: daily returns correlate at ${a.returnCorrelation} with a tracking error of ${a.trackingErrorBpPerDay} bp/day, and it prices within ${a.priceDeviationPct}% of the underlying's last raw close. It is the instrument a trader would actually hold outside cash hours - and outside those hours is where ${ch?.referenceClosedMoveSharePct ?? "most"}% of its own movement happens.`,
-      caveat: `Measured on ${venueName}, which is where these tokenised-equity wrappers are listed and tradeable; the official Bitget MCP is probed and cross-checked separately in the provenance panel, on both a direct and a proxied route, and neither route is the source of the figures in this block. A ${a.tier} tracker is not the underlying - at ${a.trackingErrorBpPerDay} bp/day of tracking error the wrapper carries its own idiosyncratic risk, and a premium band of ${a.premiumP10Pct}% to ${a.premiumP90Pct}% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure.`
+      caveat: `Measured on ${venueName}, which is where these tokenised-equity wrappers are listed and tradeable; the official Bitget MCP is probed and cross-checked separately in the provenance panel, on both a direct and a proxied route, and neither route is the source of the figures in this block. A ${a.tier} tracker is not the underlying - at ${a.trackingErrorBpPerDay} bp/day of tracking error the wrapper carries its own idiosyncratic risk, and a premium band of ${a.premiumP10Pct}% to ${a.premiumP90Pct}% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure; the one consumer is the 7x24 venue stress overlay, which composes the retrieved paths with these measured closed-market blocks and prints the instrument, the block count and the distinct-weekend count beside the result it produces.`
     };
   };
 
@@ -358,7 +358,7 @@ export function createBitget7x24View(probe) {
         caveatNote: pooled?.caveat || null
       } : null,
       interpretation: `${a.pair} is a ${a.tierLabel} for ${symbol} on Bitget's own venue: daily returns correlate at ${a.returnCorrelation} with a tracking error of ${a.trackingErrorBpPerDay} bp/day, and it prices within ${a.priceDeviationPct}% of the underlying's last raw close. It is a 24/7 perpetual, so it is the instrument a trader would actually hold outside cash hours - and outside those hours is where ${ch?.referenceClosedMoveSharePct ?? "most"}% of its own movement happens.`,
-      caveat: `Measured on ${venueName} through the official Bitget MCP on the ${route} route, with the exchange pinned to "${a.exchange}" and the echoed interval (${a.intervalEchoed}) and exchange (${a.exchangeEchoed}) asserted on every fetch - the upstream accepts a granularity parameter and silently ignores it, returning daily bars, so the echo is checked rather than trusted. A ${a.tier} perpetual is not the underlying and not a redeemable spot token: at ${a.trackingErrorBpPerDay} bp/day of tracking error it carries its own idiosyncratic risk, funding applies, and a basis band of ${a.premiumP10Pct}% to ${a.premiumP90Pct}% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure.`
+      caveat: `Measured on ${venueName} through the official Bitget MCP on the ${route} route, with the exchange pinned to "${a.exchange}" and the echoed interval (${a.intervalEchoed}) and exchange (${a.exchangeEchoed}) asserted on every fetch - the upstream accepts a granularity parameter and silently ignores it, returning daily bars, so the echo is checked rather than trusted. A ${a.tier} perpetual is not the underlying and not a redeemable spot token: at ${a.trackingErrorBpPerDay} bp/day of tracking error it carries its own idiosyncratic risk, funding applies, and a basis band of ${a.premiumP10Pct}% to ${a.premiumP90Pct}% means the price you exit at can differ from the reference close the analog distribution is built on. Nothing here feeds the retrieval engine, the conformal scale or any validation figure; the one consumer is the 7x24 venue stress overlay, which composes the retrieved paths with these measured closed-market blocks and prints the instrument, the block count and the distinct-weekend count beside the result it produces.`
     };
   };
 
@@ -401,6 +401,44 @@ function annotateWrapperScenarios(card) {
 export function createDesk({ dataset, validationResults = null, provenance = {}, config = {}, wrapper = null, bitget7x24 = null }) {
   const wrapperView = createWrapperView(wrapper);
   const bitgetView = createBitget7x24View(bitget7x24);
+
+  // The venue stress scenario composes analog paths with the measured closed-market weekend blocks of
+  // the verified instrument for this symbol: primary venue first (Bitget RWA perpetuals), then the
+  // Gate.io spot wrapper. A symbol with neither gets a skipped scenario carrying the reason, never an
+  // invented block.
+  // The effective sample of the composition is the number of DISTINCT weekend starts among the blocks
+  // this instrument actually contributes, not the venue-wide count: one instrument can be missing a
+  // weekend to an hourly-data gap, and quoting the venue-wide figure would then overstate its own
+  // sample. Both are carried, so a reader can see the gap when there is one.
+  const distinctStarts = (blocks) => new Set(blocks.map((b) => b.startIso).filter(Boolean)).size || null;
+  const venueForStress = (symbol) => {
+    const bgInst = bitget7x24 && !bitget7x24.degradation
+      ? (bitget7x24.instruments || []).find((x) => x.sym === symbol) : null;
+    const bgBlocks = Array.isArray(bgInst?.closedReturns?.weekendBlocks) ? bgInst.closedReturns.weekendBlocks : null;
+    if (bgBlocks && bgBlocks.length) {
+      return {
+        venue: "bitget", venueName: bitget7x24.venue?.name || "Bitget official MCP", instrument: bgInst.pair,
+        instrumentClass: bgInst.instrumentClass, blocks: bgBlocks,
+        distinctWeekendStarts: distinctStarts(bgBlocks),
+        venueDistinctWeekendStarts: bitget7x24.closedSessionReturns?.distinctWeekendStarts ?? null,
+        pooledWeekendN: bitget7x24.closedSessionReturns?.pooled?.weekendReturnDistribution?.n ?? null,
+        route: bitget7x24.venue?.route ?? null
+      };
+    }
+    const wInst = wrapper && !wrapper.degradation ? (wrapper.bySymbol || {})[symbol] : null;
+    const wBlocks = Array.isArray(wInst?.closedReturns?.weekendBlocks) ? wInst.closedReturns.weekendBlocks : null;
+    if (wBlocks && wBlocks.length) {
+      return {
+        venue: "gateio", venueName: wrapper.venue?.name || "Gate.io spot v4", instrument: wInst.pair,
+        instrumentClass: "redeemable spot tokenised-equity wrapper", blocks: wBlocks,
+        distinctWeekendStarts: distinctStarts(wBlocks),
+        venueDistinctWeekendStarts: wrapper.closedSessionReturns?.distinctWeekendStarts ?? null,
+        pooledWeekendN: wrapper.closedSessionReturns?.pooled?.weekendReturnDistribution?.n ?? null,
+        route: null
+      };
+    }
+    return { blocks: [], reason: `no verified 7x24 instrument with a measured weekend return layer for ${symbol} on either venue` };
+  };
   const t0 = Date.now();
   const engine = createEngine(dataset, { k: DEFAULT_K, horizon: DEFAULT_HORIZON });
 
@@ -490,7 +528,7 @@ export function createDesk({ dataset, validationResults = null, provenance = {},
       const { H, K } = req;
       const t0 = Date.now();
       const base = engine.query({ sym: symbol, date, horizon: H, k: K });
-      const stress = includeStress ? stressReport(engine, { sym: symbol, date, horizon: H, k: K, scenarios: scenarios || SCENARIOS }) : null;
+      const stress = includeStress ? stressReport(engine, { sym: symbol, date, horizon: H, k: K, scenarios: scenarios || SCENARIOS, venue: venueForStress(symbol) }) : null;
 
       const prov = {
         ...provenance,

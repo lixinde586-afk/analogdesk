@@ -37,6 +37,42 @@ Consequence: **the analog median is a conservative anchor, not an expectation**,
 conformal multiplier is 1.310 rather than the Gaussian 80% value of 1.282. Any UI copy that reads the median
 as "the expected outcome" is wrong.
 
+### 2.1 The breach probabilities: better than the benchmarks at ranking, biased in level
+
+The PIT failure above is about the endpoint interval. The path-risk probability printed on every card — the
+share of retrieved analogs whose realised excursion breached -L — is scored separately, on the same frozen
+split, in `research/VALIDATION.md` §5.1. Predicted and realised are the same quantity by construction: both
+are a raw intraday low over the raw close of the decision session, so this is a calibration test rather than a
+comparison of two different definitions. Two properties pull in opposite directions.
+
+**It discriminates, and it beats three frozen benchmarks at it.** At -10% over 2698 test queries, AUC is
+**0.811** for the analog excursion share, **0.801** for the reflection principle `2*Phi(-L / (sigma60*sqrt H))`
+on the instrument's own trailing 60-session volatility, **0.722** for that instrument's own frozen
+calibration-era breach rate and **0.500** for one library-wide rate — the last two are constants per symbol and
+per library, so they cannot rank anything at all. On paired Brier score the analog share beats all three at
+-5% and at -10% with date-cluster bootstrap intervals that exclude zero: **-0.0115** [-0.0208, -0.0023] and
+**-0.0045** [-0.0071, -0.0022] against the reflection principle, **-0.0089** [-0.0149, -0.0022] and **-0.0045**
+[-0.0059, -0.0029] against the same-name rate, **-0.0131** [-0.0183, -0.0075] and **-0.0014** [-0.0023,
+-0.0005] against the pooled rate. At -20% the comparison against the reflection principle is **not resolved**
+([-0.0004, +0.0001], 88% of resamples), because only 0.1% of paths breached at all; that is reported as
+unresolved rather than claimed as a win.
+
+**Its level is biased, conservatively, and the bias is not uniform.** Mean predicted breach at -10% is **3.4%**
+against **2.0%** realised, a gap of **+1.4 pp** with a clustered SE of 0.48 pp; at -5%, **15.9%** against
+**13.1%** (+2.83 pp, SE 1.65). Every reliability bin over-states, and by different amounts. This is the same
+artefact as the PIT rejection: matching on a stressed-looking state retrieves episodes that were followed by
+more stress than the query turned out to have. The consequence is concrete and unfavourable — a trader who
+reads "P(10% drawdown) = 34%" as a frequency will over-estimate how often the stop is hit — and because the
+bias differs by bin it cannot be removed with a single multiplier without re-fitting on the test era, which
+this repo does not do.
+
+**The effective sample behind every interval is 38, not 2698.** All 71 instruments queried on one session
+share one market shock, so every standard error here is clustered by query date and 38 sessions is the sample
+size that matters. AUC is a pooled point estimate with no clustered interval behind it, so a small AUC gap
+(0.811 against 0.801) is noise; the paired Brier intervals are the comparisons that carry weight. The honest
+use of the number is comparative — which of two ideas carries more path risk, and which regimes carry more —
+not a probability to size from.
+
 ## 3. There is no alpha here
 
 Directional hit rate of the analog median: **50.1%**. A coin toss. This is the expected result for
@@ -99,6 +135,32 @@ The library starts 2016-09-20. **2008 and 2000 are not retrievable at all.** The
 the library are 2020-02-21..2020-03-20 (**-31%**), 2018-12-03..2019-01-03 (-12%), 2022-09-12..2022-10-10
 (-12%), 2025-03-07..2025-04-04 (-12%). A desk that cannot retrieve the global financial crisis will
 understate worst-case paths for any instrument whose tail behaviour is shaped by credit contagion.
+
+### 8.1 The fourteenth scenario is a measured overlay, and its sample is the weakest in the suite
+
+`weekend-hold-7x24` is neither a window nor a shock. It composes every retrieved analog path with the measured
+closed-market weekend blocks of the verified 7x24 instrument for that symbol — Bitget RWA perpetual first,
+Gate.io spot wrapper second — block first, then the analog's own path compounded onto the block's exit level.
+The composition itself is exact arithmetic (`worst point = min(block low, (1 + block return) x (1 + analog
+excursion) - 1)`), so no distributional assumption is added at that step. Three limits are added instead.
+
+- **The sample is a handful of weekends.** The Bitget layer's 233 pooled blocks are 39 instruments landing on
+  the *same* **6 distinct weekend starts** (5 for MRK, whose hourly window has a gap); the Gate.io layer's 136
+  blocks are 34 wrappers over **4**. The scenario uses one instrument's own blocks — 4 to 6 of them — so the
+  distinct-weekend count, not the block count, is the effective sample, and it is printed beside every figure
+  the scenario produces. Blocks from different instruments in the same weekend are not independent draws and
+  are never treated as such.
+- **The pairing is a convention, not a joint distribution.** Analog *i* is paired with block *i mod B*:
+  deterministic, reproducible, disclosed. It is not a model of which weekend would have followed which
+  historical episode. The scenario answers "what does this path look like with a measured closed-market
+  weekend spliced in front of it", never "what is the joint law of analog outcomes and weekend returns".
+- **Coverage is 49 of 71 symbols.** 39 resolve to a Bitget perpetual, 10 more to a Gate.io wrapper, and **22**
+  have no verified instrument on either venue (META, AMD, INTC, QCOM, MS, WFC, BLK, C, PFE, TMO, SLB, DIS, RTX,
+  BIDU, LI, DIA, XLF, XLI, UUP, VIXY, FXI, EEM). For those the scenario is skipped with the reason printed in
+  the card, the UI table and the run record — a disclosed gap, not a silent zero and not an invented block.
+- **A perpetual is not a spot token.** Where the primary venue resolves, the blocks are perpetual returns and
+  carry funding and a basis that a redeemable spot wrapper does not. The instrument class is printed with the
+  figure everywhere it appears, and the cross-venue table in §9 is the evidence about how much that matters.
 
 ## 9. The 7x24 thesis: measured on two venues, Bitget's own first; the outcome distribution is still 5x24
 
@@ -255,6 +317,12 @@ venue is primary on that build, naming the instrument and its class (`AAPL/USDT,
 a perpetual is never described as a spot wrapper. `npm run check:bitget7x24` asserts that the caveat names the
 primary venue's instrument class.
 
+There is now a **second** consumer, and outside the measurement itself it is the only one: the
+`weekend-hold-7x24` stress overlay (§8.1) composes the retrieved paths with these measured closed-market
+blocks, and prints the instrument, its class, the block count and the distinct-weekend count beside the result.
+Retrieval, the conformal scale and every validation figure still use none of it, and `npm run check:bitget7x24`
+still asserts that byte-for-byte.
+
 ## 10. No costs, no execution, no P&L
 
 No strategy is run, no position is taken, no Sharpe is claimed, so there is no backtest return series to
@@ -352,7 +420,9 @@ plainly: the route is part of every Bitget figure in this project, so a reviewer
 direct result and the disclosure that goes with it; the analog library, the retrieval features and every
 validation number still come from the keyless non-Bitget sources in `DATA-PROVENANCE.md`; and the one place
 Bitget data **is** consumed is the 7x24 instrument layer (§9), where it is the primary venue, is labelled with
-its instrument class and its route everywhere it is rendered, and is gated by `npm run check:bitget7x24`. The
+its instrument class and its route everywhere it is rendered, and is gated by `npm run check:bitget7x24`. That
+layer in turn feeds exactly one stress scenario — the 7x24 venue overlay, §8.1 — and no retrieval, conformal or
+validation figure. The
 connector (`src/data/bitget.mjs`) is implemented, probes at start-up, classifies
 transport errors precisely by walking the `cause` chain, and renders the degradation in the provenance panel
 of every card and in `demo/RUN-RECORD.md` §8. Where a run has no direct network egress and can only report a
@@ -375,7 +445,7 @@ measured without a credential ever leaving the probe, and `data-cache/network-pr
 ## 13. The LLM layer verifies numbers, not interpretation
 
 The numeric gate traces every numeral in the generated narrative back to the engine payload (last demo run
-**168/168**; gate smoke **144/144** renders). It cannot verify an adjective. A live `qwen3.8-max` generation can
+**173/173**; gate smoke **144/144** renders). It cannot verify an adjective. A live `qwen3.8-max` generation can
 still frame a conservative median as an expectation or call a 26-analog scenario "robust" while every number
 in the sentence is correct. Mitigations: the template renderer is deterministic and is the reference copy;
 the card always states which mode produced the text; the verdict and caveats panels are engine-rendered, not
@@ -398,12 +468,13 @@ without a key or a network — reproducible and complete — but it is not a liv
 
 ## 15. Latency depends on the harness
 
-Mean **8.5 ms** per query measured across the 2698-query validation sweep (warm, amortised); **14.7 ms** mean
-/ 13.7 ms median / 15.4 ms p95 in the dedicated 108-query latency harness; **31 ms** for the single cold
+Mean **9.0 ms** per query measured across the 2698-query validation sweep (warm, amortised); **14.4 ms** mean
+/ 13.5 ms median / 15.1 ms p95 in the dedicated 108-query latency harness; **39 ms** for the single cold
 retrieval in the demo run record (a single cold call on a loaded laptop moves by tens of milliseconds, which
-is exactly why the amortised sweep figure is the one worth quoting). Full engine build 613-637 ms across runs
-on this machine, full research card 163 ms, full 13-scenario stress report ~191 ms, peak RSS 364 MB. The
-honest summary is "tens of milliseconds per retrieval, sub-second for a full card".
+is exactly why the amortised sweep figure is the one worth quoting). Full engine build 506-711 ms depending on
+the harness on this machine (in-browser 506 ms, node demo 593 ms, validation harness 711 ms), full research
+card including the 14-scenario stress suite 202-246 ms in node and 155-230 ms in the browser, peak RSS 374 MB.
+The honest summary is "tens of milliseconds per retrieval, sub-second for a full card".
 Retrieval is an exact scan over ~178k library rows x 25 features with no ANN index; at this size an exact
 scan beats building an index. That stops being true past roughly 10^6 rows.
 

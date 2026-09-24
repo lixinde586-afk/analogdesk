@@ -181,6 +181,19 @@ if (AD) {
     const gate = AD.verify.verifyNumbers(tmpl.text, allow);
     const line = `${sym.padEnd(5)} H=${String(H).padEnd(3)} analyze=${String(Date.now() - t2).padStart(4)}ms n=${card.distribution.n} median=${card.distribution.medianPct}% conf=${card.conformal.lowerPct}..${card.conformal.upperPct} scen=${card.stress.length} gate=${gate.ok}(${gate.unsupportedCount}/${gate.total})`;
     assert(gate.ok && card.distribution.n > 0, "  " + line, "  " + line);
+    const ven = (card.stress || []).find((x) => x.id === "weekend-hold-7x24");
+    assert(!!ven, `  ${sym.padEnd(5)} the 7x24 venue overlay is in the suite the static build serves`, `  ${sym} card has no weekend-hold-7x24 scenario`);
+    if (ven) {
+      const vm = ven.venueMeta;
+      const usable = vm && vm.blocksUsed > 0 && vm.distinctWeekendStarts > 0 && vm.distinctWeekendStarts <= vm.blocksUsed && typeof vm.instrument === "string" && vm.instrument.length > 0;
+      assert(usable || (typeof ven.skipped === "string" && ven.skipped.length > 10),
+        `  ${sym.padEnd(5)} venue overlay ${usable ? `composed with ${vm.blocksUsed} measured block(s) of ${vm.instrument} over ${vm.distinctWeekendStarts} distinct weekend(s) on ${vm.venue}` : `skipped, with the reason printed: ${String(ven.skipped).slice(0, 64)}`}`,
+        `  ${sym} venue overlay carries neither usable venueMeta nor a skipped reason: ${JSON.stringify(vm)}`);
+    }
+    const prk = card.validation?.pathRisk;
+    assert(prk && Number.isFinite(prk.brier?.analogMae) && prk.reliability?.length > 0 && Number.isFinite(prk.pairedBrierVs?.volReflection?.ci95Low),
+      `  ${sym.padEnd(5)} path-risk probabilities scored out of sample on the card (Brier ${prk?.brier?.analogMae}, AUC ${prk?.auc?.analogMae}, ${prk?.reliability?.length} reliability bins, paired CI vs the volatility benchmark present)`,
+      `  ${sym} card carries no usable pathRisk validation block: ${JSON.stringify(prk && Object.keys(prk))}`);
     const w = card.wrapper;
     assert(!!w && typeof w.status === "string" && w.referenceMarket?.closedSharePct != null,
       `  ${sym.padEnd(5)} wrapper block present (status ${w?.status}, reference market closed ${w?.referenceMarket?.closedSharePct}%)`,

@@ -142,7 +142,7 @@ try {
   const stSc = sc(st);
   assert(!st.result.isError, "stress call succeeded", "stress error: " + fmt(stText));
   const scen = (stSc && stSc.scenarios) || [];
-  assert(scen.length === 13, scen.length + " scenarios returned", "scenario count: " + scen.length);
+  assert(scen.length === 14, scen.length + " scenarios returned", "scenario count: " + scen.length);
   assert(/AnalogDesk stress suite/.test(stText), "the stress text is headed", "stress head missing");
   assert(/CAVEATS/.test(stText), "every scenario caveat is printed", "caveats missing");
   const ran = scen.filter((s) => !s.skipped).length;

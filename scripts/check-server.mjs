@@ -83,13 +83,17 @@ try {
 
   console.log("\n=== stress scenarios, provenance and the frozen validation ===");
   const sc = await get("/api/scenarios");
-  assert(sc.status === 200 && Array.isArray(sc.json.scenarios) && sc.json.scenarios.length === 13,
-    "GET /api/scenarios lists the 13 stress scenarios", "scenarios: " + fmt(sc.json.scenarios && sc.json.scenarios.length));
+  assert(sc.status === 200 && Array.isArray(sc.json.scenarios) && sc.json.scenarios.length === 14,
+    "GET /api/scenarios lists the 14 stress scenarios", "scenarios: " + fmt(sc.json.scenarios && sc.json.scenarios.length));
   assert((sc.json.scenarios || []).every((s) => s && s.why && s.caveat),
     "every scenario ships its own why and caveat, so the suite cannot be rendered without them", "a scenario is missing why/caveat");
-  assert(String([...new Set((sc.json.scenarios || []).map((s) => s.kind))].sort()) === "shock,window",
-    "scenario kinds are exactly the two documented lenses (shock, window)",
+  assert(String([...new Set((sc.json.scenarios || []).map((s) => s.kind))].sort()) === "shock,venue,window",
+    "scenario kinds are exactly the three documented lenses (shock, venue, window)",
     "kinds: " + fmt([...new Set((sc.json.scenarios || []).map((s) => s.kind))]));
+  const ven = (sc.json.scenarios || []).find((s) => s.id === "weekend-hold-7x24");
+  assert(!!ven && ven.kind === "venue" && /weekend/i.test(String(ven.label)),
+    "the 7x24 venue overlay is listed as a scenario in its own right, not folded into a shock",
+    "weekend-hold-7x24: " + fmt(ven && { id: ven.id, kind: ven.kind, label: ven.label }));
 
   const pv = await get("/api/provenance");
   const pvBg = pv.json.provenance.bitget;
@@ -118,6 +122,12 @@ try {
     "summary keys: " + fmt(Object.keys(s5)));
   assert(typeof s5.honestVerdict === "string" && s5.honestVerdict.length > 20,
     "the summary carries the engine's own verdict instead of leaving the reader to infer one", "honestVerdict: " + fmt(s5.honestVerdict));
+  assert(s5.pathRisk && Number.isFinite(s5.pathRisk.brier?.analogMae) && Array.isArray(s5.pathRisk.reliability) && s5.pathRisk.reliability.length > 0,
+    "the frozen summary scores the breach probabilities the card prints: Brier, AUC and a reliability table, out of sample",
+    "pathRisk: " + fmt(s5.pathRisk && Object.keys(s5.pathRisk)));
+  assert(Number.isFinite(s5.pathRisk?.pairedBrierVs?.volReflection?.ci95Low) && Number.isFinite(s5.pathRisk?.pairedBrierVs?.volReflection?.ci95High),
+    "that comparison ships a date-clustered interval against the closed-form benchmark, not a point estimate beside a point estimate",
+    "pairedBrierVs: " + fmt(s5.pathRisk && s5.pathRisk.pairedBrierVs));
 
   console.log("\n=== the sentence-driven analyze call: one parser, three doors ===");
   const zh = await get("/api/analyze?question=" + encodeURIComponent("\u82f1\u4f1f\u8fbe \u672a\u6765 5 \u4e2a\u4ea4\u6613\u65e5\uff0c\u6211\u80fd\u627f\u53d7 10% \u7684\u56de\u64a4\u5417\uff1f") + "&stress=0");

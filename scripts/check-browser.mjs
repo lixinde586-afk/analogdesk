@@ -329,6 +329,21 @@ function checkResults(out) {
   assert(countOf(stress, /data-id=/g) >= 8,
     "stress table has " + countOf(stress, /data-id=/g) + " scenario rows",
     "stress table has only " + countOf(stress, /data-id=/g) + " rows");
+  /*
+   * Two guards against the quietest failure this page has had: a field-name mismatch between the card
+   * and a renderer, which does not throw and does not print "undefined" - it prints the placeholder
+   * dash, so a whole column of the stress table looked intentional while carrying no number at all
+   * ("held within 10% dd" read card.stress[].heldWithin10PctDrawdown while the card emits
+   * heldWithin10PctDrawdownPct, and the conformal panel's "analog median / sd" row read fields the
+   * LLM card never carried). A dash next to a unit sign is that signature; so is a dash inside a
+   * numeric table cell. Neither is ever a legitimate render.
+   */
+  const dashUnit = out.match(/.{0,90}\u2013%.{0,40}/);
+  assert(!dashUnit, "no placeholder-with-unit anywhere on the page",
+    "a null number was rendered next to a unit: " + (dashUnit ? dashUnit[0].replace(/\s+/g, " ") : ""));
+  const dashCells = stress.match(/<td class="num">[^<]*\u2013[^<]*<\/td>/g) || [];
+  assert(dashCells.length === 0, "every numeric cell in the stress table is populated",
+    dashCells.length + " stress cell(s) rendered a placeholder: " + dashCells.slice(0, 3).join(" "));
   const prov = between(out, '<div id="validation">', "</div>") || "";
   assert(prov.length > 100, "validation panel rendered (" + prov.length + " chars)", "validation panel empty");
   assert((between(out, '<div id="hist">', "</div>") || "").includes("<svg"),

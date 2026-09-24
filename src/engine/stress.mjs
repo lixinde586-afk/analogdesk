@@ -100,6 +100,12 @@ export const SCENARIOS = [
     shock: { z: { relBench20: -1.5, usdChg20: 1, mktRet20: -0.5 } }, tags: ["china", "fx", "policy"],
     why: "Sustained underperformance versus SPY with a firmer dollar: the historical signature of a China-equity policy or capital-flow shock, which is the dominant risk for the ADR sleeve.",
     caveat: "Delisting and audit-access risks are structural and will not appear in a price/vol feature space at all."
+  },
+  {
+    id: "weekend-hold-7x24", label: "Weekend hold on the 7x24 venue", kind: "venue",
+    tags: ["7x24", "venue", "path"],
+    why: "The reference cash market is closed for most of the week while the tokenised instrument keeps trading. This composes every analog's realised session path with the measured closed-market weekend blocks of the verified instrument for this symbol - primary venue Bitget RWA perpetual, else the Gate.io spot wrapper - block first, so the answer carries the path risk of the hours the reference market cannot price.",
+    caveat: "Blocks are paired to analogs by index modulo the block count: a deterministic convention, not a joint distribution. The measured window holds only a handful of distinct weekends, so blocks are cross-correlated and the distinct-weekend count is the honest bound. A perpetual carries funding and basis a spot token does not; the instrument class is printed with every figure."
   }
 ];
 
@@ -170,10 +176,38 @@ export function tailProfile(analogs, H) {
 }
 
 /**
+ * Compose each analog's realised session path with a measured closed-market weekend block, block
+ * first. Concatenation makes the combined path exact rather than approximated: the level after the
+ * block is (1 + block return), so the analog's own drawdown multiplies onto it, and the worst point
+ * of the whole path is the worse of the block's own low and that compounded analog low.
+ * Pairing is index modulo the block count - a disclosed convention, not a joint model.
+ */
+export function composeVenuePath(analogs, blocks, H) {
+  const out = [];
+  let i = 0;
+  for (const a of analogs) {
+    const f = a.fwd?.[H];
+    if (f == null || !Number.isFinite(f) || a.mae == null || !Number.isFinite(a.mae)) { i++; continue; }
+    const b = blocks[i % blocks.length];
+    i++;
+    if (!b || !Number.isFinite(b.returnPct) || !Number.isFinite(b.maePct)) continue;
+    const level = 1 + b.returnPct / 100;
+    out.push({
+      sym: a.sym, idx: a.idx,
+      block: { startIso: b.startIso, endIso: b.endIso, hours: b.hours, kind: b.kind },
+      fwd: { [H]: level * (1 + f) - 1 },
+      mae: Math.min(b.maePct / 100, level * (1 + a.mae) - 1),
+      mfe: Math.max((b.mfePct ?? 0) / 100, level * (1 + (a.mfe ?? 0)) - 1)
+    });
+  }
+  return out;
+}
+
+/**
  * Run one scenario against one idea.
  * @returns {{scenario:object, result:object|null, skipped:string|null, tail:object|null, fan:Array|null}}
  */
-export function runScenario(engine, { sym, date = "latest", horizon, k, scenario }) {
+export function runScenario(engine, { sym, date = "latest", horizon, k, scenario, venue = null }) {
   const sc = typeof scenario === "string" ? byId(scenario) : scenario;
   if (!sc) throw new Error(`unknown scenario: ${scenario}`);
   const H = horizon ?? engine.C.horizon;
@@ -187,6 +221,16 @@ export function runScenario(engine, { sym, date = "latest", horizon, k, scenario
     opts.restrict = { from: sc.from, to: sc.to };
   } else if (sc.kind === "shock") {
     opts.shock = sc.shock;
+  } else if (sc.kind === "venue") {
+    if (!venue || !Array.isArray(venue.blocks) || !venue.blocks.length) {
+      return { scenario: sc, result: null, skipped: venue?.reason || "no verified 7x24 instrument with a measured weekend return layer for this symbol on either venue", tail: null, fan: null, venue: null };
+    }
+    const base = engine.query({ sym, date, horizon: H, k });
+    const composed = composeVenuePath(base.analogs, venue.blocks, H);
+    if (!composed.length) {
+      return { scenario: sc, result: null, skipped: "no analog with a completed outcome at this horizon to compose with a closed-market block", tail: null, fan: null, venue: null };
+    }
+    return { scenario: sc, result: { analogs: composed, query: base.query, config: base.config }, skipped: null, tail: tailProfile(composed, H), fan: null, venue };
   } else {
     throw new Error(`scenario kind not supported: ${sc.kind}`);
   }
@@ -197,14 +241,14 @@ export function runScenario(engine, { sym, date = "latest", horizon, k, scenario
 }
 
 /** Baseline (no scenario) plus every scenario, in one payload the UI and the LLM can share. */
-export function stressReport(engine, { sym, date = "latest", horizon, k, scenarios = SCENARIOS }) {
+export function stressReport(engine, { sym, date = "latest", horizon, k, scenarios = SCENARIOS, venue = null }) {
   const H = horizon ?? engine.C.horizon;
   const baseline = engine.query({ sym, date, horizon: H, k });
   const baseDist = summarize(baseline.analogs.map((a) => a.fwd?.[H]).filter((x) => x != null), {});
   const baseMedianPct = pct(baseDist.median);
   const runs = [];
   for (const sc of scenarios) {
-    const r = runScenario(engine, { sym, date, horizon: H, k, scenario: sc });
+    const r = runScenario(engine, { sym, date, horizon: H, k, scenario: sc, venue });
     const dist = r.result ? summarize(r.result.analogs.map((a) => a.fwd?.[H]).filter((x) => x != null), {}) : null;
     runs.push({
       id: sc.id, label: sc.label, kind: sc.kind, tags: sc.tags || [], why: sc.why, caveat: sc.caveat,
@@ -215,6 +259,14 @@ export function stressReport(engine, { sym, date = "latest", horizon, k, scenari
       breach10Pct: r.tail ? (r.tail.breaches.find((b) => b.drawdown === 0.10)?.p ?? null) : null,
       holdableWithin10pct: r.tail?.holdableWithin10pct ?? null,
       deltaMedianPct: dist ? pct(dist.median) - baseMedianPct : null,
+      venueMeta: r.venue ? {
+        venue: r.venue.venue, venueName: r.venue.venueName, instrument: r.venue.instrument,
+        instrumentClass: r.venue.instrumentClass, blocksUsed: r.venue.blocks.length,
+        distinctWeekendStarts: r.venue.distinctWeekendStarts ?? null,
+        venueDistinctWeekendStarts: r.venue.venueDistinctWeekendStarts ?? null,
+        pooledWeekendN: r.venue.pooledWeekendN ?? null,
+        route: r.venue.route ?? null
+      } : null,
       fan: r.fan, tail: r.tail, result: r.result
     });
   }

@@ -77,17 +77,17 @@ serves both the keyed server and the keyless browser bundle.
 npm run demo
 ```
 
-writes three artefacts for one full research task (NVDA, latest session, H = 5 sessions, all 13 stress
+writes three artefacts for one full research task (NVDA, latest session, H = 5 sessions, all 14 stress
 scenarios):
 
 | File | What it is |
 |---|---|
-| `demo/RUN-RECORD.md` | The human-readable record: task -> protocol -> distribution -> 13 stress scenarios -> 50 retrieved analogs -> narrative -> engine validation -> data provenance -> reproduction command |
+| `demo/RUN-RECORD.md` | The human-readable record: task -> protocol -> distribution -> 14 stress scenarios -> 50 retrieved analogs -> narrative -> engine validation -> data provenance -> reproduction command |
 | `demo/run-record.json` | The same run as machine-readable JSON (full card, full analog list, gate report, timings) |
 | `demo/narrative.txt` | The narrative layer text only |
 
 Every numeral in the narrative passes a **verification gate**: the renderer extracts each number and traces it
-back to the engine payload. The last demo run passed **168/168**. A number the engine did not produce cannot
+back to the engine payload. The last demo run passed **173/173**. A number the engine did not produce cannot
 be printed.
 
 ---
@@ -221,7 +221,8 @@ plain-language idea  ->  LUI parser (zh + en, alias table)
                      ->  realised forward returns on the ADJUSTED close (embargoed)
                      ->  distribution + path risk (MAE / MFE / drawdown breach) on RAW session OHLC
                      ->  frozen conformal multiplier -> calibrated interval
-                     ->  13 stress scenarios (6 named crisis windows + 7 shock overlays)
+                     ->  14 stress scenarios (6 named crisis windows + 7 shock overlays
+                                                + 1 measured 7x24 venue overlay)
                      ->  narrative layer (qwen3.8-max | replay cache | template) + numeric gate
                      ->  research card, charts, provenance panel
 ```
@@ -276,7 +277,21 @@ Fitted analog multiplier **1.310** (calibration era, frozen).
 **What the engine is good at.** It hits its coverage target out of sample (80.8% vs 80.0%), and it keeps
 hitting it as the horizon lengthens — at H = 20 the analog interval covers 87.4% while the same-name
 unconditional band collapses to 76.6%. Its width tracks each instrument's own realised volatility
-(correlation 0.960). Retrieval costs **8.5 ms** per query averaged over the 2698-query validation sweep (**14.7 ms** in a dedicated 108-query cold harness; see `research/LIMITATIONS.md` §15).
+(correlation 0.960). Retrieval costs **9.0 ms** per query averaged over the 2698-query validation sweep (**14.4 ms** in a dedicated 108-query cold harness; see `research/LIMITATIONS.md` §15).
+
+**The path-risk probabilities are scored the same way.** The stress table prints a probability that the path
+breaches a drawdown level *at some point inside* the horizon, and an endpoint interval can be calibrated while
+the path statistic built from the same analogs is not — so it is tested separately, on the same frozen split
+(2698 queries, but only **38 distinct sessions**, and every standard error here is clustered by query date).
+At the -10% level the analog excursion share scores Brier **0.0196** against **0.0241** for the reflection
+principle `2*Phi(-L / (sigma60 * sqrt H))`, **0.0240** for the same instrument's own frozen calibration-era
+rate and **0.0210** for one library-wide rate, and ranks breached paths above held ones at AUC **0.811**. On
+the paired date-cluster bootstrap the analog share wins with intervals excluding zero at -5%
+(-0.0115, CI -0.0208 to -0.0023) and at -10% (-0.0045, CI -0.0071 to -0.0022), and is **not** separated from
+the volatility benchmark at -20%, where only a handful of paths breached at all. Its *level* is biased
+conservative: it predicts **3.4%** breaches against **2.0%** realised, +1.4 pp with a clustered SE of 0.48 pp —
+the same direction as the PIT rejection below. Read it to compare two ideas and to see which regimes carry
+path risk, not to size from. Tables for all three levels and all six horizons: `research/VALIDATION.md` §5.1.
 
 **What it is not good at.** At matched coverage it is **7.6% wider** than a band that only knows the symbol's
 own history. Matched-coverage gain is negative at every measured horizon (H = 1 / 5 / 10 / 20 / 40 / 60:
@@ -474,6 +489,16 @@ It is a **measurement of the instrument layer, not a new price source**: nothing
 scale or any validation figure uses it, so adding a venue cannot move a number a reviewer has already read —
 and `check:bitget7x24` asserts that directly, by requiring a card's retrieval, conformal, excursion and
 validation blocks to be byte-identical with and without the Bitget payload loaded.
+
+**One stress scenario does consume it, and says so.** `weekend-hold-7x24`, the fourteenth scenario, composes
+every retrieved analog path with the measured closed-market weekend blocks of the verified instrument for that
+symbol — Bitget RWA perpetual first, Gate.io spot wrapper second — block first, then the analog's own path
+compounded onto the block's exit level, so the composed drawdown is exact arithmetic
+(`min(block low, (1 + block return) x (1 + analog excursion) - 1)`) rather than a model. Each row prints the
+instrument, its class, the venue and route, the block count and the **distinct-weekend** count behind it; for
+the 22 symbols with no verified instrument on either venue the scenario is skipped with the reason printed
+instead of being dropped or estimated. Blocks are paired to analogs by index modulo the block count, a
+disclosed convention and not a joint distribution.
 The limits — a primary venue that needs a local proxy and degrades to a disclosure without one, a perpetual
 that is not a redeemable spot token, a conservative closed-hours convention that biases the movement share
 *downward*, 22 instruments with no verified instrument on either venue, two calm-market snapshots taken about
@@ -516,8 +541,8 @@ demo/                      RUN-RECORD.md, run-record.json, narrative.txt
 
 AnalogDesk 是一台**决策压力测试台**：你用一句自然语言说出交易想法（中英皆可，如「英伟达财报前五天会不会被砸」），
 它从 2016 年以来 2513 个交易日、71 个标的中检索出**市场状态最像当下**的 50 个历史片段，展示这些片段之后
-5/10/20/40/60 个交易日**真实发生**的收益分布与路径风险（最大不利偏移、回撤击穿概率），再用 6 个命名危机窗口
-和 7 个冲击叠加做压力测试，最后由 LLM 写成研究卡。**每一个数字都必须能追溯到引擎输出**，通不过校验就不渲染。
+5/10/20/40/60 个交易日**真实发生**的收益分布与路径风险（最大不利偏移、回撤击穿概率），再用 6 个命名危机窗口、7 个冲击叠加
+和 1 个**实测的 7x24 场地叠加**做压力测试，最后由 LLM 写成研究卡。**每一个数字都必须能追溯到引擎输出**，通不过校验就不渲染。
 
 - 零依赖、零密钥即可运行：打开 `dist/index.html`，或 `npm start` 后访问 `http://127.0.0.1:3000`。
 - 可选填 `LLM_API_KEY` 启用实时叙述。已提交的回放缓存是用黑客松网关 `https://hackathon.bitgetops.com/v1`

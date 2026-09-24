@@ -215,6 +215,29 @@ function wrapperZh(w) {
 }
 /* --------------------------------- English -------------------------------- */
 
+/**
+ * The paired Brier difference against the closed-form volatility benchmark, phrased so the interval
+ * rather than the point estimate carries the claim. deltaBrier is analog minus benchmark, so an
+ * interval entirely below zero is a win for the analog share and one entirely above zero is a loss.
+ */
+function pairEn(pr) {
+  const d = pr?.pairedBrierVs?.volReflection;
+  if (!d) return "";
+  const verdict = d.ci95High < 0
+    ? "the analog excursion share is the better probability here, and it is the date-clustered interval saying so rather than the point estimate alone"
+    : (d.ci95Low > 0 ? "the volatility benchmark is the better probability on this sample" : "this sample does not separate the two");
+  return `On the paired difference against that volatility benchmark: ${s(d.deltaBrier)}, date-clustered 95% interval ${s(d.ci95Low)} to ${s(d.ci95High)}, so ${verdict}; ${pc(d.shareAnalogBetterPct)} of bootstrap resamples favoured the analog share.`;
+}
+
+function pairZh(pr) {
+  const d = pr?.pairedBrierVs?.volReflection;
+  if (!d) return "";
+  const verdict = d.ci95High < 0
+    ? "类比偏移份额是更好的那个概率——做出这个判断的是按交易日聚类的区间，而不只是点估计"
+    : (d.ci95Low > 0 ? "在这个样本上，波动率基准是更好的概率" : "这个样本不足以把两者分开");
+  return `与波动率基准的配对 Brier 差为 ${s(d.deltaBrier)}，按交易日聚类的 95% 区间为 ${s(d.ci95Low)} 至 ${s(d.ci95High)}，${verdict}；自助重抽样中有 ${pc(d.shareAnalogBetterPct)} 支持类比份额。`;
+}
+
 function renderEn(card) {
   const i = card.idea, r = card.retrieval, d = card.distribution, e = card.excursion, c = card.conformal;
   const v = card.validation, p = card.provenance || {};
@@ -263,13 +286,30 @@ function renderEn(card) {
     worst.length ? `The scenarios that worsen the picture most, by median forward return: ${list(worst.map((x) => `${x.label} at ${pc(x.medianForwardPct)} (${x.analogsUsed} analogs, delta versus baseline ${pc(x.deltaMedianVsBaselinePct)})`))}.` : null,
     worst.length ? `On path risk the same ordering mostly holds: ${list(worst.map((x) => `${x.label} median adverse excursion ${pc(x.maxAdverseMedianPct)}, probability of a 10% intra-horizon drawdown ${pc(x.probabilityOfBreaching10PctDrawdown)}`))}.` : null,
     best.length ? `For contrast, the mildest scenarios were ${list(best.map((x) => `${x.label} at ${pc(x.medianForwardPct)}`))} - which is itself a warning, since a scenario that cannot produce a bad outcome is not stressing anything.` : null,
+    (() => {
+      // The venue overlay is the one scenario that is a measurement rather than a re-retrieval, so the
+      // template names the instrument, the venue and the block count instead of letting a reader assume
+      // the weekend path was simulated. Every numeral here is on the card, so the gate can trace it.
+      const vs = st.find((x) => x.id === "weekend-hold-7x24");
+      if (!vs) return null;
+      if (vs.skipped) return `The 7x24 venue overlay was skipped on this query: ${vs.skipped}.`;
+      const vm = vs.venueMeta;
+      if (!vm) return null;
+      return `One scenario in the suite is not a re-retrieval but a composition with a measurement: ${vs.label} splices each retrieved path with ${n0(vm.blocksUsed)} closed-market weekend block(s) of ${vm.instrument} - ${vm.instrumentClass} on ${vm.venueName} - covering ${n0(vm.distinctWeekendStarts)} distinct weekend start(s), block first and then the analog's own path compounded onto it, so the arithmetic is exact rather than modelled. It lands at ${pc(vs.medianForwardPct)} median forward (${pc(vs.deltaMedianVsBaselinePct)} against the baseline) with a median adverse excursion of ${pc(vs.maxAdverseMedianPct)}.`;
+    })(),
     ...worst.slice(0, 3).map((x) => `Caveat carried from the engine for ${x.label}: ${x.caveat}`),
     skipped.length ? `Skipped, with reason: ${list(skipped.map((x) => `${x.label} (${x.skipped})`))}. A skipped scenario is reported rather than silently dropped, because a stress suite that hides its own gaps is worse than no suite.` : null
   ].filter(Boolean).join("\n\n") : "No scenarios were run for this query.";
 
+  O.reasoning = st.length ? [
+    `Which scenarios matter for this idea: model reasoning is not available in TEMPLATE mode, and no heuristic ranking is substituted for it. The engine's own ordering is the delta-versus-baseline column above: ${worst.length ? list(worst.slice(0, 3).map((x) => x.label)) : "none computed"}.`,
+    `The concentration a reader should distrust is named in the Why-these-analogs section; what each stress figure cannot tell you is carried by the scenario's own caveat above.`
+  ].join(" ") : "No scenarios were run for this query.";
+
   O.limits = [
     v ? `Validation, out of sample on ${v.protocol}: the conformal analog interval covered ${pc(v.analog.coveragePct)} of realised outcomes against a ${pc(v.targetCoveragePct)} target (cluster-robust standard error ${s(v.analog.coverageSEPp)} pp), at a mean width of ${pc(v.analog.widthPct)}.` : null,
     v ? `It is not the sharpest interval available. At matched coverage the same-name unconditional band is ${pc(v.benchmarks?.uncondNamePIT?.matchedCoverageWidthPct)} wide against ${pc(v.analog.matchedCoverageWidthPct)} for the analog band, a difference of ${pc(v.matchedCoverageSharpnessVsSameNamePct)}. Per-symbol coverage dispersion is ${s(v.perSymbolCoverageSdPp?.analogConformal)} pp for the analog band, ${s(v.perSymbolCoverageSdPp?.uncondNamePIT)} pp for the same-name band and ${s(v.perSymbolCoverageSdPp?.pooledUncond)} pp for the pooled band.` : null,
+    v?.pathRisk ? `The path-risk probabilities above are scored out of sample as well, on the same frozen split and at the ${s(v.pathRisk.levelPct)}% drawdown level: across ${n0(v.pathRisk.testQueries)} test queries on ${n0(v.pathRisk.dateClusters)} distinct sessions, ${pc(v.pathRisk.realisedBreachPct)} actually breached while the analog excursion share predicted a mean of ${pc(v.pathRisk.meanPredictedPct)}, a calibration gap of ${s(v.pathRisk.calibrationGapPp)} pp with a date-clustered standard error of ${s(v.pathRisk.calibrationGapSEPp)} pp. Brier score, lower is better: ${s(v.pathRisk.brier?.analogMae)} for the analog share against ${s(v.pathRisk.brier?.volReflection)} for the reflection principle on trailing volatility, ${s(v.pathRisk.brier?.sameNameCalib)} for the same instrument's own frozen calibration-era rate and ${s(v.pathRisk.brier?.pooledCalib)} for one library-wide rate; discrimination is AUC ${s(v.pathRisk.auc?.analogMae)} against ${s(v.pathRisk.auc?.volReflection)} and ${s(v.pathRisk.auc?.pooledCalib)} for a constant. ${pairEn(v.pathRisk)} A calibrated breach rate is still not a forecast of this path: it states how often the number was wrong out of sample, measured rather than asserted.` : null,
     v ? `Probability calibration fails a uniformity test: PIT chi-square ${s(v.pitChiSquare)} against a 5% critical value of ${s(v.pitChiSquareCritical5Pct)}. Directional hit rate of the analog median is ${pc(v.directionalHitRatePct)}, i.e. no better than a coin toss, which is the expected result for daily-feature equity prediction and is stated rather than hidden.` : null,
     v?.honestVerdict ? `Engine's own verdict: ${v.honestVerdict}` : null,
     `Retrieval costs ${s(v?.meanRetrievalMs)} ms per query over a library of ${p.sessions} sessions; the full scenario suite is one query per scenario.`,
@@ -331,13 +371,27 @@ function renderZh(card) {
     worst.length ? `按中位前向收益排序，恶化最明显的情景：${list(worst.map((x) => `${x.label}，${pc(x.medianForwardPct)}（${x.analogsUsed} 个类比，相对基线 ${pc(x.deltaMedianVsBaselinePct)}）`), "；")}。` : null,
     worst.length ? `路径风险上的排序大体一致：${list(worst.map((x) => `${x.label} 最大不利偏移中位数 ${pc(x.maxAdverseMedianPct)}，持有期内出现 10% 回撤的概率 ${pc(x.probabilityOfBreaching10PctDrawdown)}`), "；")}。` : null,
     best.length ? `作为对照，最温和的情景是 ${list(best.map((x) => `${x.label}，${pc(x.medianForwardPct)}`), "；")}——这本身就是一个警告：一个无法产生坏结果的情景，等于没有施加任何压力。` : null,
+    (() => {
+      const vs = st.find((x) => x.id === "weekend-hold-7x24");
+      if (!vs) return null;
+      if (vs.skipped) return `7x24 场地叠加情景在本次查询中被跳过：${vs.skipped}。`;
+      const vm = vs.venueMeta;
+      if (!vm) return null;
+      return `套件中有一个情景不是重新检索，而是与一次实测结果的拼接：${vs.label} 把每条检索到的路径与 ${vm.instrument}（${vm.venueName}，${vm.instrumentClass}）的 ${n0(vm.blocksUsed)} 个休市周末区块相接，覆盖 ${n0(vm.distinctWeekendStarts)} 个不同的周末起点——先区块，再把类比自身的路径复利叠加其上，因此这段是精确算术而不是建模。结果中位前向收益 ${pc(vs.medianForwardPct)}（相对基线 ${pc(vs.deltaMedianVsBaselinePct)}），中位最大不利偏移 ${pc(vs.maxAdverseMedianPct)}。`;
+    })(),
     ...worst.slice(0, 3).map((x) => `${x.label} 的引擎内置免责说明：${x.caveat}`),
     skipped.length ? `被跳过的情景及原因：${list(skipped.map((x) => `${x.label}（${x.skipped}）`), "；")}。跳过必须显式披露，因为一个隐藏自身缺口的情景套件比没有套件更危险。` : null
   ].filter(Boolean).join("\n\n") : "本次查询未运行情景。";
 
+  O.reasoning = st.length ? [
+    `哪些情景对这个想法真正重要：TEMPLATE 模式下没有模型推理，也不拿启发式排序冒充它。引擎自身的排序即上文的相对基线列：${worst.length ? list(worst.slice(0, 3).map((x) => x.label), "；") : "无"}。`,
+    `读者最该警惕的集中度已在"为什么是这些类比"一节命名；每个压力数字不能告诉你什么，由该情景自带的免责说明承担。`
+  ].join(" ") : "本次查询未运行情景。";
+
   O.limits = [
     v ? `样本外验证（${v.protocol}）：保形类比区间对已实现结果的覆盖率为 ${pc(v.analog.coveragePct)}，目标 ${pc(v.targetCoveragePct)}（按交易日聚类的稳健标准误 ${s(v.analog.coverageSEPp)} 个百分点），平均宽度 ${pc(v.analog.widthPct)}。` : null,
     v ? `它并不是最锐利的区间。在等覆盖率下，同名无条件区间宽 ${pc(v.benchmarks?.uncondNamePIT?.matchedCoverageWidthPct)}，类比区间宽 ${pc(v.analog.matchedCoverageWidthPct)}，相差 ${pc(v.matchedCoverageSharpnessVsSameNamePct)}。分标的覆盖率离散度：类比 ${s(v.perSymbolCoverageSdPp?.analogConformal)} 个百分点，同名无条件 ${s(v.perSymbolCoverageSdPp?.uncondNamePIT)}，全库混合 ${s(v.perSymbolCoverageSdPp?.pooledUncond)}。` : null,
+    v?.pathRisk ? `上文的路径风险概率同样做了样本外评分，用的是同一次冻结切分、同一个 ${s(v.pathRisk.levelPct)}% 回撤阈值：${n0(v.pathRisk.testQueries)} 个测试查询分布在 ${n0(v.pathRisk.dateClusters)} 个不同交易日上，实际击穿 ${pc(v.pathRisk.realisedBreachPct)}，而类比偏移份额给出的平均预测是 ${pc(v.pathRisk.meanPredictedPct)}，校准偏差 ${s(v.pathRisk.calibrationGapPp)} 个百分点，按交易日聚类的标准误 ${s(v.pathRisk.calibrationGapSEPp)} 个百分点。Brier 分数（越低越好）：类比份额 ${s(v.pathRisk.brier?.analogMae)}，滚动波动率反射原理 ${s(v.pathRisk.brier?.volReflection)}，同名标的自身冻结的校准期击穿率 ${s(v.pathRisk.brier?.sameNameCalib)}，全库单一击穿率 ${s(v.pathRisk.brier?.pooledCalib)}；区分度 AUC 依次为 ${s(v.pathRisk.auc?.analogMae)}、${s(v.pathRisk.auc?.volReflection)}，以及常数基准的 ${s(v.pathRisk.auc?.pooledCalib)}。${pairZh(v.pathRisk)} 校准过的击穿概率仍然不是对这条路径的预测：它说明的是这个数字在样本外错得有多频繁，而且是量出来的，不是宣称的。` : null,
     v ? `概率标定未通过均匀性检验：PIT 卡方 ${s(v.pitChiSquare)}，5% 临界值 ${s(v.pitChiSquareCritical5Pct)}。类比中位数的方向命中率 ${pc(v.directionalHitRatePct)}，与抛硬币无异——这对"日频特征预测股票收益"是应有结果，此处如实写出而非隐去。` : null,
     v?.honestVerdict ? `引擎自评：${v.honestVerdict}` : null,
     `单次检索耗时 ${s(v?.meanRetrievalMs)} 毫秒，情景套件每个情景一次检索。`,

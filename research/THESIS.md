@@ -62,12 +62,16 @@ A **research card**: one page, one trade idea, six parts.
    **adjusted** close, tail statistics and path risk (MAE / MFE / drawdown breach) on **raw** session OHLC.
 4. **Calibrated interval** — median +/- a conformal multiplier fitted on 2019-2022 only and **frozen**,
    reported with its out-of-sample coverage and standard error.
-5. **Stress** — 13 scenarios: 6 named crisis windows drawn from the library's own worst benchmark windows
+5. **Stress** — 14 scenarios: 6 named crisis windows drawn from the library's own worst benchmark windows
    (2020-02/03 liquidity crash, 2018-Q4 tightening scare, 2022 inflation/rate bear, 2023-03 regional bank
    stress, 2024-08-05 carry unwind, 2025-04 tariff shock) plus 7 shock overlays (+2 sigma VIX, policy-rate
    re-pricing, liquidity air pocket, earnings day, FOMC day, crypto drawdown contagion, China ADR
-   de-rating). Each prints how many analogs backed it, so a 26-analog scenario is visibly weaker than a
-   50-analog one.
+   de-rating), plus 1 **venue overlay** that is a measurement rather than a re-retrieval: it composes every
+   retrieved path with the closed-market weekend blocks of the verified 7x24 instrument for that symbol
+   (Bitget RWA perpetual first, Gate.io spot wrapper second), block first and then the analog's own path
+   compounded onto it, so the composed drawdown is arithmetic and the block count and distinct-weekend count
+   are printed with it. Each scenario prints how many analogs backed it, so a 26-analog scenario is visibly
+   weaker than a 50-analog one.
 6. **Provenance and verdict** — sources, timestamps, what was excluded and why, network reality including the
    Bitget degradation, and the engine's own honest verdict.
 

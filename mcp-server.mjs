@@ -364,9 +364,9 @@ const TOOLS = [
   {
     name: "analogdesk_analyze",
     title: "Stress-test a trade idea against historical analogs",
-    description: "Retrieves the historical market states closest to this one and reports what actually happened next: the realised forward-return distribution, path risk (maximum adverse excursion, drawdown-breach probabilities), a frozen split-conformal interval with its out-of-sample coverage, and a 13-scenario stress suite. Every figure is engine-computed at call time and every numeral in the narrative has been re-checked against the card by the numeric gate, whose verdict is reported. Use this BEFORE acting on an idea, not to forecast: the verdict the engine itself prints is that this is a stress-testing and provenance instrument, not an alpha source.",
+    description: "Retrieves the historical market states closest to this one and reports what actually happened next: the realised forward-return distribution, path risk (maximum adverse excursion, drawdown-breach probabilities), a frozen split-conformal interval with its out-of-sample coverage, and a 14-scenario stress suite. Every figure is engine-computed at call time and every numeral in the narrative has been re-checked against the card by the numeric gate, whose verdict is reported. Use this BEFORE acting on an idea, not to forecast: the verdict the engine itself prints is that this is a stress-testing and provenance instrument, not an alpha source.",
     inputSchema: { type: "object", properties: Object.assign({}, REQUEST_SCHEMA, {
-      includeStress: { type: "boolean", description: "Run the 13-scenario stress suite (default true; turning it off roughly halves the latency)." },
+      includeStress: { type: "boolean", description: "Run the 14-scenario stress suite, including the measured 7x24 venue overlay (default true; turning it off roughly halves the latency)." },
       fullNarrative: { type: "boolean", description: "Return all six narrative sections instead of the verdict and the limits (default false). The full text is about 7000 characters." }
     }), required: [] }
   },
@@ -378,7 +378,7 @@ const TOOLS = [
   },
   {
     name: "analogdesk_stress",
-    title: "The 13 named stress scenarios for one idea",
+    title: "The 14 named stress scenarios for one idea",
     description: "Re-runs the same retrieval under six named crisis windows drawn from the library own worst benchmark episodes and seven shock overlays, and returns each scenario median, tail, delta versus the baseline, loss and drawdown-breach probabilities, plus the caveat the engine attaches to it. Rows are directly comparable because the settings are identical.",
     inputSchema: { type: "object", properties: REQUEST_SCHEMA, required: [] }
   },
@@ -407,7 +407,7 @@ function rpcError(id, code, message) { send({ jsonrpc: "2.0", id: id === undefin
 
 const INSTRUCTIONS = [
   "AnalogDesk is a pre-trade decision stress-testing desk, not a signal generator.",
-  "Call analogdesk_analyze with the idea as a sentence (English or Chinese) to get the realised outcome distribution of the closest historical states, a frozen split-conformal interval, path risk and 13 stress scenarios.",
+  "Call analogdesk_analyze with the idea as a sentence (English or Chinese) to get the realised outcome distribution of the closest historical states, a frozen split-conformal interval, path risk and 14 stress scenarios.",
   "Every number in a result is engine-computed and traceable; the narrative reports its numeric-gate verdict, and any adjustment made to your request (snapped horizon, clamped k) is disclosed in the result text and in card.retrieval.notes.",
   "The verdict the engine itself prints: analog retrieval hits its 80% coverage target out of sample (80.8%) but is NOT sharper than a same-name unconditional band at matched coverage, and its probability calibration fails. Treat it as risk and provenance tooling, never as alpha. This is not investment advice."
 ].join(" ");

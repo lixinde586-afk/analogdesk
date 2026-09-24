@@ -35,6 +35,21 @@ export function quantile(sorted, p) {
 
 export const DEFAULT_COVERAGE = 0.8;
 
+/**
+ * Standard normal CDF via the Abramowitz-Stegun 7.1.26 erf approximation (|error| < 1.5e-7).
+ * The path-risk benchmark needs Phi(-x) and this repo ships no dependencies, so the twelve lines
+ * live here rather than arriving in a package. It is also deterministic to the last bit, which
+ * matters because research/validation-results.json is regenerated and diffed.
+ */
+export function normalCdf(x) {
+  const z = Number(x);
+  if (!Number.isFinite(z)) return NaN;
+  const t = 1 / (1 + 0.3275911 * (Math.abs(z) / Math.SQRT2));
+  const poly = ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t;
+  const erfMag = 1 - poly * Math.exp(-(z * z) / 2);   // erf(|z|/sqrt 2); the 1 - IS the identity
+  return 0.5 * (1 + (z >= 0 ? erfMag : -erfMag));
+}
+
 const clean = (arr) => (arr || []).filter((x) => x != null && Number.isFinite(x)).map(Number);
 export const pct = (x, dp = 2) => (x == null || !Number.isFinite(x) ? null : Number((x * 100).toFixed(dp)));
 

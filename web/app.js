@@ -223,6 +223,7 @@ const SECTION_HEADINGS = [
   { key: "history", en: "What happened next", zh: "随后发生了什么" },
   { key: "tails", en: "Path risk, not just endpoint", zh: "路径风险，而不只是终点" },
   { key: "stress", en: "Stress scenarios", zh: "压力情景" },
+  { key: "reasoning", en: "Which scenarios matter for this idea", zh: "哪些情景对这个想法真正重要" },
   { key: "limits", en: "What this does not tell you", zh: "这份分析没有告诉你什么" }
 ];
 
@@ -621,7 +622,7 @@ function renderConformal(card) {
       ["target coverage", pctPlain(c.coverageTargetPct, 0)],
       ["fitted scale", num(c.scale, 3)],
       ["interval width", pctPlain(c.widthPct)],
-      ["analog median / sd", `${num(c.medianPct)}% / ${num(c.analogSdPct)}%`],
+      ["analog median / sd", `${num(c.medianPct ?? d?.medianPct)}% / ${num(c.analogSdPct ?? d?.sdPct)}%`],
       ["fitted on", esc(c.fittedOn || "\u2013")],
       ["out-of-sample coverage", `${pctPlain(c.outOfSampleCoveragePct)} <span class="muted">&plusmn;${num(c.outOfSampleSEPp, 1)} pp SE</span>`],
       ["test era", esc(c.testEra || "\u2013")],
@@ -894,7 +895,7 @@ function renderStress(card) {
       <td class="num">${pctPlain(r.probabilityBelowMinus10Pct)}</td>
       <td class="num">${pcHtml(r.maxAdverseMedianPct)}</td>
       <td class="num">${pctPlain(r.probabilityOfBreaching10PctDrawdown)}</td>
-      <td class="num">${pctPlain(r.heldWithin10PctDrawdown)}</td></tr>`;
+      <td class="num">${pctPlain(r.heldWithin10PctDrawdownPct)}</td></tr>`;
   }).join("");
   $("stresstable").innerHTML = `<div class="scroll" style="max-height:none"><table>${head}<tbody>${body}</tbody></table></div>`;
 
@@ -915,7 +916,10 @@ function renderStress(card) {
           ["&Delta; median vs baseline", `${pcHtml(r.deltaMedianVsBaselinePct)} <span class="muted">percentage points</span>`],
           ["median max adverse excursion", pcHtml(r.maxAdverseMedianPct)],
           ["P(breaching a 10% drawdown)", pctPlain(r.probabilityOfBreaching10PctDrawdown)],
-          ["share holdable within 10% drawdown", pctPlain(r.heldWithin10PctDrawdown)]
+          ["share holdable within 10% drawdown", pctPlain(r.heldWithin10PctDrawdownPct)],
+          ...(r.venueMeta ? [["composed with", `<b>${esc(r.venueMeta.instrument)}</b> &middot; ${esc(r.venueMeta.venueName)} &middot; ${esc(r.venueMeta.instrumentClass)}`],
+            ["measured closed-market blocks", `${num(r.venueMeta.blocksUsed, 0)} weekend block(s) over ${num(r.venueMeta.distinctWeekendStarts, 0)} distinct weekend start(s)${isNum(r.venueMeta.pooledWeekendN) ? ` <span class="muted">&middot; venue-wide pooled ${num(r.venueMeta.pooledWeekendN, 0)}</span>` : ""}`],
+            ["fetched on", esc(r.venueMeta.route ? `the ${r.venueMeta.route} route` : "a direct keyless route")]] : [])
         ])}
         ${r.fan && r.fan.length ? `<div style="margin-top:8px">${fanSvg(r.fan, { unit: "pct", height: 190, label: "sessions ahead" })}</div>` : ""}
         <div class="caveat"><b>Engine caveat, carried verbatim:</b> ${esc(r.caveat || "")}</div>
@@ -965,6 +969,15 @@ function renderProv(card) {
   const v = card.validation, p = card.provenance || {};
   if (v) {
     const bm = v.benchmarks || {};
+    // The path-risk probabilities the stress table prints are themselves scored out of sample; the
+    // panel says so, with the paired interval rather than the point estimate carrying the comparison.
+    const prk = v.pathRisk || null;
+    const prPair = prk?.pairedBrierVs?.volReflection || null;
+    const prVerdict = prPair
+      ? (prPair.ci95High < 0 ? "the date-clustered interval resolves in favour of the analog excursion share"
+        : (prPair.ci95Low > 0 ? "the date-clustered interval resolves in favour of the volatility benchmark"
+          : "the date-clustered interval does not separate the two"))
+      : "";
     const rows = [
       ["analog + frozen conformal scale", v.analog?.coveragePct, v.analog?.widthPct, v.analog?.matchedCoverageWidthPct, true],
       ["analog raw percentiles (uncalibrated)", bm.analogRaw?.coveragePct, bm.analogRaw?.widthPct, bm.analogRaw?.matchedCoverageWidthPct],
@@ -989,6 +1002,7 @@ function renderProv(card) {
         ["directional hit rate", pctPlain(v.directionalHitRatePct)],
         ["mean retrieval", `${num(v.meanRetrievalMs, 1)} ms`]
       ])}
+      ${prk ? `<div class="note info" style="margin:10px 0 0"><b>Path risk, scored out of sample.</b> At the ${num(prk.levelPct, 0)}% drawdown level over ${num(prk.testQueries, 0)} test queries on ${num(prk.dateClusters, 0)} distinct sessions, ${pctPlain(prk.realisedBreachPct)} actually breached against a mean predicted ${pctPlain(prk.meanPredictedPct)} by the analog excursion share (gap ${num(prk.calibrationGapPp, 2)} pp &plusmn; ${num(prk.calibrationGapSEPp, 2)}). Brier, lower is better: analog ${num(prk.brier?.analogMae, 4)} &middot; reflection principle on 60-session vol ${num(prk.brier?.volReflection, 4)} &middot; same-name frozen rate ${num(prk.brier?.sameNameCalib, 4)} &middot; pooled frozen rate ${num(prk.brier?.pooledCalib, 4)}. Discrimination AUC: ${num(prk.auc?.analogMae, 3)} analog vs ${num(prk.auc?.volReflection, 3)} volatility vs ${num(prk.auc?.pooledCalib, 3)} for a constant.${prPair ? ` Paired Brier difference against the volatility benchmark ${num(prPair.deltaBrier, 4)}, 95% CI ${num(prPair.ci95Low, 4)} to ${num(prPair.ci95High, 4)} - ${prVerdict}.` : ""}</div>` : ""}
       <div class="note bad" style="margin-bottom:0"><b>The engine's own verdict, unedited:</b> ${esc(v.honestVerdict || "")}</div>`;
   } else {
     $("validation").innerHTML = `<div class="note">No frozen validation summary is loaded for this horizon. Run <code>node scripts/verify.mjs</code>; it writes <code>research/VALIDATION.md</code> and <code>research/validation-results.json</code>.</div>`;

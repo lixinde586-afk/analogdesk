@@ -226,7 +226,10 @@ the project that comes from a trading venue, and it is kept separate on purpose:
 instrument layer*, and no retrieval, conformal or validation figure uses any of it. Adding a venue must not be
 able to move a published number, so it cannot — and that is asserted, not promised: `npm run check:bitget7x24`
 requires a card's retrieval, conformal, excursion and validation blocks to be byte-identical with and without
-the Bitget payload loaded.
+the Bitget payload loaded. **One stress scenario does consume it**, by design and labelled: the fourteenth
+scenario, `weekend-hold-7x24`, composes the retrieved paths with these measured closed-market weekend blocks
+and prints the instrument, its class, the block count and the distinct-weekend count beside the result
+(`research/LIMITATIONS.md` §8.1). It is the only consumer outside the measurement itself.
 
 **Why it exists.** The thesis is about a market that never closes, but every price above is a US daily
 session. `research/LIMITATIONS.md` §9 used to state that plainly: nothing in the repo measured a weekend. That

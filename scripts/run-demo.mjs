@@ -178,13 +178,16 @@ function renderMarkdownPart2(ctx) {
   } else {
     L.push(`Every scenario re-runs the SAME engine with the SAME settings, so each row is directly comparable to`);
     L.push(`the baseline. **Window** scenarios pin the analog library to a named historical episode; **shock** scenarios`);
-    L.push(`move the query state in z-space and re-retrieve across the whole library.`);
+    L.push(`move the query state in z-space and re-retrieve across the whole library. The **venue** overlay does neither:`);
+    L.push(`it composes each retrieved path with the measured closed-market weekend blocks of the verified 7x24`);
+    L.push(`instrument for this symbol, so the suite contains one row that is a measurement spliced onto the`);
+    L.push(`retrieval rather than a second retrieval.`);
     L.push(``);
     L.push(`| Scenario | Kind | Analogs | Median fwd | Delta vs base | p10 | p90 | P(loss>10%) | Median MAE | P(10% dd) | Held within 10% dd |`);
     L.push(`|---|---|---|---|---|---|---|---|---|---|---|`);
     for (const s of st) {
       if (s.skipped) { L.push(`| ${mdEsc(s.label)} | ${mdEsc(s.kind)} | \u2013 | _skipped: ${mdEsc(s.skipped)}_ | | | | | | | |`); continue; }
-      L.push(`| ${mdEsc(s.label)} | ${mdEsc(s.kind)} | ${n(s.analogsUsed, 0)} | ${p(s.medianForwardPct)} | ${s.deltaMedianVsBaselinePct == null ? "\u2013" : p(s.deltaMedianVsBaselinePct)} | ${p(s.p10ForwardPct)} | ${p(s.p90ForwardPct)} | ${pl(s.probabilityBelowMinus10Pct)} | ${p(s.maxAdverseMedianPct)} | ${pl(s.probabilityOfBreaching10PctDrawdown)} | ${pl(s.heldWithin10PctDrawdown)} |`);
+      L.push(`| ${mdEsc(s.label)} | ${mdEsc(s.kind)} | ${n(s.analogsUsed, 0)} | ${p(s.medianForwardPct)} | ${s.deltaMedianVsBaselinePct == null ? "\u2013" : p(s.deltaMedianVsBaselinePct)} | ${p(s.p10ForwardPct)} | ${p(s.p90ForwardPct)} | ${pl(s.probabilityBelowMinus10Pct)} | ${p(s.maxAdverseMedianPct)} | ${pl(s.probabilityOfBreaching10PctDrawdown)} | ${pl(s.heldWithin10PctDrawdownPct)} |`);
     }
     L.push(``);
     const worst = st.filter((s) => !s.skipped && s.id !== "baseline" && s.deltaMedianVsBaselinePct != null)
@@ -199,6 +202,24 @@ function renderMarkdownPart2(ctx) {
       }
       L.push(``);
     }
+    const ven = st.find((s) => s.id === "weekend-hold-7x24");
+    if (ven && !ven.skipped && ven.venueMeta) {
+      const vm = ven.venueMeta;
+      L.push(`**The venue overlay, and exactly where its blocks come from.** ${mdEsc(ven.label)} splices each retrieved`);
+      L.push(`analog path with ${n(vm.blocksUsed, 0)} measured closed-market weekend block(s) of ${mdEsc(vm.instrument)} on`);
+      L.push(`${mdEsc(vm.venueName)} - class "${mdEsc(vm.instrumentClass)}" - covering ${n(vm.distinctWeekendStarts, 0)} distinct`);
+      L.push(`weekend start(s), against ${n(vm.pooledWeekendN, 0)} weekend block(s) pooled venue-wide${vm.route ? ` and fetched on the ${mdEsc(vm.route)} route` : ""}.`);
+      L.push(`Block first, then the analog's own path compounded onto the block's exit level, so the composed drawdown is`);
+      L.push(`arithmetic rather than a model: worst point = min(block low, (1 + block return) x (1 + analog excursion) - 1).`);
+      L.push(`Median forward ${p(ven.medianForwardPct)} (${p(ven.deltaMedianVsBaselinePct)} vs baseline), median adverse excursion`);
+      L.push(`${p(ven.maxAdverseMedianPct)}, P(breaching a 10% drawdown) ${pl(ven.probabilityOfBreaching10PctDrawdown)}.`);
+      L.push(`Caveat carried verbatim: ${mdEsc(ven.caveat)}`);
+      L.push(``);
+    } else if (ven && ven.skipped) {
+      L.push(`**The venue overlay was skipped on this run:** ${mdEsc(ven.skipped)}.`);
+      L.push(``);
+    }
+
     const skipped = st.filter((s) => s.skipped);
     if (skipped.length) {
       L.push(`**Skipped, disclosed rather than hidden:** ${mdEsc(skipped.map((s) => `${s.label} (${s.skipped})`).join("; "))}.`);
@@ -274,6 +295,42 @@ function renderMarkdownPart2(ctx) {
     L.push(`| Directional hit rate of the analog median | ${pl(validation.directionalHitRatePct)} |`);
     L.push(`| Mean retrieval time | ${n(validation.meanRetrievalMs, 1)} ms |`);
     L.push(``);
+    const prk = validation.pathRisk || null;
+    if (prk) {
+      L.push(`### 7.1 The breach probabilities this record prints, scored out of sample`);
+      L.push(``);
+      L.push(`Everything above calibrates the ENDPOINT interval. The stress table prints a different object - a`);
+      L.push(`probability that the path breaches a drawdown level at some point inside the horizon - so it is scored`);
+      L.push(`separately, on the same frozen split. Predicted = the share of the retrieved analogs whose realised`);
+      L.push(`excursion breached the level, computed exactly as the card computes it. Realised = whether this query's`);
+      L.push(`own path breached it over (q, q+H], on the same raw-low-over-raw-close basis, so the two are the same`);
+      L.push(`quantity. Every benchmark is frozen on the calibration era or closed-form; none of them sees the test era.`);
+      L.push(``);
+      L.push(`At the **${n(prk.levelPct, 0)}%** drawdown level: ${n(prk.testQueries, 0)} test queries over ${n(prk.dateClusters, 0)} distinct sessions, realised breach **${pl(prk.realisedBreachPct)}** against a mean predicted **${pl(prk.meanPredictedPct)}** from the analog share - a calibration gap of ${n(prk.calibrationGapPp, 2)} pp with a date-clustered standard error of ${n(prk.calibrationGapSEPp, 2)} pp.`);
+      L.push(``);
+      L.push(`| Predictor of P(breach ${n(prk.levelPct, 0)}%) | Brier (lower is better) | AUC |`);
+      L.push(`|---|---|---|`);
+      L.push(`| **Analog excursion share (this desk)** | **${n(prk.brier?.analogMae, 4)}** | **${n(prk.auc?.analogMae, 3)}** |`);
+      L.push(`| Reflection principle, 2 x Phi(-L / (sigma60 x sqrt H)) | ${n(prk.brier?.volReflection, 4)} | ${n(prk.auc?.volReflection, 3)} |`);
+      L.push(`| Same-name calibration-era rate, frozen | ${n(prk.brier?.sameNameCalib, 4)} | ${n(prk.auc?.sameNameCalib, 3)} |`);
+      L.push(`| Pooled calibration-era rate, frozen | ${n(prk.brier?.pooledCalib, 4)} | ${n(prk.auc?.pooledCalib, 3)} |`);
+      L.push(``);
+      const pv = prk.pairedBrierVs?.volReflection;
+      if (pv) {
+        L.push(`Paired Brier difference against the volatility benchmark (analog minus benchmark, so negative favours the desk): **${n(pv.deltaBrier, 4)}**, date-cluster bootstrap 95% interval ${n(pv.ci95Low, 4)} to ${n(pv.ci95High, 4)}, with ${pl(pv.shareAnalogBetterPct, 0)} of resamples favouring the analog share. ${pv.ci95High < 0 ? "The interval excludes zero on the side that favours the desk." : (pv.ci95Low > 0 ? "The interval excludes zero against the desk, and that is reported rather than dropped." : "The interval spans zero, so this sample does not separate the two.")}`);
+        L.push(``);
+      }
+      if (prk.reliability?.length) {
+        L.push(`Reliability of the desk's own number - what it said against what happened:`);
+        L.push(``);
+        L.push(`| Predicted P(breach) bin | Queries | Mean predicted | Realised |`);
+        L.push(`|---|---|---|---|`);
+        for (const b of prk.reliability) L.push(`| ${mdEsc(b.bin)} | ${n(b.count, 0)} | ${pl(b.meanPredictedPct)} | ${pl(b.realisedPct)} |`);
+        L.push(``);
+      }
+      L.push(`AUC is a pooled point estimate; its uncertainty is not clustered here, so a small AUC gap is noise and the paired Brier interval above is the comparison that carries weight. Full detail per level and per horizon: research/VALIDATION.md section 5.1.`);
+      L.push(``);
+    }
     L.push(`> ${mdEsc(validation.honestVerdict || "")}`);
     L.push(``);
     L.push(`Full detail, per horizon and per symbol: \`research/VALIDATION.md\` and \`research/validation-results.json\`.`);
@@ -326,7 +383,7 @@ function renderMarkdownPart2(ctx) {
     L.push(`Not measured on this build${w?.degradation ? ` (${mdEsc(w.venueName)}: ${mdEsc(w.degradation.kind)} - ${mdEsc(w.degradation.detail)})` : ""}. No wrapper figure is reported and none is estimated; the card describes the underlying only.`);
   } else {
     const rm = w.referenceMarket;
-    if (rm) L.push(`Reference market, from the library's own session calendar (no venue needed): **${pl(rm.closedSharePct)}** of the week closed - ${n(rm.closedHoursPerWeek, 2)}h of ${n(rm.weekHours, 0)}h, from ${n(rm.sessions, 0)} sessions over ${n(rm.weeksObserved, 1)} weeks at 6.5 cash hours each.`);
+    if (rm) L.push(`Reference market, from the library's own session calendar (no venue needed): **${pl(rm.closedSharePct)}** of the week closed - ${n(rm.closedHoursPerWeek, 2)}h of ${n(rm.weekHours, 0)}h, from ${n(rm.sessions, 0)} sessions at ${n(rm.sessionsPerWeek, 3)} per week x 6.5 cash hours each.`);
     if (w.status === "measured") {
       const t = w.tracking, s24 = w.sevenByTwentyFour, lq = w.liquidity, pr = w.premium;
       L.push(``);
@@ -352,7 +409,7 @@ function renderMarkdownPart2(ctx) {
           L.push(`| intra-weekend adverse excursion | median ${pl(mae.medianPct)}, p10 ${pl(mae.p10Pct)}, worst ${pl(mae.minPct)} |`);
           L.push(`| breached -5% inside the block | ${pl(bcr.weekendShareBreached5PctDrawdownPct)} of weekends |`);
           L.push(`| closed-hour vs open-hour volatility | ${n(bcr.hourlyStdRatioOutsideOverInside, 2)}x per hour |`);
-          if (bcr.pooledWeekendReturnDistribution) L.push(`| pooled across every verified perpetual | ${n(bcr.pooledWeekendReturnDistribution.n, 0)} blocks over ${n(bcr.pooledPairs, 0)} perpetuals and **${n(bcr.pooledDistinctWeekendStarts, 0)} distinct weekends** - median ${pl(bcr.pooledWeekendReturnDistribution.medianPct)}, p10 ${pl(bcr.pooledWeekendReturnDistribution.p10Pct)}, median MAE ${pl(bcr.pooledWeekendMaeDistribution?.medianPct)} |`);
+          if (bcr.pooledWeekendReturnDistribution) L.push(`| pooled across every verified perpetual | ${n(bcr.pooledWeekendReturnDistribution.n, 0)} blocks over ${n(bcr.pooledInstruments ?? bcr.pooledPairs, 0)} perpetuals and **${n(bcr.pooledDistinctWeekendStarts, 0)} distinct weekends** - median ${pl(bcr.pooledWeekendReturnDistribution.medianPct)}, p10 ${pl(bcr.pooledWeekendReturnDistribution.p10Pct)}, median MAE ${pl(bcr.pooledWeekendMaeDistribution?.medianPct)} |`);
         }
         L.push(``);
         L.push(`> ${mdEsc(b.caveat || "")}`);
@@ -416,7 +473,7 @@ function renderMarkdownPart2(ctx) {
       L.push(`**No verified wrapper for ${mdEsc(card.idea.symbol)}.** ${mdEsc(w.reason || "")} ${n(w.candidatesTested, 0)} candidate listing(s) were tested and refused; every refusal and its reason is in \`data-cache/wrapper-probe.json\`. No wrapper spread, premium or closed-hours figure is reported for this instrument, and none is estimated.`);
     }
     L.push(``);
-    L.push(`Produced by \`scripts/measure-wrapper.mjs\` (Gate.io) and \`scripts/measure-bitget-7x24.mjs\` (Bitget), committed as \`data-cache/wrapper-probe.json\` and \`data-cache/bitget-7x24.json\`, gated by \`npm run check:wrapper\` and \`npm run check:bitget7x24\`. It is a measurement of the instrument layer: no retrieval, conformal or validation figure above uses any of it.`);
+    L.push(`Produced by \`scripts/measure-wrapper.mjs\` (Gate.io) and \`scripts/measure-bitget-7x24.mjs\` (Bitget), committed as \`data-cache/wrapper-probe.json\` and \`data-cache/bitget-7x24.json\`, gated by \`npm run check:wrapper\` and \`npm run check:bitget7x24\`. It is a measurement of the instrument layer: no retrieval, conformal or validation figure above uses any of it. The one consumer is the venue overlay in section 4, which composes the retrieved paths with these measured closed-market blocks and names the instrument, its class, the block count and the distinct-weekend count beside the result it produces.`);
   }
   L.push(``);
   L.push(`## 9. Reproducing this run`);

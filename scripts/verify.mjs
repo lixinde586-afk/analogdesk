@@ -285,12 +285,47 @@ function renderMarkdown(P) {
   for (const r of R.reliability) push(`| ${f(r.level, 2)} | ${p1(r.level * 100)} | ${p1(r.empirical * 100)} |`);
   push(``);
 
+  const PR = R.pathRisk;
+  if (PR) {
+    push(`### 5.1 Path risk: are the breach probabilities themselves calibrated?`, ``);
+    push(`Sections 2 to 5 score the ENDPOINT interval. The desk also prints a path-risk probability on every card - "in the retrieved episodes, X% touched a -L drawdown at some point inside the horizon" - and an interval can be perfectly calibrated while the path statistics built from the same analogs are systematically wrong. So they are scored here, on the same frozen split.`, ``);
+    push(`**Predicted** is the share of the k = ${R.protocol.k} retrieved analogs whose realised maximum adverse excursion breached -L, computed exactly as the card computes it. **Realised** is whether this query's own path breached -L over (q, q+H], measured on the same basis the analogs use: the raw intraday low over the raw close of the decision session. Predicted and realised are therefore the same quantity, which is the only thing that makes a calibration test of them meaningful.`, ``);
+    push(`Benchmarks, none of which sees the test era: **reflection principle** 2*Phi(-L / (sigma60*sqrt(H))) on the name's own trailing 60-session volatility - the textbook answer a desk would use with no analog engine at all; **same-name** the symbol's own breach rate over the calibration-era grid, frozen; **pooled** one library-wide calibration-era rate, the floor. Brier score is the mean squared error of a probability, so lower is better. Every standard error is clustered by query date, and the paired differences use a date-cluster bootstrap (${PR.bootstraps} resamples, seed ${PR.seed}) so the intervals reproduce exactly on a re-run.`, ``);
+    push(`| Level | Queries | Sessions | Realised breach | Mean predicted | Gap +/- SE | Brier analog | Brier reflection | Brier same-name | Brier pooled | AUC analog | AUC reflection |`, `|---|---|---|---|---|---|---|---|---|---|---|---|`);
+    for (const lvl of PR.levelsPct) {
+      const b = PR.byLevel[lvl];
+      if (!b || !b.n) continue;
+      const PP = b.predictors;
+      push(`| -${lvl}% | ${b.n} | ${b.clusters} | ${p1(b.realisedBreachPct)} | ${p1(PP.analogMae.meanPredictedPct)} | ${f(b.calibrationInTheLarge.gapPp, 2)} +/- ${f(b.calibrationInTheLarge.sePp, 2)} pp | ${f(PP.analogMae.brier, 4)} | ${f(PP.volReflection.brier, 4)} | ${f(PP.sameNameCalib.brier, 4)} | ${f(PP.pooledCalib.brier, 4)} | ${f(PP.analogMae.auc, 3)} | ${f(PP.volReflection.auc, 3)} |`);
+    }
+    push(``);
+    push(`Paired Brier differences (analog minus benchmark, so a negative interval favours the analog share) with date-cluster bootstrap 95% intervals, and the share of resamples favouring the desk:`, ``);
+    push(`| Level | vs reflection principle | vs same-name frozen rate | vs pooled frozen rate |`, `|---|---|---|---|`);
+    for (const lvl of PR.levelsPct) {
+      const b = PR.byLevel[lvl];
+      if (!b || !b.n) continue;
+      const cell = (d) => (d ? `${f(d.deltaBrier, 4)} [${f(d.ci95Low, 4)}, ${f(d.ci95High, 4)}] ${p1(d.shareAnalogBetterPct)}` : "n/a");
+      push(`| -${lvl}% | ${cell(b.pairedBrierVs.volReflection)} | ${cell(b.pairedBrierVs.sameNameCalib)} | ${cell(b.pairedBrierVs.pooledCalib)} |`);
+    }
+    push(``);
+    const lv10 = PR.byLevel[10];
+    if (lv10 && lv10.reliability && lv10.reliability.length) {
+      push(`Reliability of the desk's own number at the -10% level, which is the level the card, the UI table and the narrative quote:`, ``);
+      push(`| Predicted P(breach) bin | Queries | Mean predicted | Realised | +/- SE |`, `|---|---|---|---|---|`);
+      for (const b of lv10.reliability) push(`| ${b.bin} | ${b.count} | ${p1(b.meanPredictedPct)} | ${p1(b.realisedPct)} | ${b.realisedSEPp == null ? "n/a" : f(b.realisedSEPp, 2) + " pp"} |`);
+      push(``);
+      push(`A bin whose realised rate sits outside its own standard error of the mean predicted rate is a miscalibration this desk can name; a bin with one session in it proves nothing, and the query count column is there so the reader can see which is which.`, ``);
+    }
+    push(interpretPathRisk(R), ``);
+    push(`${PR.aucNote}`, ``);
+  }
+
   push(`## 6. Cost`, ``);
   push(`| Stage | Time |`, `|---|---|`);
   push(`| Engine build (feature matrix + expanding stats + z matrix, ${R.library.nSym} symbols x ${R.library.nDates} sessions) | ${P.engine.config.initMs} ms |`);
   push(`| Single retrieval, mean over ${P.latency.n} queries | ${f(P.latency.meanMs, 1)} ms |`);
   push(`| Single retrieval, median / p95 | ${f(P.latency.medianMs, 1)} ms / ${f(P.latency.p95Ms, 1)} ms |`);
-  push(`| Full 13-scenario stress report for one idea | ~${f(13 * P.latency.meanMs, 0)} ms |`);
+  push(`| Full 14-scenario stress report for one idea | ~${f(14 * P.latency.meanMs, 0)} ms |`);
   push(`| Peak resident set during this run | ${f(process.memoryUsage?.().rss / 1e6 ?? NaN, 0)} MB |`, ``);
   push(`Retrieval is a single pass over ${(P.latency.libraryRows / 1000).toFixed(0)}k library rows x ${P.engine.metricFeatures.length} features with no approximate-nearest-neighbour index. At this library size an exact scan is faster than building and querying an index; the index only becomes worth it past roughly 10^6 rows.`, ``);
 
@@ -389,6 +424,36 @@ function interpretBySymbol(R) {
   lines.push(`Width tracking the instrument matters more than it looks: corr(width, own 20-session vol) is ${f(a.corrWidthOwnVol, 3)} for the analog interval and ${f(u?.corrWidthOwnVol, 3)} for the unconditional band, versus ${f(p.corrWidthOwnVol, 3)} for the pooled band. A stress instrument whose interval does not scale with the thing being stressed is not a stress instrument.`);
   return lines.join(" ");
 }
+/**
+ * What the path-risk scoring actually showed, in the direction the data points rather than the
+ * direction that would be most flattering. Written as a function of the numbers so a re-run that
+ * reverses a result reverses the prose with it.
+ */
+function interpretPathRisk(R) {
+  const PR = R.pathRisk;
+  const lv = PR && PR.byLevel ? PR.byLevel[10] : null;
+  if (!lv || !lv.n) return "No test query had a measurable path at the -10% level on this run.";
+  const A = lv.predictors.analogMae, V = lv.predictors.volReflection, S = lv.predictors.sameNameCalib, P = lv.predictors.pooledCalib;
+  const pv = lv.pairedBrierVs.volReflection, ps = lv.pairedBrierVs.sameNameCalib, pp = lv.pairedBrierVs.pooledCalib;
+  const gap = lv.calibrationInTheLarge.gapPp, gse = lv.calibrationInTheLarge.sePp;
+  const verdict = (d, name) => {
+    if (!d) return `the comparison against ${name} was not computable`;
+    const iv = `${f(d.ci95Low, 4)} to ${f(d.ci95High, 4)}`;
+    if (d.ci95High < 0) return `the analog share beats ${name} on paired Brier score (${f(d.deltaBrier, 4)}, 95% interval ${iv} excluding zero, ${p1(d.shareAnalogBetterPct)} of resamples)`;
+    if (d.ci95Low > 0) return `${name} beats the analog share on paired Brier score (${f(d.deltaBrier, 4)}, 95% interval ${iv} excluding zero)`;
+    return `the sample does not separate the analog share from ${name} (paired Brier difference ${f(d.deltaBrier, 4)}, 95% interval ${iv} spans zero)`;
+  };
+  const bias = gap == null ? "not measurable" : (gap > 0
+    ? `the analog share OVER-states breach frequency by ${f(gap, 2)} pp (clustered SE ${f(gse, 2)}), which is the same conservative direction the PIT rejection in section 5 shows: matching on a stressed-looking state retrieves episodes that were followed by more stress than this one was`
+    : `the analog share UNDER-states breach frequency by ${f(-gap, 2)} pp (clustered SE ${f(gse, 2)}), so a trader reading it as an upper bound on path risk would be wrong in the dangerous direction`);
+  return [
+    `At the -10% level over ${lv.n} test queries on ${lv.clusters} distinct sessions, ${p1(lv.realisedBreachPct)} of paths actually breached against a mean predicted ${p1(A.meanPredictedPct)}: ${bias}.`,
+    `Calibration in the large is the weakest part of this number and is reported as such. Discrimination is the stronger part: the analog share ranks breached paths above held ones at AUC ${f(A.auc, 3)}, against ${f(V.auc, 3)} for the reflection principle and ${f(S.auc, 3)} / ${f(P.auc, 3)} for the frozen same-name and pooled rates, which are constants per symbol and per library and therefore cannot rank anything at all.`,
+    `On the paired test, ${verdict(pv, "the reflection principle")}; ${verdict(ps, "the frozen same-name rate")}; and ${verdict(pp, "the frozen pooled rate")}.`,
+    `The honest summary is that the analog excursion share is a better RANKING of which ideas carry path risk than a volatility formula or a base rate, and a worse-calibrated LEVEL than a trader would want: use it to compare two ideas and to see which regimes carry path risk, and read the level against the reliability table above rather than as a probability to size from.`
+  ].join(" ");
+}
+
 /** The PIT shape is a finding, not just a pass/fail: explain the direction of the failure. */
 function pitInterpretation(R) {
   const b = R.pit.bins;

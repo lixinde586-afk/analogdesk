@@ -35,7 +35,7 @@ import { detectLang } from "./lui.mjs";
  * A bump is the honest way to retire prose that was written against a different payload: leaving the
  * version alone would keep serving a cached narrative that never saw the new figures.
  */
-export const PROMPT_VERSION = "4";
+export const PROMPT_VERSION = "5";
 
 function allowFor(card) {
   return buildAllowlist(card, defaultAllowance(card));

@@ -40,7 +40,7 @@
  *                    in stressed tape is worse than useless for a stress-testing desk.
  */
 
-import { summarize, conformalScale, band, contains, quantile, scoreIntervals, reliability, pct } from "./distribution.mjs";
+import { summarize, conformalScale, band, contains, quantile, scoreIntervals, reliability, pct, normalCdf } from "./distribution.mjs";
 import { FIDX, NF } from "./features.mjs";
 
 export const ERAS = {
@@ -173,10 +173,36 @@ export function probe(engine, sq, q, C) {
   const sorted = [...rets].sort((a, c) => a - c);
   const pit = sorted.filter((x) => x <= y).length / sorted.length;
 
+  /*
+   * The path-risk layer. Predicted and realised breach are measured on the SAME basis the analogs'
+   * own excursion uses - the raw intraday low over the raw close of the decision session - so the
+   * calibration test below compares two versions of one quantity instead of a raw low against an
+   * adjusted close. Only the summary is kept per row: 50 raw excursions per query would double the
+   * size of the audit dump for no reporting gain.
+   */
+  const maes = res.analogs.map((a) => a.mae).filter(finite);
+  const rawEntry = mx.priceC[b + q];
+  let selfLo = Infinity;
+  if (finite(rawEntry) && rawEntry > 0) {
+    for (let t = q + 1; t <= q + H && t < nDates; t++) {
+      const Lo = mx.priceL[b + t];
+      if (finite(Lo)) selfLo = Math.min(selfLo, Lo / rawEntry - 1);
+    }
+  }
+  const pathRisk = {
+    nMae: maes.length,
+    medianMae: maes.length ? quantile([...maes].sort((x, z) => x - z), 0.5) : NaN,
+    maeSelf: Number.isFinite(selfLo) ? selfLo : NaN
+  };
+  for (const L of PATH_RISK_LEVELS) {
+    pathRisk[`pBreach${Math.round(L * 100)}`] = maes.length ? maes.filter((x) => x <= -L).length / maes.length : NaN;
+  }
+
   const dv = trailingVol(mx, sq, q, C.volLookback);
   const un = uncondNamePIT(mx, sq, q, H, C.coverage);
   const row = FIDX.vol20;
   return {
+    pathRisk,
     sq, q, date: mx.dates[q], sym: mx.syms[sq],
     sector: (engine.sectorOf?.[mx.syms[sq]]) || null,
     y, ms, n: rets.length, pit,
@@ -392,6 +418,8 @@ export function runValidation(engine, opts = {}) {
     analogTestWidthPct: results.analogConformal.matched.widthPct
   };
 
+  out.pathRisk = runPathRiskValidation({ calib, test, levels: PATH_RISK_LEVELS });
+
   out.directional = {
     hitRate: pct(test.filter((r) => Math.sign(r.y) === Math.sign(r.analogConformal.centre)).length / test.length, 1),
     n: test.length
@@ -405,6 +433,221 @@ function strip(o) {
   const { rows, ...rest } = o;
   void rows;
   return rest;
+}
+
+/* ------------------------- path-risk calibration -------------------------- */
+
+/**
+ * Every card this desk prints carries a path-risk probability - "in the retrieved episodes, 34%
+ * touched a 10% drawdown at some point inside the horizon" - and the UI table, the narrative and the
+ * MCP tool all quote it. Until this block existed, nothing in the repo scored those probabilities:
+ * the conformal work calibrates the ENDPOINT interval only, and an interval can be perfectly
+ * calibrated while the path statistics built from the same analogs are systematically wrong. This is
+ * the same frozen split applied to the path.
+ *
+ *   predicted, per test query : the share of the k retrieved analogs whose realised maximum adverse
+ *                               excursion breached -L. Computed exactly as the card computes it.
+ *   realised, per test query  : whether THIS query's own path breached -L over (q, q+H], on the same
+ *                               raw-low-over-raw-close basis the analogs' excursion uses.
+ *
+ * Benchmarks, each frozen on the calibration era or closed-form, so none of them sees the test era:
+ *   volReflection : 2*Phi(-L / (sigma60 * sqrt(H))), the reflection principle for driftless Brownian
+ *                   motion - the textbook answer a desk would use with no analog engine at all.
+ *   sameNameCalib : the same symbol's own breach rate over the calibration-era query grid, frozen;
+ *                   symbols with fewer than 10 calibration queries fall back to the pooled rate and
+ *                   the fallback row count is reported rather than hidden.
+ *   pooledCalib   : one library-wide calibration-era breach rate. The floor.
+ *
+ * Scoring is Brier (mean squared error of a probability), with standard errors clustered by QUERY
+ * DATE because every symbol queried on one session shares the same market shock. Discrimination is
+ * AUC. The claim that one predictor beats another rests on the PAIRED Brier difference under a
+ * date-cluster bootstrap, not on the two point estimates sitting next to each other in a table.
+ */
+export const PATH_RISK_LEVELS = [0.05, 0.10, 0.20];
+export const PATH_RISK_PREDICTORS = ["analogMae", "volReflection", "sameNameCalib", "pooledCalib"];
+export const PATH_RISK_LABELS = {
+  analogMae: "Analog excursion share (this desk)",
+  volReflection: "Reflection principle on 60d vol",
+  sameNameCalib: "Same-name calibration-era rate",
+  pooledCalib: "Pooled calibration-era rate"
+};
+const PATH_RISK_BINS = [0, 0.05, 0.1, 0.2, 0.35, 0.5, 0.7, 1.0001];
+const PATH_RISK_BOOTSTRAPS = 400;
+const PATH_RISK_SEED = 20260924;
+const PATH_RISK_MIN_NAME_ROWS = 10;
+
+/** Seeded PRNG, so the bootstrap interval is reproducible: this file is regenerated and diffed. */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Mean of a per-row value with a standard error clustered by query date. */
+function clusteredMean(rows) {
+  const n = rows.length;
+  if (!n) return { mean: NaN, se: NaN, clusters: 0 };
+  const byDate = new Map();
+  for (const r of rows) { const d = byDate.get(r.date) || { s: 0, n: 0 }; d.s += r.v; d.n++; byDate.set(r.date, d); }
+  const per = [...byDate.values()].map((d) => d.s / d.n);
+  return { mean: rows.reduce((a, r) => a + r.v, 0) / n, se: per.length > 1 ? sd(per) / Math.sqrt(per.length) : NaN, clusters: per.length };
+}
+
+const pp = (x) => (finite(x) ? Number((x * 100).toFixed(2)) : null);
+
+/** Mann-Whitney AUC with ties at half credit. 0.5 is a coin toss, 1.0 ranks every breach first. */
+function aucOf(scores, labels) {
+  const n = scores.length;
+  let pos = 0;
+  for (const l of labels) pos += l;
+  const neg = n - pos;
+  if (!pos || !neg) return NaN;
+  const order = scores.map((_, i) => i).sort((a, b) => scores[a] - scores[b]);
+  let rankSum = 0, i = 0;
+  while (i < n) {
+    let j = i;
+    while (j + 1 < n && scores[order[j + 1]] === scores[order[i]]) j++;
+    const avgRank = (i + j) / 2 + 1;
+    for (let t = i; t <= j; t++) if (labels[order[t]]) rankSum += avgRank;
+    i = j + 1;
+  }
+  return (rankSum - (pos * (pos + 1)) / 2) / (pos * neg);
+}
+
+/**
+ * Score the desk's breach probabilities out of sample against three frozen benchmarks, at each
+ * drawdown level. Rows from both eras are the ones probe() already produced, so no query is run
+ * twice and the path test cannot drift away from the interval test it sits beside.
+ */
+export function runPathRiskValidation({ calib, test, levels = PATH_RISK_LEVELS, bootstraps = PATH_RISK_BOOTSTRAPS, seed = PATH_RISK_SEED }) {
+  const out = {
+    protocol: "predicted = share of the k retrieved analogs whose realised MAE breached -L; realised = this query's own path over (q, q+H], measured on the same raw-low-over-raw-close basis; calibration-era rates frozen before the test era was scored; every standard error and the paired-difference bootstrap clustered by query date",
+    levelsPct: levels.map((L) => Math.round(L * 100)),
+    predictors: PATH_RISK_PREDICTORS,
+    labels: PATH_RISK_LABELS,
+    bootstraps, seed,
+    aucNote: "AUC is a pooled point estimate; its uncertainty is not clustered here, so read a small AUC gap as noise and read the paired Brier intervals, which are date-clustered.",
+    byLevel: {}
+  };
+
+  for (const L of levels) {
+    const key = `pBreach${Math.round(L * 100)}`;
+    const lv = Math.round(L * 100);
+
+    // Frozen calibration-era breach rates: one per symbol, one pooled.
+    const perSym = new Map();
+    let pooledHit = 0, pooledN = 0;
+    for (const r of calib) {
+      const pr = r.pathRisk;
+      if (!pr || !finite(pr.maeSelf)) continue;
+      const y = pr.maeSelf <= -L ? 1 : 0;
+      const o = perSym.get(r.sym) || { hit: 0, n: 0 };
+      o.hit += y; o.n++; perSym.set(r.sym, o);
+      pooledHit += y; pooledN++;
+    }
+    const pooledRate = pooledN ? pooledHit / pooledN : NaN;
+
+    const rows = [];
+    const dropped = { noMeasurablePath: 0, noAnalogExcursion: 0, noVolHarness: 0 };
+    let nameFallbackRows = 0;
+    for (const r of test) {
+      const pr = r.pathRisk;
+      if (!pr || !finite(pr.maeSelf)) { dropped.noMeasurablePath++; continue; }
+      const pA = pr[key];
+      if (!finite(pA)) { dropped.noAnalogExcursion++; continue; }
+      const pV = finite(r.sigmaH) && r.sigmaH > 0 ? Math.min(1, 2 * normalCdf(-L / r.sigmaH)) : NaN;
+      if (!finite(pV)) { dropped.noVolHarness++; continue; }
+      const own = perSym.get(r.sym);
+      let pN = own && own.n >= PATH_RISK_MIN_NAME_ROWS ? own.hit / own.n : NaN;
+      if (!finite(pN)) { pN = pooledRate; nameFallbackRows++; }
+      if (!finite(pN) || !finite(pooledRate)) continue;
+      rows.push({ date: r.date, sym: r.sym, y: pr.maeSelf <= -L ? 1 : 0, analogMae: pA, volReflection: pV, sameNameCalib: pN, pooledCalib: pooledRate });
+    }
+    if (!rows.length) { out.byLevel[lv] = { levelPct: lv, n: 0, note: "no test query had a measurable path at this level" }; continue; }
+
+    const predictors = {};
+    for (const k of PATH_RISK_PREDICTORS) {
+      const b = clusteredMean(rows.map((r) => ({ date: r.date, v: (r[k] - r.y) ** 2 })));
+      const br = rows.filter((r) => r.y === 1), hh = rows.filter((r) => r.y === 0);
+      predictors[k] = {
+        brier: b.mean, brierSEPp: pp(b.se), clusters: b.clusters,
+        meanPredictedPct: pct(rows.reduce((a, r) => a + r[k], 0) / rows.length, 1),
+        auc: aucOf(rows.map((r) => r[k]), rows.map((r) => r.y)),
+        meanPredictedWhenBreachedPct: br.length ? pct(br.reduce((a, r) => a + r[k], 0) / br.length, 1) : null,
+        meanPredictedWhenHeldPct: hh.length ? pct(hh.reduce((a, r) => a + r[k], 0) / hh.length, 1) : null
+      };
+    }
+
+    const realised = clusteredMean(rows.map((r) => ({ date: r.date, v: r.y })));
+    const inLarge = clusteredMean(rows.map((r) => ({ date: r.date, v: r.analogMae - r.y })));
+
+    const reliability = [];
+    for (let i = 0; i < PATH_RISK_BINS.length - 1; i++) {
+      const lo = PATH_RISK_BINS[i], hi = PATH_RISK_BINS[i + 1];
+      const inBin = rows.filter((r) => r.analogMae >= lo && r.analogMae < hi);
+      if (!inBin.length) continue;
+      const m = clusteredMean(inBin.map((r) => ({ date: r.date, v: r.y })));
+      reliability.push({
+        bin: `${Math.round(lo * 100)}-${Math.round(Math.min(hi, 1) * 100)}%`,
+        count: inBin.length,
+        meanPredictedPct: pct(inBin.reduce((a, r) => a + r.analogMae, 0) / inBin.length, 1),
+        realisedPct: pct(m.mean, 1), realisedSEPp: pp(m.se)
+      });
+    }
+
+    // Date-cluster bootstrap on the PAIRED Brier difference: resample whole sessions, because rows
+    // inside one session are not independent draws.
+    const byDate = new Map();
+    for (const r of rows) {
+      const d = byDate.get(r.date) || { date: r.date, n: 0, se: {} };
+      d.n++;
+      for (const k of PATH_RISK_PREDICTORS) d.se[k] = (d.se[k] || 0) + (r[k] - r.y) ** 2;
+      byDate.set(r.date, d);
+    }
+    const clusters = [...byDate.values()];
+    const m = clusters.length;
+    const rnd = mulberry32(seed + lv);
+    const benchKeys = PATH_RISK_PREDICTORS.filter((k) => k !== "analogMae");
+    const draws = Object.fromEntries(benchKeys.map((k) => [k, []]));
+    for (let b = 0; b < bootstraps; b++) {
+      let nTot = 0;
+      const sTot = {};
+      for (const k of PATH_RISK_PREDICTORS) sTot[k] = 0;
+      for (let i = 0; i < m; i++) {
+        const c = clusters[(rnd() * m) | 0];
+        nTot += c.n;
+        for (const k of PATH_RISK_PREDICTORS) sTot[k] += c.se[k];
+      }
+      if (!nTot) continue;
+      for (const k of benchKeys) draws[k].push(sTot.analogMae / nTot - sTot[k] / nTot);
+    }
+    const pairedBrierVs = {};
+    for (const k of benchKeys) {
+      const arr = draws[k];
+      if (!arr.length) { pairedBrierVs[k] = null; continue; }
+      const sorted = [...arr].sort((a, c) => a - c);
+      pairedBrierVs[k] = {
+        deltaBrier: predictors.analogMae.brier - predictors[k].brier,
+        ci95Low: quantile(sorted, 0.025), ci95High: quantile(sorted, 0.975),
+        shareAnalogBetterPct: pct(arr.filter((x) => x < 0).length / arr.length, 0),
+        resamples: arr.length
+      };
+    }
+
+    out.byLevel[lv] = {
+      levelPct: lv, n: rows.length, clusters: m,
+      realisedBreachPct: pct(realised.mean, 1), realisedBreachSEPp: pp(realised.se),
+      calibrationInTheLarge: { gapPp: pp(inLarge.mean), sePp: pp(inLarge.se), note: "mean predicted minus realised, in percentage points; negative = the analog share UNDER-states how often the path breached" },
+      dropped, nameFallbackRows,
+      calibrationEra: { pooledBreachPct: pct(pooledRate, 1), pooledRows: pooledN, symbolsWithOwnRate: [...perSym.values()].filter((o) => o.n >= PATH_RISK_MIN_NAME_ROWS).length },
+      predictors, reliability, pairedBrierVs
+    };
+  }
+  return out;
 }
 
 /* --------------------------- cluster-robust errors ------------------------ */

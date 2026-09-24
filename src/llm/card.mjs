@@ -153,6 +153,19 @@ export function buildCard({ result, stress = null, validation = null, provenance
       testEra: conformal.testEra, testQueries: conformal.testQueries,
       interpretation: "Interval is median +/- scale x sd of the analog sample. The scale is fitted on 2019-2022 only and frozen; the coverage figure is measured on 2023 onward."
     } : null,
+    /*
+     * The suite's own counts, carried as payload values instead of being left as an array length. The
+     * narrative quotes them ("14 preset scenarios were run"), and the numeric gate can only trace a
+     * numeral it can find in the card - an array's length is not a numeral in the payload, which is how
+     * a count that happened to coincide with another card figure went untested until it stopped
+     * coinciding.
+     */
+    stressSuite: stress ? {
+      scenariosRun: stress.scenarios.length,
+      scenariosSkipped: stress.scenarios.filter((x) => x.skipped).length,
+      baselineAnalogs: Array.isArray(stress.baseline?.analogs) ? stress.baseline.analogs.length : null,
+      baselineMedianPct: pct(stress.baseline?.distribution?.median)
+    } : null,
     stress: stress ? stress.scenarios.map((sc) => ({
       id: sc.id, label: sc.label, kind: sc.kind, tags: sc.tags,
       why: sc.why, caveat: sc.caveat, skipped: sc.skipped, analogsUsed: sc.n,
@@ -162,6 +175,7 @@ export function buildCard({ result, stress = null, validation = null, provenance
       probabilityOfBreaching10PctDrawdown: sc.breach10Pct == null ? null : Number((sc.breach10Pct * 100).toFixed(1)),
       heldWithin10PctDrawdownPct: sc.holdableWithin10pct == null ? null : Number((sc.holdableWithin10pct * 100).toFixed(1)),
       deltaMedianVsBaselinePct: sc.deltaMedianPct == null ? null : Number(sc.deltaMedianPct.toFixed(2)),
+      venueMeta: sc.venueMeta || null,
       fan: (sc.fan || []).filter((_, i) => i % Math.max(1, Math.ceil((sc.fan || []).length / 12)) === 0).map((p) => ({
         session: p.t, p10Pct: p.p10 == null ? null : Number((p.p10 * 100).toFixed(2)),
         p50Pct: p.p50 == null ? null : Number((p.p50 * 100).toFixed(2)),
@@ -187,10 +201,41 @@ export function validationSummary(V) {
     benchmarks: Object.fromEntries(["analogRaw", "uncondNamePIT", "volHarness", "pooledUncond"].map((k) => [k, {
       coveragePct: r[k].testEra.coveragePct, widthPct: r[k].testEra.widthPct, matchedCoverageWidthPct: r[k].matched.widthPct }])),
     matchedCoverageSharpnessVsSameNamePct: V.headline.matchedCoverageSharpnessGainPct,
+    /*
+     * The breach probabilities this card prints are themselves scored out of sample, at the level the
+     * card actually quotes. Carried onto the card rather than left in research/VALIDATION.md so the
+     * narrative can state - and the numeric gate can trace - how well the desk's own path-risk number
+     * predicted realised breaches, against three benchmarks that never saw the test era.
+     */
+    pathRisk: (() => {
+      const pr = V.pathRisk?.byLevel?.[10];
+      if (!pr || !pr.n) return null;
+      const P = pr.predictors || {};
+      const b4 = (x) => (x == null || !Number.isFinite(x) ? null : Number(x.toFixed(4)));
+      const b3 = (x) => (x == null || !Number.isFinite(x) ? null : Number(x.toFixed(3)));
+      const pair = (k) => (pr.pairedBrierVs?.[k] ? {
+        deltaBrier: b4(pr.pairedBrierVs[k].deltaBrier), ci95Low: b4(pr.pairedBrierVs[k].ci95Low),
+        ci95High: b4(pr.pairedBrierVs[k].ci95High), shareAnalogBetterPct: pr.pairedBrierVs[k].shareAnalogBetterPct
+      } : null);
+      return {
+        levelPct: pr.levelPct, testQueries: pr.n, dateClusters: pr.clusters, ciLevelPct: 95,
+        realisedBreachPct: pr.realisedBreachPct, realisedBreachSEPp: pr.realisedBreachSEPp,
+        meanPredictedPct: P.analogMae?.meanPredictedPct ?? null,
+        calibrationGapPp: pr.calibrationInTheLarge?.gapPp ?? null, calibrationGapSEPp: pr.calibrationInTheLarge?.sePp ?? null,
+        brier: { analogMae: b4(P.analogMae?.brier), volReflection: b4(P.volReflection?.brier), sameNameCalib: b4(P.sameNameCalib?.brier), pooledCalib: b4(P.pooledCalib?.brier) },
+        brierAnalogSEPp: P.analogMae?.brierSEPp ?? null,
+        auc: { analogMae: b3(P.analogMae?.auc), volReflection: b3(P.volReflection?.auc), sameNameCalib: b3(P.sameNameCalib?.auc), pooledCalib: b3(P.pooledCalib?.auc) },
+        meanPredictedWhenBreachedPct: P.analogMae?.meanPredictedWhenBreachedPct ?? null,
+        meanPredictedWhenHeldPct: P.analogMae?.meanPredictedWhenHeldPct ?? null,
+        pairedBrierVs: { volReflection: pair("volReflection"), sameNameCalib: pair("sameNameCalib"), pooledCalib: pair("pooledCalib") },
+        reliability: (pr.reliability || []).map((b) => ({ bin: b.bin, count: b.count, meanPredictedPct: b.meanPredictedPct, realisedPct: b.realisedPct })),
+        protocol: V.pathRisk?.protocol || null
+      };
+    })(),
     perSymbolCoverageSdPp: { analogConformal: Number(V.bySymbol.dispersion.analogConformal.coverageSdPp.toFixed(1)), uncondNamePIT: Number(V.bySymbol.dispersion.uncondNamePIT.coverageSdPp.toFixed(1)), pooledUncond: Number(V.bySymbol.dispersion.pooledUncond.coverageSdPp.toFixed(1)) },
     pitChiSquare: Number(V.pit.chiSquare.toFixed(1)), pitChiSquareCritical5Pct: V.pit.chiSquareCritical5pct,
     directionalHitRatePct: V.directional.hitRate,
     meanRetrievalMs: Number(V.timing.meanQueryMs.toFixed(1)),
-    honestVerdict: "Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source. See research/VALIDATION.md and research/LIMITATIONS.md."
+    honestVerdict: "Analog retrieval hits its coverage target out of sample and its width tracks each instrument's own volatility, but it is NOT sharper than a same-name unconditional band at matched coverage, and its raw PIT distribution fails a uniformity test. It is a stress-testing and provenance instrument, not an alpha source. The breach probabilities it prints are scored out of sample too: they rank path risk better than a volatility formula or a frozen base rate, and they over-state how often the path breaches, in the same conservative direction as the PIT failure. See research/VALIDATION.md sections 5 and 5.1 and research/LIMITATIONS.md."
   };
 }
