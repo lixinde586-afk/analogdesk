@@ -250,8 +250,14 @@ async function handleAnalyze(params, res) {
   const parsed = question ? parseIdea(question, luiLib) : null;
   const symbol = String(params.symbol || params.sym || (parsed && parsed.symbol) || "").trim().toUpperCase();
   if (!symbol) {
+    // "We do not carry that" and "you misspelled it" are different facts and need different answers.
+    // A named instrument the library does not hold is reported as itself, with what it trades as, so
+    // the caller is not left to guess whether the desk failed to read the sentence.
+    const uh = parsed && parsed.unheld;
     return badRequest(res, question
-      ? `no instrument recognised in "${question.slice(0, 80)}". Name one of the ${luiLib.symbols.length} library instruments (a ticker such as NVDA, or a name such as 英伟达), or pass symbol= explicitly.`
+      ? (uh
+        ? `"${uh.word}" is ${uh.name} (${uh.ticker}), which this library does not hold. ${uh.why} Name one of the ${luiLib.symbols.length} instruments it does hold (a ticker such as NVDA, or a name such as 英伟达), or pass symbol= explicitly.`
+        : `no instrument recognised in "${question.slice(0, 80)}". Name one of the ${luiLib.symbols.length} library instruments (a ticker such as NVDA, or a name such as 英伟达), or pass symbol= explicitly.`)
       : "symbol is required - or send question= and let the parser find the instrument");
   }
   // Explicit parameters win; the sentence fills whatever they left out. The UI resolves its own
@@ -268,7 +274,19 @@ async function handleAnalyze(params, res) {
 
   let analysis;
   const includeStress = String(params.stress ?? params.scenarios ?? "1") !== "0";
-  try { analysis = desk.analyze({ symbol, date, horizon, k, includeStress, riskTolerancePct }); }
+  // What the sentence asked for that a one-instrument, long-side, closed-grid card cannot fully carry.
+  // It travels into the card rather than staying in the parsed block below, because the card is where
+  // a reviewer reads the answer - a narrowing disclosed only in JSON is not disclosed.
+  const intent = parsed ? {
+    // ?dir= is how a stateless caller forwards a direction it inherited from an earlier turn; the
+    // browser UI does that, because the server has no conversation to inherit from.
+    positionDirection: (params.dir === "short" || params.dir === "long" ? params.dir : null) || parsed.direction || null,
+    droppedInstruments: (parsed.droppedInstruments || []).length ? parsed.droppedInstruments : null,
+    sectorProxy: parsed.sectorProxy || null,
+    ambiguousAlias: parsed.ambiguousAlias || null,
+    unheld: parsed.unheld || null
+  } : {};
+  try { analysis = desk.analyze({ symbol, date, horizon, k, includeStress, riskTolerancePct, language, ...intent }); }
   catch (e) { return badRequest(res, e.message); }
 
   const prov = { ...provenanceBase, bitget: provenance().bitget, llm: provenance().llm };

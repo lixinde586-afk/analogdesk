@@ -187,9 +187,15 @@ function resolveRequest(args = {}) {
   const question = String(args.question ?? args.q ?? "").trim();
   const parsed = question ? parseIdea(question, luiLib) : null;
   const symbol = String(args.symbol || (parsed && parsed.symbol) || "").trim().toUpperCase();
+  const uh = parsed && parsed.unheld;
   if (!symbol) {
+    // "This library does not carry that instrument" is a different fact from "I could not read your
+    // sentence", and an agent host can act on the first one - it can pick another instrument or say
+    // no - while the second just invites a retry of the same words.
     throw new ToolError(question
-      ? "no instrument recognised in \"" + question.slice(0, 80) + "\". Name one of the " + luiLib.symbols.length + " library instruments (a ticker such as NVDA, or a name such as 英伟达), or pass symbol explicitly. analogdesk_library lists them."
+      ? (uh
+        ? "\"" + uh.word + "\" is " + uh.name + " (" + uh.ticker + "), which this library does not hold. " + uh.why + " Name one of the " + luiLib.symbols.length + " instruments it does hold (a ticker such as NVDA, or a name such as 英伟达), or pass symbol explicitly. analogdesk_library lists them."
+        : "no instrument recognised in \"" + question.slice(0, 80) + "\". Name one of the " + luiLib.symbols.length + " library instruments (a ticker such as NVDA, or a name such as 英伟达), or pass symbol explicitly. analogdesk_library lists them.")
       : "give a symbol, or a question that names one. analogdesk_library lists the " + luiLib.symbols.length + " instruments.");
   }
   const asNum = (v, fb) => { const x = Number(v); return Number.isFinite(x) ? x : fb; };
@@ -200,7 +206,15 @@ function resolveRequest(args = {}) {
     horizon: asNum(args.horizon, parsed && parsed.horizon != null ? parsed.horizon : DEFAULT_HORIZON),
     k: asNum(args.k, parsed && parsed.k != null ? parsed.k : 50),
     riskTolerancePct: Number.isFinite(risk) && risk > 0 ? risk : null,
-    language: args.language || (question ? detectLang(question) : "en")
+    language: args.language || (question ? detectLang(question) : "en"),
+    // What the sentence asked for that a one-instrument, long-side, closed-grid card cannot fully
+    // carry. Passed to the desk so the narrowing is printed ON the card an agent host receives, not
+    // only in the understood block beside it.
+    positionDirection: (parsed && parsed.direction) || null,
+    droppedInstruments: (parsed && parsed.droppedInstruments && parsed.droppedInstruments.length) ? parsed.droppedInstruments : null,
+    sectorProxy: (parsed && parsed.sectorProxy) || null,
+    ambiguousAlias: (parsed && parsed.ambiguousAlias) || null,
+    unheld: (parsed && parsed.unheld) || null
   };
 }
 
@@ -219,7 +233,9 @@ async function toolAnalyze(args) {
   let a;
   try {
     a = desk.analyze({ symbol: req.symbol, date: req.date, horizon: req.horizon, k: req.k,
-      includeStress: args.includeStress !== false, riskTolerancePct: req.riskTolerancePct });
+      includeStress: args.includeStress !== false, riskTolerancePct: req.riskTolerancePct,
+      positionDirection: req.positionDirection, droppedInstruments: req.droppedInstruments,
+      sectorProxy: req.sectorProxy, ambiguousAlias: req.ambiguousAlias, unheld: req.unheld, language: req.language });
   } catch (e) { throw new ToolError((e && e.message) || String(e)); }
   stampProvenance(a.card);
   const narrative = await narrate({ card: a.card, question: req.question, language: req.language, llm: cfg.llm, store });
@@ -258,7 +274,9 @@ async function toolLibrary() {
 async function toolStress(args) {
   const req = resolveRequest(args);
   let a;
-  try { a = desk.analyze({ symbol: req.symbol, date: req.date, horizon: req.horizon, k: req.k, includeStress: true, riskTolerancePct: req.riskTolerancePct }); }
+  try { a = desk.analyze({ symbol: req.symbol, date: req.date, horizon: req.horizon, k: req.k, includeStress: true, riskTolerancePct: req.riskTolerancePct,
+    positionDirection: req.positionDirection, droppedInstruments: req.droppedInstruments,
+    sectorProxy: req.sectorProxy, ambiguousAlias: req.ambiguousAlias, unheld: req.unheld, language: req.language }); }
   catch (e) { throw new ToolError((e && e.message) || String(e)); }
   stampProvenance(a.card);
   const card = a.card, d = card.distribution, rows = card.stress || [];

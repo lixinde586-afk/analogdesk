@@ -254,6 +254,11 @@ function apiRuntime() {
       if (p.question) q.set("question", p.question);
       if (p.includeStress === false) q.set("stress", "0");
       if (p.riskTolerancePct) q.set("risk", String(p.riskTolerancePct));
+      // The server re-parses the sentence itself, so it already recovers the sector word, the
+      // ambiguity and the dropped names. Direction is the one field a follow-up fragment inherits
+      // from an earlier sentence ("k 改成 100" is still about the short named two turns ago), and a
+      // stateless server cannot inherit anything - so that one is forwarded explicitly.
+      if (p.positionDirection) q.set("dir", p.positionDirection);
       return get(`/api/analyze?${q}`);
     },
     async bitget() { try { return (await get("/api/bitget-probe")).bitget; } catch { return null; } }
@@ -331,7 +336,11 @@ function browserRuntime(mods) {
       const t0 = performance.now();
       const language = p.language && p.language !== "auto" ? p.language : detectLang(p.question || "");
       const a = desk.analyze({ symbol: p.symbol, date: p.date || "latest", horizon: p.horizon, k: p.k,
-        includeStress: p.includeStress !== false, riskTolerancePct: p.riskTolerancePct || null });
+        includeStress: p.includeStress !== false, riskTolerancePct: p.riskTolerancePct || null,
+        // The language layer's disclosure, printed on the card rather than left in the parse trace.
+        positionDirection: p.positionDirection || null, droppedInstruments: p.droppedInstruments || null,
+        sectorProxy: p.sectorProxy || null, ambiguousAlias: p.ambiguousAlias || null,
+        unheld: p.unheld || null, language });
       const prov = mods.provenance || {};
       a.card.provenance = { ...(a.card.provenance || {}), ...prov,
         bitget: prov.bitget || { reachable: false, summary: "not probed in the static build", endpoints: [], disclosure: prov.bitgetDisclosure || null },
@@ -574,10 +583,16 @@ function renderFollowups(card, p) {
   const zh = (p.language || "en") === "zh";
   const sym = card.idea ? card.idea.symbol : null;
   const bench = S.lib && S.lib.benchSym;
+  const pd = p.parsed || {};
   const sug = followUpSuggestions(
-    { symbol: sym, horizon: card.idea ? card.idea.horizonSessions : null, riskTolerancePct: p.riskTolerancePct },
+    { symbol: sym, horizon: card.idea ? card.idea.horizonSessions : null, riskTolerancePct: p.riskTolerancePct,
+      earningsIntent: Boolean(pd.earningsIntent) },
     { language: zh ? "zh" : "en", horizons: (S.lib && S.lib.horizons) || null,
-      fallbackSymbol: bench || "SPY", alternateSymbol: bench && bench !== sym ? bench : null });
+      fallbackSymbol: bench || "SPY", alternateSymbol: bench && bench !== sym ? bench : null,
+      // A comparison question is answered for one name; the chip for the other turns that disclosed
+      // limitation into one click instead of a retype.
+      droppedInstruments: pd.droppedInstruments || null,
+      earningsDate: pd.earningsIntent ? lastEarningsSession(sym, card.idea ? card.idea.asOfSession : null) : null });
   if (!sug.length) { box.hidden = true; box.innerHTML = ""; return; }
   box.innerHTML = `<span class="lbl">${zh ? "接着问" : "ask next"}</span>`
     + sug.map((s, i) => `<button type="button" data-i="${i}" title="${esc(s.q)}">${esc(s.label)}</button>`).join("");
@@ -1118,6 +1133,10 @@ function readParams(inherit = false) {
   // is inherited. Without this, clearing the question and picking a different symbol re-ran the
   // previous symbol, because the carried-over context outranked the dropdown the user just changed.
   const parsed = inherit && q ? mergeContext(S.lastParsed, parseQuery(q, S.lib)) : parseQuery(q, S.lib);
+  // An explicit "用英文再说一遍" outranks the character count that detectLang() would otherwise apply,
+  // and mergeContext() keeps that choice for the rest of the conversation. A hand-picked dropdown still
+  // wins over both, because it is the more deliberate act.
+  const wantLang = $("lang").value;
   return {
     question: q,
     symbol: parsed.symbol || $("symbol").value,
@@ -1125,8 +1144,17 @@ function readParams(inherit = false) {
     date: parsed.date || $("date").value || "latest",
     k: parsed.k || Number($("k").value) || 50,
     riskTolerancePct: parsed.riskTolerancePct || null,
-    language: $("lang").value === "auto" ? detectLang(q) : $("lang").value,
+    language: wantLang === "auto" ? (parsed.language || detectLang(q)) : wantLang,
     includeStress: $("stress").checked,
+    // What the sentence asked for that a one-instrument, long-side, closed-grid card cannot fully
+    // carry. Every one of these is null on a plain request, which is what keeps a canonical card
+    // byte-identical to the one the replay cache was warmed from.
+    positionDirection: parsed.direction || null,
+    droppedInstruments: (parsed.droppedInstruments || []).length ? parsed.droppedInstruments : null,
+    sectorProxy: parsed.sectorProxy || null,
+    ambiguousAlias: parsed.ambiguousAlias || null,
+    // Only reaches the card when a held instrument was analysed beside it; see run().
+    unheld: parsed.unheld || null,
     parsed
   };
 }
@@ -1153,7 +1181,59 @@ function showParsed(p) {
   if (p.riskTolerancePct) bits.push(`drawdown tolerance <b>${num(p.riskTolerancePct, 0)}%</b>`);
   bits.push(`lang <b>${esc(p.language)}</b>`);
   if (!p.includeStress) bits.push(`<span class="muted">stress suite off</span>`);
+  // What the sentence asked for that this card cannot fully carry. Printed here as well as in the
+  // amber bar below, because this line is read while the trader is still checking their own sentence
+  // and the bar only appears once the engine has finished.
+  if (pd.direction) bits.push("direction <b>" + esc(pd.direction) + "</b>"
+    + (pd.directionMatched ? ' <span class="muted">from "' + esc(pd.directionMatched) + '"</span>' : ""));
+  if (pd.sectorProxy) bits.push('<span class="muted">"' + esc(pd.sectorProxy.word) + '" is a sector word &rarr; ' + esc(pd.sectorProxy.symbol) + "</span>");
+  if (pd.ambiguousAlias) bits.push('<span class="muted">"' + esc(pd.ambiguousAlias.word) + '" is ambiguous &rarr; ' + esc(pd.ambiguousAlias.symbol) + "</span>");
+  if ((pd.droppedInstruments || []).length) bits.push('<span class="muted">also named, not analysed: ' + esc(pd.droppedInstruments.map((d) => d.symbol).join(", ")) + "</span>");
+  if (pd.earningsIntent) bits.push('<span class="muted">earnings mentioned &middot; as-of date left alone</span>');
+  if (pd.unheld && !pd.symbol) bits.push('<span class="muted">' + esc(pd.unheld.word) + " = " + esc(pd.unheld.name) + " (" + esc(pd.unheld.ticker) + "), not in this library</span>");
+  if ((pd.changed || []).length) bits.push('<span class="muted">changed: ' + esc(pd.changed.join(", ")) + "</span>");
   $("parsed").innerHTML = bits.join(" &middot; ");
+}
+
+/**
+ * The most recent reported-earnings session for a symbol at or before the card's as-of date.
+ *
+ * An earnings sentence never moves the as-of date by itself - see EARNINGS_RE in src/llm/lui.mjs,
+ * where the reason is that one of the canonical replay cards IS an earnings question and a silent
+ * snap would change which card was answered. What the desk can do is offer the move as one click.
+ * The date is snapped onto the library's own session calendar first, because a chip that produced
+ * an error would be worse than no chip.
+ */
+function lastEarningsSession(sym, asOf) {
+  const all = (S.lib && S.lib.earnings && S.lib.earnings[sym]) || null;
+  const dates = (S.lib && S.lib.dates) || null;
+  if (!Array.isArray(all) || !all.length || !Array.isArray(dates) || !dates.length) return null;
+  const cut = asOf || dates[dates.length - 1];
+  let best = null;
+  for (const d of all) { if (typeof d === "string" && d <= cut && (best == null || d > best)) best = d; }
+  if (!best) return null;
+  for (let i = dates.length - 1; i >= 0; i--) { if (dates[i] <= best) return dates[i]; }
+  return null;
+}
+
+/**
+ * The "nothing analysed yet" panel, reused as the place to say WHY nothing was analysed.
+ *
+ * An instrument this library does not hold used to fall through to whatever the Symbol dropdown
+ * happened to be set to, so 台积电 produced a full, confident research card about a different
+ * company. The original markup is captured on first use and restored before a real card renders, so
+ * the panel is never left carrying a stale explanation.
+ */
+const EMPTY_ORIGINAL = { html: null };
+function sayEmpty(title, body) {
+  const box = $("empty");
+  if (EMPTY_ORIGINAL.html == null) EMPTY_ORIGINAL.html = box.innerHTML;
+  box.innerHTML = "<h2>" + esc(title) + "</h2><p>" + esc(body) + "</p>";
+  box.hidden = false;
+}
+function restoreEmpty() {
+  const box = $("empty");
+  if (EMPTY_ORIGINAL.html != null) box.innerHTML = EMPTY_ORIGINAL.html;
 }
 
 async function run() {
@@ -1161,11 +1241,23 @@ async function run() {
   const p = readParams(true);
   showParsed(p);
   S.lastParsed = p.parsed;
+  // A named instrument this library does not hold is not a typo, and it must not quietly become the
+  // dropdown. Saying so is a fact about the desk the trader is entitled to hear before the position.
+  const uh = (p.parsed || {}).unheld;
+  if (uh && !(p.parsed || {}).symbol) {
+    const why = (p.language === "zh" && uh.whyZh) ? uh.whyZh : uh.why;
+    sayEmpty(uh.name + " (" + uh.ticker + ") is not in this library", why);
+    // The previous card has to go: a refusal printed above a full, confident research card for a
+    // DIFFERENT instrument reads as the desk disagreeing with itself.
+    $("results").hidden = true;
+    toast(why, "bad", 16000);
+    return;
+  }
   if (!p.symbol) { toast("No instrument recognised. Pick one from the Symbol dropdown, or type a ticker that is in the library.", "bad"); return; }
   S.busy = true;
   const btn = $("go"), prev = btn.innerHTML;
   btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Analysing`;
-  $("empty").hidden = true; $("results").hidden = false;
+  restoreEmpty(); $("empty").hidden = true; $("results").hidden = false;
   $("request-notes").hidden = true; $("request-notes").innerHTML = "";
   renderPersonal(null); $("followups").hidden = true;
   $("cardbar").innerHTML = `<div class="headline"><h2>${esc(p.symbol)}</h2><div class="meta">retrieving analogs${p.includeStress ? " and running the stress suite" : ""}&hellip;</div></div>`;

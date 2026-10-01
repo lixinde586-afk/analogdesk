@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T04:57:05.387Z",
+  "generatedAt": "2026-10-01T11:55:46.652Z",
   "primaryHorizon": 5,
   "horizons": [
     1,
@@ -74,7 +74,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 711
+        "initMs": 617
       },
       "grid": {
         "calibration": 1823,
@@ -300,7 +300,7 @@
         },
         "matchedCoverageSharpnessGainPct": -1.1,
         "analogScale": 1.3367893681432808,
-        "meanQueryMs": 9.006671608598962,
+        "meanQueryMs": 10.985174203113417,
         "meanAnalogs": 50,
         "testN": 2698,
         "calibN": 1823
@@ -3719,9 +3719,9 @@
         "n": 2698
       },
       "timing": {
-        "totalMs": 36827,
-        "meanQueryMs": 9.006671608598962,
-        "engineInitMs": 711
+        "totalMs": 43928,
+        "meanQueryMs": 10.985174203113417,
+        "engineInitMs": 617
       },
       "rowsOmitted": 0
     },
@@ -3789,7 +3789,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 711
+        "initMs": 617
       },
       "grid": {
         "calibration": 1823,
@@ -4015,7 +4015,7 @@
         },
         "matchedCoverageSharpnessGainPct": -7.6,
         "analogScale": 1.310234253013022,
-        "meanQueryMs": 8.970719051148999,
+        "meanQueryMs": 10.893995552260934,
         "meanAnalogs": 50,
         "testN": 2698,
         "calibN": 1823
@@ -7469,9 +7469,9 @@
         "n": 2698
       },
       "timing": {
-        "totalMs": 36142,
-        "meanQueryMs": 8.970719051148999,
-        "engineInitMs": 711
+        "totalMs": 41821,
+        "meanQueryMs": 10.893995552260934,
+        "engineInitMs": 617
       },
       "rowsOmitted": 0
     },
@@ -7539,7 +7539,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 711
+        "initMs": 617
       },
       "grid": {
         "calibration": 1823,
@@ -7765,7 +7765,7 @@
         },
         "matchedCoverageSharpnessGainPct": -2.4,
         "analogScale": 1.4924341728583514,
-        "meanQueryMs": 8.830605253140465,
+        "meanQueryMs": 10.556909021697754,
         "meanAnalogs": 50,
         "testN": 2627,
         "calibN": 1823
@@ -11247,9 +11247,9 @@
         "n": 2627
       },
       "timing": {
-        "totalMs": 34875,
-        "meanQueryMs": 8.830605253140465,
-        "engineInitMs": 711
+        "totalMs": 42057,
+        "meanQueryMs": 10.556909021697754,
+        "engineInitMs": 617
       },
       "rowsOmitted": 0
     },
@@ -11317,7 +11317,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 711
+        "initMs": 617
       },
       "grid": {
         "calibration": 1823,
@@ -11543,7 +11543,7 @@
         },
         "matchedCoverageSharpnessGainPct": -3.4,
         "analogScale": 1.7677363165745443,
-        "meanQueryMs": 8.633422154548915,
+        "meanQueryMs": 10.122953939855348,
         "meanAnalogs": 50,
         "testN": 2627,
         "calibN": 1823
@@ -15032,9 +15032,9 @@
         "n": 2627
       },
       "timing": {
-        "totalMs": 33753,
-        "meanQueryMs": 8.633422154548915,
-        "engineInitMs": 711
+        "totalMs": 40086,
+        "meanQueryMs": 10.122953939855348,
+        "engineInitMs": 617
       },
       "rowsOmitted": 0
     },
@@ -15102,7 +15102,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 711
+        "initMs": 617
       },
       "grid": {
         "calibration": 1823,
@@ -15328,7 +15328,7 @@
         },
         "matchedCoverageSharpnessGainPct": -4.9,
         "analogScale": 1.6157427584905268,
-        "meanQueryMs": 8.881064162754303,
+        "meanQueryMs": 10.453442879499217,
         "meanAnalogs": 50,
         "testN": 2556,
         "calibN": 1823
@@ -18817,9 +18817,9 @@
         "n": 2556
       },
       "timing": {
-        "totalMs": 33641,
-        "meanQueryMs": 8.881064162754303,
-        "engineInitMs": 711
+        "totalMs": 39406,
+        "meanQueryMs": 10.453442879499217,
+        "engineInitMs": 617
       },
       "rowsOmitted": 0
     },
@@ -18887,7 +18887,7 @@
         "minWeightCoverage": 0.6,
         "minHistory": 60,
         "poolMultiple": 80,
-        "initMs": 711
+        "initMs": 617
       },
       "grid": {
         "calibration": 1823,
@@ -19113,7 +19113,7 @@
         },
         "matchedCoverageSharpnessGainPct": -0.7,
         "analogScale": 1.4943814995810776,
-        "meanQueryMs": 8.836619718309858,
+        "meanQueryMs": 7.901408450704225,
         "meanAnalogs": 50,
         "testN": 2485,
         "calibN": 1823
@@ -22595,9 +22595,9 @@
         "n": 2485
       },
       "timing": {
-        "totalMs": 32737,
-        "meanQueryMs": 8.836619718309858,
-        "engineInitMs": 711
+        "totalMs": 31327,
+        "meanQueryMs": 7.901408450704225,
+        "engineInitMs": 617
       },
       "rowsOmitted": 0
     }

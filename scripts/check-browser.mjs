@@ -195,9 +195,54 @@ const PROBE = `
                   "clean-k-reruns", function () {
                     var rn2 = document.getElementById("request-notes");
                     steps.push("request-notes-hidden-when-clean=" + (!!rn2 && rn2.hidden === true));
-                    steps.push("no-fatal-banner=" + !document.getElementById("fatal"));
-                    var bad = steps.filter(function (s) { return /=false$|=0$/.test(s); });
-                    finish(bad.length ? "FAIL" : "PASS", bad.length ? bad.join(", ") : "");
+                    // Phase 5: a sector word. The substitution has to be disclosed ON the page, in the
+                    // language the question arrived in, and named in the parse line above it.
+                    q.value = "半导体板块未来 10 个交易日怎么看";
+                    clickGo();
+                    waitFor(function () { return finished("XLK"); }, "sector-proxy-reruns", function () {
+                      var rn3 = document.getElementById("request-notes");
+                      var t3 = rn3 ? rn3.textContent : "";
+                      steps.push("sector-notes-visible=" + (!!rn3 && !rn3.hidden));
+                      steps.push("sector-notes-name-the-proxy=" + /XLK/.test(t3));
+                      steps.push("sector-notes-in-the-questions-language=" + /板块/.test(t3));
+                      steps.push("parse-line-names-the-substitution=" + /XLK/.test(document.getElementById("parsed").textContent || ""));
+                      // Phase 6: a short position keeps its long-side card and says so on it.
+                      q.value = "I want to short QQQ over the next 5 sessions";
+                      clickGo();
+                      waitFor(function () { return finished("QQQ"); }, "short-side-reruns", function () {
+                        var rn4 = document.getElementById("request-notes");
+                        var t4 = rn4 ? rn4.textContent : "";
+                        steps.push("short-notes-visible=" + (!!rn4 && !rn4.hidden));
+                        steps.push("short-notes-name-the-side=" + /SHORT position/.test(t4));
+                        steps.push("parse-line-names-the-direction=" + /direction/.test(document.getElementById("parsed").textContent || ""));
+                        // Phase 7: an instrument this library does not hold must NOT fall through to
+                        // whatever the dropdown says. It has to name what it recognised and stop.
+                        q.value = "台积电未来一个月";
+                        clickGo();
+                        waitFor(function () {
+                          var e = document.getElementById("empty");
+                          return !!e && !e.hidden && /TSM/.test(e.textContent);
+                        }, "unheld-refused", function () {
+                          var e2 = document.getElementById("empty");
+                          steps.push("unheld-names-the-ticker=" + /TSM/.test(e2.textContent));
+                          steps.push("unheld-explains-in-the-questions-language=" + /不在本库/.test(e2.textContent));
+                          steps.push("unheld-hid-the-previous-card=" + document.getElementById("results").hidden);
+                          // Phase 8: a clean question afterwards must restore the normal page, which
+                          // is also the only thing that proves the refusal panel is not sticky.
+                          q.value = "NVDA 未来 5 个交易日";
+                          clickGo();
+                          waitFor(function () { return finished("NVDA"); }, "clean-rerun-after-refusal", function () {
+                            steps.push("empty-state-hidden-again=" + document.getElementById("empty").hidden);
+                            var eb = document.getElementById("empty");
+                            steps.push("empty-state-markup-restored=" + (eb.hidden || /Nothing analysed yet/.test(eb.innerHTML)));
+                            steps.push("request-notes-hidden-again=" + document.getElementById("request-notes").hidden);
+                            steps.push("no-fatal-banner=" + !document.getElementById("fatal"));
+                            var bad = steps.filter(function (s) { return /=false$|=0$/.test(s); });
+                            finish(bad.length ? "FAIL" : "PASS", bad.length ? bad.join(", ") : "");
+                          });
+                        });
+                      });
+                    });
                   });
               });
           });

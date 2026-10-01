@@ -84,6 +84,69 @@ function normalizeRequest({ horizon, k, horizons }) {
 }
 
 /**
+ * What the parser understood that the engine cannot act on, said out loud on the card.
+ *
+ * normalizeRequest() discloses the adjustments the ENGINE makes (a snapped horizon, a clamped k).
+ * This discloses the narrowing the LANGUAGE layer makes, which is the more dangerous kind: nothing
+ * failed, the card is internally consistent, and every number on it is real - it is just not the
+ * number the sentence asked for. A short question answered with long-side statistics, a sector word
+ * answered with one ETF, a two-name comparison answered for one name: each produces a confident,
+ * well-formed, wrong-scope card. So each one prints what was asked, what was run, and why those two
+ * are not the same thing.
+ *
+ * Every field defaults to null and the function returns [] when nothing is set, so a card built
+ * without this layer - every record in the replay cache, the committed demo run - is byte-identical
+ * to the one it was warmed from. scripts/check-replay.mjs asserts that.
+ *
+ * Bilingual because the disclosure is only a disclosure if the person who asked can read it.
+ */
+function discloseIntent({ positionDirection = null, droppedInstruments = null, sectorProxy = null, ambiguousAlias = null, unheld = null, symbol = null } = {}, language = "en") {
+  const zh = String(language) === "zh";
+  const notes = [];
+  const dropped = Array.isArray(droppedInstruments) ? droppedInstruments.filter((d) => d && d.symbol && d.symbol !== symbol) : [];
+
+  if (dropped.length) {
+    const syms = dropped.map((d) => d.symbol);
+    // Grammatically enumerated rather than comma-joined: "You named 2 instruments (AMD)" reads as a
+    // bug, and a disclosure that reads as a bug does not get read as a disclosure.
+    const listed = zh ? syms.join("、")
+      : syms.length === 1 ? syms[0] : syms.slice(0, -1).join(", ") + " and " + syms[syms.length - 1];
+    const named = zh ? symbol + "、" + syms.join("、")
+      : syms.length === 1 ? symbol + " and " + syms[0] : symbol + ", " + listed;
+    notes.push(zh
+      ? "你在一句话里提到了 " + (syms.length + 1) + " 个标的（" + named + "）。本桌面一次只分析一个标的，没有对比模式，所以这张卡片只关于 " + symbol + "。" + listed + " 没有与它做比较、对冲、相关性或基准对照，下面没有任何相对结论。请分别提问，再把两张卡片并排读。"
+      : "You named " + (syms.length + 1) + " instruments in one sentence: " + named + ". This desk analyses one at a time and has no comparison mode, so this card is about " + symbol + " only. " + listed + (syms.length === 1 ? " was" : " were") + " not compared, netted, correlated or benchmarked against it, and nothing below is a relative view. Ask for each name separately and read the two cards side by side.");
+  }
+
+  if (positionDirection === "short") {
+    notes.push(zh
+      ? "你问的是做空，这张卡片没有按做空重算。下面所有数字——类比分布、分位数、保形区间和压力情景——都基于检索到的历史片段的做多方向远期收益，因此描述的是标的本身怎么走，不是做空能赚多少。请把尾部反着读：这里列为最差的情景对做空伤害最小，上行尾部才是最伤的。同理，回撤承受面板（如果有）也是做多口径的统计。"
+      : "You asked about a SHORT position and this card was not recomputed for one. Every figure below - the analog distribution, the percentiles, the conformal interval and the stress suite - is built from the LONG-side forward return of the retrieved episodes, so it describes what the instrument did, not what a short would have earned. Read the tails in reverse: the scenarios named here as the worst outcomes are the ones that hurt a short least, and the upside tail is the one that hurts it most. The stated-drawdown panel, when present, is a long-side statistic for the same reason.");
+  }
+
+  if (sectorProxy) {
+    notes.push(zh
+      ? "「" + sectorProxy.word + "」指的是一个板块或篮子，不是单一标的。本库没有与之完全对应的标的，这张卡片分析的是 " + sectorProxy.have + "。" + (sectorProxy.whyZh || sectorProxy.why)
+      : '"' + sectorProxy.word + '" names a sector or a basket, not one instrument. You asked for ' + sectorProxy.want + '; this card analyses ' + sectorProxy.have + ". " + sectorProxy.why);
+  }
+
+  if (ambiguousAlias) {
+    notes.push(String(zh ? (ambiguousAlias.whyZh || ambiguousAlias.why) : ambiguousAlias.why));
+  }
+
+  // Reached only when a held instrument was analysed BESIDE an unheld one ("bitcoin and NVDA").
+  // The unheld-only case never gets this far: the UI and the API both refuse it before a card exists,
+  // because a card about the dropdown would be an answer to a question nobody asked.
+  if (unheld && unheld.name) {
+    notes.push(zh
+      ? "你还提到了「" + unheld.word + "」（" + unheld.name + "，" + unheld.ticker + "），本库没有这个标的，所以它没有被分析，也没有参与下面任何数字。" + (unheld.whyZh || unheld.why)
+      : "You also named \"" + unheld.word + "\" (" + unheld.name + ", " + unheld.ticker + "), which this library does not hold, so it was not analysed and contributes nothing to any figure below. " + unheld.why);
+  }
+
+  return notes;
+}
+
+/**
  * The 7x24 wrapper layer, as COMMITTED MEASUREMENT rather than a live call.
  *
  * research/LIMITATIONS.md §9 was explicit that the desk's headline claim - a market that never
@@ -501,6 +564,10 @@ export function createDesk({ dataset, validationResults = null, provenance = {},
         // instead of an approximate calendar day. 2513 short strings; the browser bundle already
         // carries the dataset this comes from.
         dates: mx.dates.slice(), horizons: engine.C.horizons,
+        // The reported-earnings calendar, symbol to ISO dates. An earnings question never moves the
+        // as-of date on its own (see EARNINGS_RE in src/llm/lui.mjs) - it is disclosed, and the report
+        // date is offered as a one-click chip so the trader chooses it. Offering it needs the dates.
+        earnings: dataset.events?.earnings || null,
         benchSym: mx.benchSym, features: FEATURES, groups: GROUPS, nFeatures: NF,
         excludedFromDistance: DISTANCE_EXCLUDE
       };
@@ -523,8 +590,14 @@ export function createDesk({ dataset, validationResults = null, provenance = {},
      * Full analysis for one trade idea.
      * @returns {{card:object, detail:object}}
      */
-    analyze({ symbol, date = "latest", horizon = DEFAULT_HORIZON, k = DEFAULT_K, scenarios = null, includeStress = true, riskTolerancePct = null } = {}) {
+    analyze({ symbol, date = "latest", horizon = DEFAULT_HORIZON, k = DEFAULT_K, scenarios = null, includeStress = true, riskTolerancePct = null,
+      // Everything below is the LANGUAGE layer's disclosure and is null unless a caller parsed a
+      // sentence. Null means "no narrowing to report", which is what keeps a default card identical
+      // to the one the replay cache and the committed demo record were built from.
+      positionDirection = null, droppedInstruments = null, sectorProxy = null, ambiguousAlias = null,
+      unheld = null, language = "en" } = {}) {
       const req = normalizeRequest({ horizon, k, horizons: engine.C.horizons });
+      const intentNotes = discloseIntent({ positionDirection, droppedInstruments, sectorProxy, ambiguousAlias, unheld, symbol }, language);
       const { H, K } = req;
       const t0 = Date.now();
       const base = engine.query({ sym: symbol, date, horizon: H, k: K });
@@ -595,7 +668,8 @@ export function createDesk({ dataset, validationResults = null, provenance = {},
         kClamped: req.kClamped,
         kBounds: { min: K_MIN, max: K_MAX },
         validatedK: VALIDATED_K,
-        notes: req.notes
+        // Engine adjustments first, then what the sentence asked for that the engine could not act on.
+        notes: req.notes.concat(intentNotes)
       });
 
       // Personalisation, and the only kind this desk accepts: a drawdown tolerance the person asking

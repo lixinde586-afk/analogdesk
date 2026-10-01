@@ -176,6 +176,31 @@ try {
     "the k clamp discloses that the frozen conformal scale and every published figure describe k=50, not this k",
     "notes: " + fmt(k9.json.card.retrieval.notes));
 
+  console.log("\n=== what the sentence asked for that one card cannot carry is printed ON the card ===");
+  const sec = await get("/api/analyze?question=" + encodeURIComponent("crude oil over the next 10 sessions") + "&stress=0");
+  assert(sec.status === 200 && sec.json.parsed.sectorProxy && sec.json.card.idea.symbol === "XLE"
+    && (sec.json.card.retrieval.notes || []).some((n) => /not a crude-oil return/.test(n)),
+    "a commodity word is answered with its proxy AND says the proxy is not the commodity",
+    "notes: " + fmt(sec.json.card.retrieval.notes));
+  const sh = await get("/api/analyze?question=" + encodeURIComponent("I want to short QQQ over the next 5 sessions") + "&stress=0&language=en");
+  assert(sh.status === 200 && sh.json.parsed.direction === "short"
+    && (sh.json.card.retrieval.notes || []).some((n) => /SHORT position/.test(n)),
+    "a short question keeps its long-side card and says so on it rather than silently answering the wrong side",
+    "notes: " + fmt(sh.json.card.retrieval.notes));
+  const cmpS = await get("/api/analyze?question=" + encodeURIComponent("NVDA vs AMD over the next 5 sessions") + "&stress=0");
+  assert(cmpS.status === 200 && (cmpS.json.parsed.droppedInstruments || []).map((d) => d.symbol).join() === "AMD"
+    && (cmpS.json.card.retrieval.notes || []).some((n) => /no comparison mode/.test(n)),
+    "a two-name question is answered for one name and names the one it did not analyse",
+    "notes: " + fmt(cmpS.json.card.retrieval.notes));
+  const zhS = await get("/api/analyze?question=" + encodeURIComponent("我想做空英伟达，未来 5 个交易日") + "&stress=0&language=zh");
+  assert(zhS.status === 200 && (zhS.json.card.retrieval.notes || []).some((n) => /做空/.test(n)),
+    "the same disclosure is written in the language the question arrived in",
+    "notes: " + fmt(zhS.json.card.retrieval.notes));
+  const uhS = await get("/api/analyze?question=" + encodeURIComponent("台积电未来一个月"));
+  assert(uhS.status === 400 && /TSM/.test(uhS.json.error) && /does not hold/.test(uhS.json.error),
+    "an instrument the library does not carry is refused BY NAME, not as an unreadable sentence",
+    "got: " + fmt(uhS.body));
+
   console.log("\n=== a request the desk cannot answer is an error, never an empty card ===");
   const ns = await get("/api/analyze?question=" + encodeURIComponent("hello there how are you"));
   assert(ns.status === 400 && ns.json.ok === false && /no instrument recognised/.test(ns.json.error),

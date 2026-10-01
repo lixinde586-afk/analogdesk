@@ -100,7 +100,44 @@ const CASES = [
   ["", { symbol: null, horizon: null, date: null, k: null, riskTolerancePct: null }],
   ["ZZZZZ", { symbol: null }],
   ["what will this week bring for the market", { symbol: null, horizon: 5 }],
-  ["how do the next five days look", { symbol: null, horizon: 5 }]
+  ["how do the next five days look", { symbol: null, horizon: 5 }],
+
+  // --- the language layer's disclosure: what the sentence asked for that one card cannot carry
+  ["把 k 调到 100 的 NVDA 一周", { symbol: "NVDA", horizon: 5, k: 100 }],
+  ["用 30 个类比看英伟达 5 天", { symbol: "NVDA", horizon: 5, k: 30 }],
+  ["我想做空英伟达，未来 5 个交易日", { symbol: "NVDA", horizon: 5, direction: "short" }],
+  ["I want to short QQQ over the next 10 sessions", { symbol: "QQQ", horizon: 10, direction: "short", language: "en" }],
+  ["short NVDA next week", { symbol: "NVDA", direction: "short" }],
+  // a stated stop is a risk tolerance, not a position: inferring a side from it would be a guess
+  ["止损 10% 的 NVDA 一周", { symbol: "NVDA", horizon: 5, riskTolerancePct: 10, direction: null }],
+  ["in the short term what happens to NVDA", { symbol: "NVDA", direction: null }],
+  ["give me a short answer on SPY", { symbol: "SPY", direction: null }],
+  ["NVDA short story over 5 sessions", { symbol: "NVDA", horizon: 5, direction: null }],
+  ["NVDA vs AMD over the next 5 sessions", { symbol: "NVDA", horizon: 5, direction: null }],
+  // sector and commodity words resolve to ONE instrument, and say so on the card
+  ["半导体板块未来 10 个交易日", { symbol: "XLK", horizon: 10, matchedHow: "sector-proxy" }],
+  ["crude oil over the next 10 sessions", { symbol: "XLE", horizon: 10, matchedHow: "sector-proxy" }],
+  ["hang seng tech 5 days", { symbol: "KWEB", horizon: 5, matchedHow: "sector-proxy" }],
+  ["china concept stocks 5 days", { symbol: "KWEB", horizon: 5, matchedHow: "sector-proxy" }],
+  ["超微未来 5 天", { symbol: "AMD", horizon: 5 }],
+  // instruments this library does not hold resolve to NOTHING, not to a lookalike
+  ["台积电未来一个月", { symbol: null, horizon: 20 }],
+  ["美联航未来一周", { symbol: null, horizon: 5 }],
+  ["bitcoin next week", { symbol: null, horizon: 5 }],
+  ["TSMC over the next 10 sessions", { symbol: null, horizon: 10 }],
+  // an unheld name beside a held one does not take the held one down with it
+  ["比特币和英伟达怎么看", { symbol: "NVDA" }],
+  ["bitcoin and NVDA over the next 5 sessions", { symbol: "NVDA", horizon: 5 }],
+  // earnings is detected and disclosed, and never moves the as-of date on its own
+  ["NVDA earnings next week", { symbol: "NVDA", earningsIntent: true, date: null }],
+  ["Should I buy BABA into earnings this week?", { symbol: "BABA", earningsIntent: true, direction: "long" }],
+  ["英伟达财报前五天会不会被砸", { symbol: "NVDA", earningsIntent: true }],
+  // an explicit language request outranks the CJK character count in both directions
+  ["用英文再说一遍 NVDA 一周", { symbol: "NVDA", horizon: 5, language: "en", languageRequest: "en" }],
+  ["用中文讲一下 SPY 未来 5 天", { symbol: "SPY", language: "zh", languageRequest: "zh" }],
+  // LI is Li Auto's ticker and "LI" is two characters of "English": word boundaries, not substrings
+  ["say it in English", { symbol: null, languageRequest: "en", language: "en" }],
+  ["the oil painting of TSLA", { symbol: "TSLA", matchedHow: "exact" }]
 ];
 
 console.log("=== sentences: one contract row each (" + CASES.length + " rows; library " + D.length + " sessions to " + LAST + ") ===");
@@ -147,6 +184,66 @@ for (const lang of ["zh", "en"]) {
       + (p.riskTolerancePct ? " risk" + p.riskTolerancePct : "") + (p.date ? " as-of " + p.date : ""));
   }
 }
+
+console.log("\n=== the disclosure fields: a narrowing has to be able to say what it narrowed ===");
+const unheldZh = parseIdea("台积电未来一个月", LIB).unheld;
+if (!unheldZh) bad("台积电 reported no unheld instrument");
+else if (unheldZh.ticker !== "TSM" || !unheldZh.whyZh) bad("台积电 unheld is incomplete: " + JSON.stringify(unheldZh));
+else ok("台积电 -> " + unheldZh.name + " (" + unheldZh.ticker + "), explanation in both languages");
+const unheldMixed = parseIdea("比特币和英伟达怎么看", LIB);
+eq("an unheld name beside a held one keeps the held one", unheldMixed.symbol, "NVDA");
+eq("and still reports the unheld one", unheldMixed.unheld && unheldMixed.unheld.ticker, "BTC");
+eq("a fragment of the matched phrase is not a second instrument", (parseIdea("hang seng tech 5 days", LIB).droppedInstruments || []).length, 0);
+const cmp = parseIdea("NVDA vs AMD over the next 5 sessions", LIB);
+eq("a comparison reports the name it did not analyse", (cmp.droppedInstruments || []).map((d) => d.symbol).join(","), "AMD");
+eq("and flags the comparison itself", cmp.comparison, true);
+eq("three names keep the two that were dropped", (parseIdea("compare NVDA AMD and TSLA next week", LIB).droppedInstruments || []).map((d) => d.symbol).join(","), "AMD,TSLA");
+const proxy = parseIdea("半导体板块未来 10 个交易日", LIB).sectorProxy;
+if (!proxy || proxy.symbol !== "XLK" || !proxy.whyZh || !proxy.want || !proxy.have) bad("半导体板块 did not tag the XLK substitution completely");
+else ok("半导体板块 -> XLK with want/have/why/whyZh");
+const amb = parseIdea("超微未来 5 天", LIB).ambiguousAlias;
+if (!amb || amb.symbol !== "AMD" || !amb.whyZh) bad("超微 did not report its ambiguity in both languages");
+else ok("超微 -> AMD, ambiguity disclosed");
+
+console.log("\n=== conversation: an edit is reported separately from an inheritance ===");
+const d1 = parseIdea("我想做空英伟达，未来 5 个交易日", LIB);
+eq("the short is read off the sentence", d1.direction, "short");
+const d2 = mergeContext(d1, parseIdea("k 改成 100", LIB));
+eq("a parameter-only follow-up keeps the instrument", d2.symbol, "NVDA");
+eq("and the horizon it never restated", d2.horizon, 5);
+eq("and the side it never restated", d2.direction, "short");
+eq("the k it did restate lands", d2.k, 100);
+eq("everything carried is reported as carried", (d2.inherited || []).join(","), "symbol,horizon,direction");
+const d3 = mergeContext(d2, parseIdea("拉长到一个月", LIB));
+eq("a horizon-only follow-up moves the horizon", d3.horizon, 20);
+eq("the side survives a second turn", d3.direction, "short");
+eq("and the edit is named as an edit, not an inheritance", (d3.changed || []).join(","), "horizon");
+const d4 = mergeContext(d3, parseIdea("用英文再说一遍", LIB));
+eq("an explicit switch changes the answer language", d4.language, "en");
+const d5 = mergeContext(d4, parseIdea("what about 10 sessions", LIB));
+eq("the switched-to language persists into the next turn", d5.language, "en");
+eq("with the instrument still carried", d5.symbol, "NVDA");
+// Naming an instrument the library does not hold is a new topic, not a fragment of the old one.
+const d6 = mergeContext(d5, parseIdea("台积电未来一个月", LIB));
+eq("an unheld name does not inherit the previous symbol", d6.symbol, null);
+eq("and inherits nothing else either", (d6.inherited || []).length, 0);
+eq("but it does keep the conversation language", d6.language, "en");
+eq("and it still reports what it recognised", d6.unheld && d6.unheld.ticker, "TSM");
+// Provenance travels with the value it describes, never on its own.
+const d7 = mergeContext(parseIdea("NVDA 未来 5 个交易日", LIB), parseIdea("拉长到一个月", LIB));
+eq("a new horizon does not keep the old raw wording", d7.horizonRaw, null);
+eq("the horizon itself is still this sentence's", d7.horizon, 20);
+
+console.log("\n=== a chip offered for a narrowed question must itself parse ===");
+const chipCmp = followUpSuggestions(cmp, { language: "en", horizons: MEASURED_HORIZONS, droppedInstruments: cmp.droppedInstruments });
+eq("a comparison offers the other name first", chipCmp[0].label, "switch to AMD");
+if (parseIdea(chipCmp[0].q, LIB).symbol !== "AMD") bad("the switch chip does not parse back to AMD: " + chipCmp[0].q);
+else ok("switch chip parses: " + chipCmp[0].q);
+const earnP = parseIdea("NVDA earnings next week", LIB);
+const chipEarn = followUpSuggestions(earnP, { language: "en", horizons: MEASURED_HORIZONS, earningsDate: "2026-08-20" });
+eq("an earnings question offers the report date", chipEarn[0].label, "as of the report 2026-08-20");
+if (parseIdea(chipEarn[0].q, LIB).date !== "2026-08-20") bad("the earnings chip does not parse back to its own date: " + chipEarn[0].q);
+else ok("earnings chip parses: " + chipEarn[0].q);
 
 console.log("\n=== primitives ===");
 eq("editDistance NVDIA -> NVDA", editDistance("NVDIA", "NVDA"), 1);

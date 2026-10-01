@@ -128,7 +128,10 @@ is published:
 - **`check:lui`** - the language-understanding contract: every sentence a reviewer might type (zh + en)
   goes through the same parser the UI, the HTTP API and the MCP server share; a symbol is only resolved
   if the library really contains it, a horizon only if the engine measures it, and a fuzzy typo repair is
-  reported as a repair instead of being silently applied.
+  reported as a repair instead of being silently applied. It also asserts the disclosure contract - that a
+  short, a comparison, a sector word, an ambiguous alias and an unheld instrument are each *reported* by
+  the parser, that a follow-up inherits and reports what it inherited, and that every chip the desk
+  offers parses back into a request it can actually answer.
 - **`check:html`** - parses `web/index.html` and `dist/index.html` with an attribute-aware scanner, then
   cross-checks the element ids it finds against the ids `web/app.js` looks up and the `REQUIRED_IDS` list
   app.js asserts at boot. A regex cannot do this job: an id sitting inside another element's attribute
@@ -216,7 +219,7 @@ and excluded from git.
 ## How it works
 
 ```
-plain-language idea  ->  LUI parser (zh + en, alias table)
+plain-language idea  ->  LUI parser (zh + en, aliases, context carry-over, disclosure of every narrowing)
                      ->  state vector: 28 features in 5 weighted groups
                      ->  analog retrieval: k = 50 nearest sessions by weighted z-score distance
                      ->  realised forward returns on the ADJUSTED close (embargoed)
@@ -228,6 +231,47 @@ plain-language idea  ->  LUI parser (zh + en, alias table)
                      ->  research card, charts, provenance panel
 ```
 
+### The language layer — what it understands, and what it says when it cannot
+
+One parser (`src/llm/lui.mjs`) is shared by the browser UI, the HTTP API and the MCP tool server, so a
+sentence means the same thing through all three doors. `npm run check:lui` is its contract: 76 sentences
+in Chinese and English, each with the exact interpretation the desk promises.
+
+**Understood** — the instrument (a ticker, an alias, or one bounded typo repair that is always reported
+as a repair), the horizon, the as-of date (absolute, relative, or "last week"), the neighbour count `k`
+including the Chinese `把 k 调到 100` and `用 30 个类比` patterns, a stated drawdown tolerance, the
+position direction, a comparison, an earnings mention, and an explicit language switch that outranks the
+CJK character count and then persists for the rest of the conversation.
+
+**Carried across turns** — a follow-up is usually a fragment ("那 20 天呢"), so the previous request is
+inherited and every inherited field is reported. An *edit* is reported separately from an *inheritance*,
+because "carried over" and "you changed this" are different statements, and a desk that shows only the
+first one hides the edit it just applied. Provenance (`asked for 7`, `from "nvida"`) travels only with
+the value it describes, never on its own.
+
+**Disclosed rather than dropped** — the desk analyses one instrument, long-side, on a closed grid, and a
+sentence can ask for more than that. Each gap is printed on the card beside the result, in the language
+the question arrived in:
+
+| the sentence asked for | what the card does | what it says |
+| --- | --- | --- |
+| a short position | nothing is recomputed | the card is long-side; read the tails in reverse |
+| two or three names | analyses the first | names the ones it did not analyse, and offers a one-click switch to each |
+| a sector or commodity word (`半导体`, `crude oil`) | substitutes the nearest instrument it holds | what was asked, what was run, and why those are not the same thing |
+| an ambiguous abbreviation (`超微`) | resolves to the one it holds | which reading it took, and the one it could not |
+| an earnings date | **does not move the as-of date** | says why, and offers the report date as a one-click chip instead |
+| an instrument it does not carry (`台积电`, `bitcoin`) | refuses | names the instrument and its ticker, rather than analysing the dropdown |
+
+Every one of those fields defaults to `null`, so a card built without them — every record in the replay
+cache, and the committed demo run — is byte-identical to the one it was warmed from. `npm run check:replay`
+asserts that, and `npm run check:browser` drives the last four rows through a real headless Chrome.
+
+**The refusal that matters most.** Naming an instrument outside the 71-instrument library used to fall
+through to whatever the Symbol dropdown happened to hold, so 台积电 produced a full, confident,
+model-written research card about a different company. `UNHELD_ALIASES` exists to stop that: those names
+resolve to nothing, and the desk says which instrument it recognised and that it does not carry it. The
+same map is why 美联航 (United Airlines) no longer analyses UNH (UnitedHealth) — an alias that existed
+only because both English names begin with "United", and which is now deleted rather than repointed.
 **Feature groups and weights** (`src/engine/features.mjs`): name 30%, market 20%, macro 20%, crypto 10%,
 event 20%. 28 features are computed; **25** enter the distance metric — `dv20z`, `fng` and `hyChg20` are
 excluded because they degraded retrieval, but they stay in the payload and are still displayed.
@@ -555,6 +599,17 @@ AnalogDesk 是一台**决策压力测试台**：你用一句自然语言说出�
 - 非法或越界请求会被规范化并**如实披露**：期限对齐到已测量档位（1/5/10/20/40/60），邻居数限制在 10..200；
   只要不是 k = 50，卡片上方就会出现琥珀色提示条，说明冻结的共形尺度与全部样本外指标都是在 k = 50 下拟合和测量的。
   无法回答的请求直接报错并指出怎么改，绝不返回一张空壳卡片。
+- **语言层（LUI）是同一个解析器**（`src/llm/lui.mjs`），浏览器 UI、HTTP API、MCP 工具服务共用，所以同一句话在三个入口
+  含义一致；`npm run check:lui` 用 76 句中英文句子锁死这份契约。除标的、期限、截至日、k 值、回撤容忍度外，还识别
+  **做空/做多方向**、**多标的对比**、**财报意图**和**显式语言切换**（「用英文再说一遍」优先于中文字符占比，
+  并在后续对话中保持）；追问是残缺句（「那 20 天呢」）时会**继承上一轮请求并逐项披露继承了什么**，
+  改动与继承分开报告，因为“沿用上一轮”和“你刚改了这个”是两句不同的话。
+- **一句话问到了卡片承载不了的东西时，缺口印在卡片上，而不是被丢掉**，而且用提问所用的语言写：
+  做空 → 说明卡片仍是做多口径、尾部要反着读；多标的 → 说明只分析了第一个并给出一键切换；
+  板块/商品词（半导体、crude oil）→ 说明用什么代替、为什么两者不是一回事；歧义简称（超微）→ 说明取了哪个含义；
+  财报 → **不擅自移动截至日**，只把报告日做成一键 chip 交给你选；库里没有的标的（台积电、bitcoin）→
+  **直接拒答并点名它是什么**，而不是退化成下拉框里的另一个标的。以上字段默认全为 `null`，所以回放缓存里的 11 张
+  规范卡片与提交的 demo 记录**逐字节不变**（`npm run check:replay` 把关，`npm run check:browser` 用真实 Chrome 跑遍后四行）。
 - **「7x24」这句话现在是测出来的，不是喊出来的——而且在两个场地上各测了一遍。** 类比库全部是美股日线，所以过去
   这是唯一一个没有数字支撑的主张。现在它在**一套共用的休市口径**下测了两次（`src/data/closed-session.mjs`，两个
   测量脚本都从这里 import，口径不允许漂移），**主场地是 Bitget 自家数据**。
