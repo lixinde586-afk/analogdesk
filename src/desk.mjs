@@ -456,10 +456,14 @@ function annotateWrapperScenarios(card) {
   if (!src) return;
   const s = (card.stress || []).find((x) => x.id === "liquidity-air-pocket");
   const closed = src.sevenByTwentyFour?.closedMoveSharePct;
-  const refClosed = src.sevenByTwentyFour?.referenceClosedSharePct ?? w.sevenByTwentyFour?.referenceClosedSharePct;
+  const refClosed = src.sevenByTwentyFour?.referenceClosedSharePct ?? w.sevenByTwentyFour?.referenceClosedSharePct
+    // The share is venue-independent (it comes from the library calendar), so referenceMarket always
+    // has it. Without this the caveat printed "closed for undefined% of the week": the Bitget view
+    // never carried the field, and card.wrapper only has one when Gate.io verified this symbol.
+    ?? w.referenceMarket?.closedSharePct;
   if (!s || !Number.isFinite(closed)) return;
   const kind = src === bg ? "Bitget RWA perpetual" : "tokenised-equity wrapper";
-  s.caveat = `${s.caveat} Measured on the instrument itself (${src.instrument}, a ${kind} on ${src.venueName}): the reference market is closed for ${refClosed}% of the week and ${closed}% of its realised hourly movement happened in those closed hours, so the gap risk this scenario describes is not hypothetical for the instrument a trader would hold.`;
+  s.caveat = `${s.caveat} Measured on the instrument itself (${src.instrument}, a ${kind} on ${src.venueName}): ${Number.isFinite(refClosed) ? "the reference market is closed for " + refClosed + "% of the week and " : ""}${closed}% of its realised hourly movement happened in those closed hours, so the gap risk this scenario describes is not hypothetical for the instrument a trader would hold.`;
 }
 export function createDesk({ dataset, validationResults = null, provenance = {}, config = {}, wrapper = null, bitget7x24 = null }) {
   const wrapperView = createWrapperView(wrapper);

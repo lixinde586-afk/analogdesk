@@ -359,7 +359,13 @@ function checkShell(out, err, expect) {
     "tab bar has only " + countOf(out, /class="tab[ "]/g) + " tabs");
   assert(countOf(out, /class="chip"/g) >= 4, countOf(out, /class="chip"/g) + " example chips", "example chips missing");
   assert(/<button id="go"/.test(out), "Analyze button is a real element", "Analyze button missing from the parsed DOM");
-  const dirty = out.match(/.{0,80}>\s*(undefined|NaN)\s*<.{0,40}/);
+  /*
+   * Anywhere in rendered TEXT, not only as a whole text node. The narrower match let a real one ship
+   * to the demo: a stress-scenario caveat read "the reference market is closed for undefined% of the
+   * week", which is undefined INSIDE a sentence, so >undefined< never matched it. Scripts are stripped
+   * first, because the probe this file injects is full of the word.
+   */
+  const dirty = out.replace(/<script[\s\S]*?<\/script>/gi, " ").match(/.{0,80}\b(undefined|NaN)\b.{0,50}/);
   assert(!dirty, "no literal undefined/NaN rendered", "found: " + (dirty && dirty[0]));
 }
 
