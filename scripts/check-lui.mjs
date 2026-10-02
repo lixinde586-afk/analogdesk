@@ -137,7 +137,33 @@ const CASES = [
   ["用中文讲一下 SPY 未来 5 天", { symbol: "SPY", language: "zh", languageRequest: "zh" }],
   // LI is Li Auto's ticker and "LI" is two characters of "English": word boundaries, not substrings
   ["say it in English", { symbol: null, languageRequest: "en", language: "en" }],
-  ["the oil painting of TSLA", { symbol: "TSLA", matchedHow: "exact" }]
+  ["the oil painting of TSLA", { symbol: "TSLA", matchedHow: "exact" }],
+  // a horizon written as a WORD is still a horizon, and the snap it causes is still disclosed
+  ["NVDA over the next three weeks", { symbol: "NVDA", horizon: 20, horizonRaw: 15, horizonHow: "units" }],
+  ["NVDA 未来三个星期", { symbol: "NVDA", horizon: 20, horizonRaw: 15, horizonHow: "units" }],
+  ["gold outlook for the next quarter", { symbol: "GLD", horizon: 60 }],
+  ["NVDA over the next month", { symbol: "NVDA", horizon: 20 }],
+  ["NVDA in a year", { symbol: "NVDA", horizon: 60, horizonRaw: 250 }],
+  ["NVDA in two quarters", { symbol: "NVDA", horizon: 60, horizonRaw: 120 }],
+  // a wording the phrase list already covered keeps its exact previous reading: no invented correction
+  ["NVDA 未来半年", { symbol: "NVDA", horizon: 60, horizonRaw: null, horizonHow: "phrase" }],
+  ["NVDA over the next two weeks", { symbol: "NVDA", horizon: 10, horizonRaw: null, horizonHow: "phrase" }],
+  // a phrase may not end inside a longer word: "next month" is a horizon, "next monday" is not one
+  ["NVDA next monday", { symbol: "NVDA", horizon: null }],
+  // the currency, the market and the index a Chinese-speaking reviewer reaches for first
+  ["美元指数未来一周", { symbol: "UUP", horizon: 5, matchedHow: "alias" }],
+  ["美元未来一周", { symbol: "UUP", horizon: 5, matchedHow: "sector-proxy" }],
+  ["港股未来一周", { symbol: "KWEB", horizon: 5, matchedHow: "sector-proxy" }],
+  ["A股最近怎么样", { symbol: "FXI", matchedHow: "sector-proxy" }],
+  ["the dollar index next week", { symbol: "UUP", horizon: 5, matchedHow: "alias" }],
+  ["a shares next week", { symbol: "FXI", horizon: 5, matchedHow: "sector-proxy" }],
+  // and the named instruments a reviewer is most likely to ask for and the library does not hold
+  ["腾讯未来5天", { symbol: null, horizon: 5 }],
+  ["Tencent next week", { symbol: null, horizon: 5 }],
+  ["帮我看看茅台", { symbol: null }],
+  ["日经指数下周", { symbol: null, horizon: 5 }],
+  ["silver next week", { symbol: null, horizon: 5 }],
+  ["copper over the next three months", { symbol: null, horizon: 60 }]
 ];
 
 console.log("=== sentences: one contract row each (" + CASES.length + " rows; library " + D.length + " sessions to " + LAST + ") ===");
@@ -204,6 +230,29 @@ else ok("半导体板块 -> XLK with want/have/why/whyZh");
 const amb = parseIdea("超微未来 5 天", LIB).ambiguousAlias;
 if (!amb || amb.symbol !== "AMD" || !amb.whyZh) bad("超微 did not report its ambiguity in both languages");
 else ok("超微 -> AMD, ambiguity disclosed");
+// A market the library does not hold is a proxy like any other: resolved, and disclosed as resolved.
+const ashare = parseIdea("A股最近怎么样", LIB).sectorProxy;
+if (!ashare || ashare.symbol !== "FXI" || !ashare.whyZh || !ashare.want) bad("A股 did not tag the FXI substitution completely");
+else ok("A股 -> FXI with want/have/why/whyZh");
+const dollar = parseIdea("the dollar next week", LIB).sectorProxy;
+if (!dollar || dollar.symbol !== "UUP" || !dollar.why) bad("the dollar did not tag the UUP substitution");
+else ok("the dollar -> UUP with want/have/why");
+// The index itself is not a proxy: UUP IS a US Dollar Index fund, so it resolves without a caveat,
+// and the bare currency - which UUP only approximates - resolves with one.
+eq("the index resolves clean while the currency is disclosed", parseIdea("美元指数未来一周", LIB).sectorProxy, null);
+// A named refusal has to name the instrument. 腾讯 is the sharp case: KWEB and FXI both hold it, so
+// the desk can answer a China-internet question and cannot answer a Tencent question, and the generic
+// dead end does not say which of those two things happened.
+const tencent = parseIdea("腾讯未来5天", LIB).unheld;
+if (!tencent || tencent.ticker !== "0700.HK" || !tencent.whyZh) bad("腾讯 did not report a named unheld instrument: " + JSON.stringify(tencent));
+else ok("腾讯 -> " + tencent.name + " (" + tencent.ticker + "), explanation in both languages");
+const moutai = parseIdea("帮我看看茅台", LIB).unheld;
+if (!moutai || moutai.ticker !== "600519.SS" || !moutai.whyZh) bad("茅台 did not report a named unheld instrument");
+else ok("茅台 -> " + moutai.name + " (" + moutai.ticker + ")");
+// A sector word is echoed in the casing the trader used. The dictionary key is upper case; shouting
+// "CRUDE OIL" back at a sentence written in lower case was the parser quoting itself, not the trader.
+eq("a sector word is echoed as typed", parseIdea("crude oil next 10 sessions", LIB).sectorProxy.word, "crude oil");
+eq("and keeps a capital the trader did put there", parseIdea("Crude oil next 10 sessions", LIB).sectorProxy.word, "Crude oil");
 
 console.log("\n=== conversation: an edit is reported separately from an inheritance ===");
 const d1 = parseIdea("我想做空英伟达，未来 5 个交易日", LIB);
@@ -264,6 +313,19 @@ else ok("zh explain: " + exZh);
 const exEn = explain(parseIdea("tesla over the last month", LIB), { language: "en" });
 if (!/TSLA/.test(exEn) || !/20 sessions/.test(exEn)) bad("en explain missing symbol or horizon: " + exEn);
 else ok("en explain: " + exEn);
+// The card names an instrument the library does not hold; the trace handed to the API and the MCP
+// tool is the same statement, and it used to be the generic one.
+const exUnheld = explain(parseIdea("TSMC over the next 10 sessions", LIB), { language: "en" });
+if (!/TSMC/.test(exUnheld) || !/TSM/.test(exUnheld) || !/not in this library/.test(exUnheld)) bad("explain() drops the unheld name the card prints: " + exUnheld);
+else ok("en explain names the refusal: " + exUnheld);
+// "latest" is the dropdown's word for the last session in the library, not anything the trader said,
+// and it used to be printed twice in one Chinese sentence: 截至 latest (latest).
+const exLatest = explain(parseIdea("NVDA 今天", LIB), { language: "zh" });
+if (/latest/.test(exLatest)) bad("the zh trace still prints the internal slug: " + exLatest);
+else ok("zh explain: " + exLatest);
+// One session is not "1 sessions".
+if (!/horizon 1 session\b/.test(explain(parseIdea("NVDA tomorrow", LIB), { language: "en" }))) bad("the en trace does not pluralise a single session: " + explain(parseIdea("NVDA tomorrow", LIB), { language: "en" }));
+else ok("en explain: " + explain(parseIdea("NVDA tomorrow", LIB), { language: "en" }));
 
 console.log("\n" + CASES.length + " sentences, " + checks + " assertions");
 console.log(failures ? "\ncheck:lui FAILED (" + failures + ")" : "\ncheck:lui passed");

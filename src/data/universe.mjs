@@ -105,6 +105,11 @@ export const ALIASES = (() => {
     "半导体":"XLK","半导体板块":"XLK","芯片":"XLK","芯片股":"XLK","科技股":"XLK",
     "金融股":"XLF","医疗股":"XLV","能源股":"XLE",
     "苹果股票":"AAPL","美股大盘":"SPY","罗素":"IWM",
+    // Currency, market and index words a Chinese-speaking reviewer reaches for first. 美元指数 IS the
+    // index UUP tracks, so it is a plain alias; 美元, 港股 and A股 name a spot rate or a whole market
+    // that this library can only approximate, so each is tagged in SECTOR_BASE too and the card says
+    // what was substituted. 腾讯 and 茅台 are deliberately NOT here: see UNHELD_BASE.
+    "美元指数":"UUP","美元":"UUP","港股":"KWEB","恒生指数":"KWEB","A股":"FXI","上证":"FXI","沪指":"FXI",
     // English spellings of the same sector, index and commodity words. The desk is demoed to a
     // bilingual audience, and a judge who types "crude oil" is entitled to the same proxy disclosure
     // as one who types 原油 rather than the generic "no instrument recognised" dead end. Multi-word
@@ -117,7 +122,10 @@ export const ALIASES = (() => {
     "us treasuries":"TLT","treasuries":"TLT","treasury bonds":"TLT","long bonds":"TLT",
     "financials":"XLF","banks":"XLF","health care":"XLV","healthcare":"XLV","pharma":"XLV",
     "gold":"GLD","gold price":"GLD","nasdaq":"QQQ","nasdaq 100":"QQQ",
-    "us market":"SPY","us stock market":"SPY","the broad market":"SPY","s&p 500":"SPY","s&p":"SPY"
+    "us market":"SPY","us stock market":"SPY","the broad market":"SPY","s&p 500":"SPY","s&p":"SPY",
+    "dollar index":"UUP","dxy":"UUP","us dollar":"UUP","the dollar":"UUP",
+    "hong kong stocks":"KWEB","hang seng":"KWEB","hang seng index":"KWEB",
+    "a shares":"FXI","china a shares":"FXI","shanghai composite":"FXI"
   };
   for (const [k, v] of Object.entries(extra)) m.set(k.toUpperCase(), v);
   return m;
@@ -157,7 +165,13 @@ const SECTOR_BASE = {
   "金融股": { symbol: "XLF", want: "the financial sector", have: "XLF (Financial Select Sector SPDR)", why: "XLF is US large-cap financials, weighted to banks and insurers. It holds no non-US financials and little fintech. This card describes XLF." , whyZh: "XLF 是美国大盘金融股，权重集中在银行和保险。它不含非美金融机构，金融科技占比也很低。这张卡片描述的是 XLF。" },
   "医疗股": { symbol: "XLV", want: "the health-care sector", have: "XLV (Health Care Select Sector SPDR)", why: "XLV is US large-cap health care, weighted to pharma and managed care. It holds no medtech small caps and no non-US names. This card describes XLV." , whyZh: "XLV 是美国大盘医疗保健，权重集中在制药和医疗保险。它不含医疗器械小盘股，也不含非美公司。这张卡片描述的是 XLV。" },
   "能源股": { symbol: "XLE", want: "the energy sector", have: "XLE (Energy Select Sector SPDR)", why: "XLE is US large-cap integrated energy and E&P. It holds no midstream MLPs and no non-US majors. This card describes XLE." , whyZh: "XLE 是美国大盘一体化能源与勘探生产企业。它不含中游 MLP，也不含非美石油巨头。这张卡片描述的是 XLE。" },
-  "美股大盘": { symbol: "SPY", want: "the broad US market", have: "SPY (SPDR S&P 500 ETF Trust)", why: "SPY is cap-weighted into the largest US names, so it is the large-cap market rather than the whole one, and it under-weights exactly the small caps a breadth question is usually about. IWM is in this library. This card describes SPY." , whyZh: "SPY 按市值加权，偏向美国最大的公司，所以它是大盘而不是整个市场，并且恰恰低配了问“市场广度”时通常最关心的小盘股。本库也持有 IWM。这张卡片描述的是 SPY。" }
+  "美股大盘": { symbol: "SPY", want: "the broad US market", have: "SPY (SPDR S&P 500 ETF Trust)", why: "SPY is cap-weighted into the largest US names, so it is the large-cap market rather than the whole one, and it under-weights exactly the small caps a breadth question is usually about. IWM is in this library. This card describes SPY." , whyZh: "SPY 按市值加权，偏向美国最大的公司，所以它是大盘而不是整个市场，并且恰恰低配了问“市场广度”时通常最关心的小盘股。本库也持有 IWM。这张卡片描述的是 SPY。" },
+  "美元": { symbol: "UUP", want: "the US dollar", have: "UUP (Invesco DB US Dollar Index Bullish)", why: "UUP is a futures-based fund on the US Dollar INDEX, a trade-weighted basket against six currencies of which roughly half is the euro. It is not spot FX and not a bilateral rate against the renminbi, and its return carries the futures roll as well as the currency move. This card describes UUP.", whyZh: "UUP 是跟踪美元指数的期货型基金；美元指数是对六种货币的贸易加权篮子，其中约一半是欧元。它不是即期汇率，也不是对人民币的双边汇率，其收益除了汇率变动还包含期货展期。这张卡片描述的是 UUP。" },
+  "港股": { symbol: "KWEB", want: "Hong Kong listed stocks", have: "KWEB (KraneShares CSI China Internet)", why: "This library holds no Hong Kong instrument. KWEB does hold several of the largest HK-listed Chinese internet names, but as US-listed ADRs: it is a different index, it excludes HK financials and property, and it trades on a US calendar, so its closed-hours behaviour is not the Hong Kong market's. This card describes KWEB.", whyZh: "本库没有港股标的。KWEB 确实持有若干在港交所上市的中国互联网大公司，但持有的是在美国上市的 ADR：它是另一个指数，不含香港的金融与地产，而且按美国日历交易，所以它休市时段的表现并不等于港股的表现。这张卡片描述的是 KWEB。" },
+  "恒生指数": { symbol: "KWEB", want: "the Hang Seng Index", have: "KWEB (KraneShares CSI China Internet)", why: "This library holds no Hang Seng instrument. The Hang Seng Index is weighted towards HK-listed financials, property and utilities, which KWEB barely holds at all: KWEB is China INTERNET, is US-listed and trades on a different calendar. This card describes KWEB, not the index.", whyZh: "本库没有恒生指数标的。恒生指数的权重集中在港股的金融、地产与公用事业，而这些 KWEB 几乎不持有：KWEB 是中国互联网 ETF，在美国上市，交易日历也不同。这张卡片描述的是 KWEB，不是恒生指数。" },
+  "A股": { symbol: "FXI", want: "onshore China A-shares", have: "FXI (iShares China Large-Cap)", why: "This library holds no onshore Chinese instrument. FXI is US-listed and reaches the largest Chinese companies through their HK listings and ADRs, so it carries ADR delisting and audit risk, a US trading calendar and a USD return - none of which an A-share holder has. It also omits the mid and small caps that dominate the onshore indices. This card describes FXI.", whyZh: "本库没有境内 A 股标的。FXI 在美国上市，通过港股与 ADR 持有最大的中国公司，因此它承担的是 ADR 退市与审计风险、按美国日历交易、收益以美元计价——这些 A 股持有人都没有。它也不含在境内指数中占多数的中小盘股。这张卡片描述的是 FXI。" },
+  "上证": { symbol: "FXI", want: "the Shanghai Composite", have: "FXI (iShares China Large-Cap)", why: "This library holds no onshore Chinese index. The Shanghai Composite is every A-share listed in Shanghai, weighted to state-owned banks and to mid and small caps; FXI is a US-listed fund holding about fifty of the largest Chinese companies through their HK listings and ADRs, on a US calendar and in USD. The two can diverge for weeks. This card describes FXI, not the Shanghai Composite.", whyZh: "本库没有境内指数标的。上证综指包含在上海上市的全部 A 股，权重偏向国有银行与中小盘；FXI 是在美国上市的基金，通过港股与 ADR 持有约五十家最大的中国公司，按美国日历、以美元计价。两者可能连续数周走势不同。这张卡片描述的是 FXI，不是上证综指。" },
+  "沪指": { symbol: "FXI", want: "the Shanghai Composite", have: "FXI (iShares China Large-Cap)", why: "This library holds no onshore Chinese index. The Shanghai Composite is every A-share listed in Shanghai, weighted to state-owned banks and to mid and small caps; FXI is a US-listed fund holding about fifty of the largest Chinese companies through their HK listings and ADRs, on a US calendar and in USD. The two can diverge for weeks. This card describes FXI, not the Shanghai Composite.", whyZh: "本库没有境内指数标的。上证综指包含在上海上市的全部 A 股，权重偏向国有银行与中小盘；FXI 是在美国上市的基金，通过港股与 ADR 持有约五十家最大的中国公司，按美国日历、以美元计价。两者可能连续数周走势不同。这张卡片描述的是 FXI，不是上证综指。" }
 };
 
 /**
@@ -177,7 +191,10 @@ const SECTOR_EN = {
   "美债": ["us treasuries", "treasuries", "treasury bonds", "long bonds"],
   "金融股": ["financials", "banks"],
   "医疗股": ["health care", "healthcare", "pharma"],
-  "美股大盘": ["us market", "us stock market", "the broad market"]
+  "美股大盘": ["us market", "us stock market", "the broad market"],
+  "美元": ["us dollar", "the dollar"],
+  "港股": ["hong kong stocks", "hang seng", "hang seng index"],
+  "A股": ["a shares", "china a shares", "shanghai composite"]
 };
 
 export const SECTOR_PROXIES = new Map(
@@ -219,7 +236,27 @@ const UNHELD_BASE = {
   "台积": { name: "Taiwan Semiconductor Mfg", ticker: "TSM", why: "TSMC is not one of the 71 instruments in this library. XLK is the nearest sector instrument this library holds." , whyZh: "台积电不在本库的 71 个标的里。XLK 是本库持有的最接近的行业标的。" },
   "比特币": { name: "Bitcoin", ticker: "BTC", why: "This is an equity analog library. BTC is used inside it as a cross-asset FEATURE (btcRet5, btcRet20) that helps describe a market state, but it is not an instrument the desk can retrieve analogs for or stress-test." , whyZh: "这是一个股票类比库。BTC 在库里只作为跨资产特征（btcRet5、btcRet20）帮助描述市场状态，它不是可以做类比检索或压力测试的标的。" },
   "以太坊": { name: "Ethereum", ticker: "ETH", why: "This is an equity analog library. ETH is carried as cross-asset context, not as an instrument the desk can retrieve analogs for or stress-test." , whyZh: "这是一个股票类比库。ETH 只作为跨资产背景，不是可以做类比检索或压力测试的标的。" },
-  "以太": { name: "Ethereum", ticker: "ETH", why: "This is an equity analog library. ETH is carried as cross-asset context, not as an instrument the desk can retrieve analogs for or stress-test." , whyZh: "这是一个股票类比库。ETH 只作为跨资产背景，不是可以做类比检索或压力测试的标的。" }
+  "以太": { name: "Ethereum", ticker: "ETH", why: "This is an equity analog library. ETH is carried as cross-asset context, not as an instrument the desk can retrieve analogs for or stress-test." , whyZh: "这是一个股票类比库。ETH 只作为跨资产背景，不是可以做类比检索或压力测试的标的。" },
+  /*
+   * The names a Chinese-speaking reviewer types first, and the commodities the library only half
+   * covers. Each of these used to produce the generic dead end - the same sentence the desk prints for
+   * a typo - which is true and useless: it does not distinguish "you misspelled it" from "we do not
+   * carry it". 腾讯 is the sharpest case, because KWEB and FXI both hold it, so the desk can answer a
+   * China-internet question and cannot answer a Tencent question, and only a named refusal says which
+   * of those two things just happened.
+   */
+  "茅台": { name: "Kweichow Moutai", ticker: "600519.SS", why: "Kweichow Moutai is an onshore Shanghai A-share. This library holds 71 US-listed instruments and no onshore Chinese one, so there is no analog set for it here. FXI is the nearest China instrument the library holds, and it does not contain Moutai.", whyZh: "贵州茅台是在上海上市的境内 A 股。本库的 71 个标的都在美国上市，没有境内中国标的，所以这里没有它的类比样本。FXI 是本库最接近的中国标的，但它不含茅台。" },
+  "贵州茅台": { name: "Kweichow Moutai", ticker: "600519.SS", why: "Kweichow Moutai is an onshore Shanghai A-share. This library holds 71 US-listed instruments and no onshore Chinese one, so there is no analog set for it here. FXI is the nearest China instrument the library holds, and it does not contain Moutai.", whyZh: "贵州茅台是在上海上市的境内 A 股。本库的 71 个标的都在美国上市，没有境内中国标的，所以这里没有它的类比样本。FXI 是本库最接近的中国标的，但它不含茅台。" },
+  "五粮液": { name: "Wuliangye Yibin", ticker: "000858.SZ", why: "Wuliangye is an onshore Shenzhen A-share. This library holds 71 US-listed instruments and no onshore Chinese one, so there is no analog set for it here.", whyZh: "五粮液是在深圳上市的境内 A 股。本库的 71 个标的都在美国上市，没有境内中国标的，所以这里没有它的类比样本。" },
+  "腾讯": { name: "Tencent Holdings", ticker: "0700.HK", why: "Tencent trades in Hong Kong and this library holds 71 US-listed instruments. KWEB and FXI both carry Tencent as a constituent, so a China-internet question CAN be answered here with KWEB - but KWEB is a basket, not this company, and the desk will not hand over a basket as though it were the single name.", whyZh: "腾讯在香港上市，而本库的 71 个标的都在美国上市。KWEB 与 FXI 都持有腾讯，所以中国互联网的问题在这里可以用 KWEB 回答——但 KWEB 是一个篮子，不是这家公司，本桌不会把篮子当作单一标的交出来。" },
+  "腾讯控股": { name: "Tencent Holdings", ticker: "0700.HK", why: "Tencent trades in Hong Kong and this library holds 71 US-listed instruments. KWEB and FXI both carry Tencent as a constituent, so a China-internet question CAN be answered here with KWEB - but KWEB is a basket, not this company, and the desk will not hand over a basket as though it were the single name.", whyZh: "腾讯在香港上市，而本库的 71 个标的都在美国上市。KWEB 与 FXI 都持有腾讯，所以中国互联网的问题在这里可以用 KWEB 回答——但 KWEB 是一个篮子，不是这家公司，本桌不会把篮子当作单一标的交出来。" },
+  "日经": { name: "Nikkei 225", ticker: "^N225", why: "This library holds 71 US-listed instruments and no Japanese one - neither the index nor an ETF on it. SPY and QQQ are the nearest broad instruments here, and neither carries the Nikkei exporters or any yen exposure.", whyZh: "本库的 71 个标的都在美国上市，没有任何日本标的——既没有日经指数，也没有跟踪它的 ETF。SPY 与 QQQ 是这里最接近的宽基标的，但两者都不含日经的出口企业，也不含日元敞口。" },
+  "日经指数": { name: "Nikkei 225", ticker: "^N225", why: "This library holds 71 US-listed instruments and no Japanese one - neither the index nor an ETF on it. SPY and QQQ are the nearest broad instruments here, and neither carries the Nikkei exporters or any yen exposure.", whyZh: "本库的 71 个标的都在美国上市，没有任何日本标的——既没有日经指数，也没有跟踪它的 ETF。SPY 与 QQQ 是这里最接近的宽基标的，但两者都不含日经的出口企业，也不含日元敞口。" },
+  "白银": { name: "Silver bullion", ticker: "SLV", why: "This library holds GLD for gold and no silver instrument at all. The two are not interchangeable: roughly half of silver demand is industrial, so it trades on the manufacturing cycle in a way gold does not, and its volatility is structurally higher.", whyZh: "本库有代表黄金的 GLD，但完全没有白银标的。两者不可互换：白银约有一半需求来自工业，因此它会随制造业周期波动而黄金不会，且其波动率在结构上更高。" },
+  "铜": { name: "Copper futures", ticker: "HG=F", why: "This library holds no copper instrument. XLE is energy equities, and copper is not part of the energy complex: it is an industrial metal priced off Chinese construction and grid investment, which XLE does not express.", whyZh: "本库没有铜的标的。XLE 是能源股票，而铜不属于能源板块：它是工业金属，价格取决于中国的建筑与电网投资，XLE 并不表达这一点。" },
+  "钯金": { name: "Palladium trust", ticker: "PALL", why: "This library holds no palladium instrument. It holds GLD for gold only; the platinum-group metals have their own supply story - South African and Russian mine output and autocatalyst demand - that nothing here expresses.", whyZh: "本库没有钯金的标的。这里只有代表黄金的 GLD；铂族金属有自己独立的供给逻辑——南非与俄罗斯的矿产以及汽车催化剂需求——本库没有任何标的表达它。" },
+  "欧洲股市": { name: "Developed-Europe equities", ticker: "VGK", why: "This library holds 71 US-listed instruments: SPY, QQQ, IWM and DIA are all US, and EEM is emerging markets, which excludes Europe. There is no developed-Europe instrument here to retrieve analogs from.", whyZh: "本库的 71 个标的都在美国上市：SPY、QQQ、IWM、DIA 都是美国宽基，而 EEM 是新兴市场，不含欧洲。这里没有发达欧洲市场的标的可以做类比检索。" },
+  "日本股市": { name: "Japanese equities", ticker: "EWJ", why: "This library holds 71 US-listed instruments and no Japanese one, neither an index nor an ETF on it. EEM is emerging markets and excludes Japan.", whyZh: "本库的 71 个标的都在美国上市，没有任何日本标的，既没有指数也没有跟踪它的 ETF。EEM 是新兴市场，不含日本。" }
 };
 
 /**
@@ -235,7 +272,16 @@ const UNHELD_EN = {
   "超微电脑": ["super micro", "super micro computer", "smci"],
   "台积电": ["tsmc", "taiwan semiconductor", "taiwan semiconductor manufacturing"],
   "比特币": ["bitcoin", "btc"],
-  "以太坊": ["ethereum", "eth", "ether"]
+  "以太坊": ["ethereum", "eth", "ether"],
+  "茅台": ["moutai", "kweichow moutai"],
+  "五粮液": ["wuliangye"],
+  "腾讯": ["tencent"],
+  "日经": ["nikkei", "nikkei 225"],
+  "白银": ["silver"],
+  "铜": ["copper"],
+  "钯金": ["palladium"],
+  "欧洲股市": ["european stocks", "europe stocks"],
+  "日本股市": ["japanese stocks", "japan stocks"]
 };
 
 export const UNHELD_ALIASES = new Map(

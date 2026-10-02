@@ -105,6 +105,39 @@ const SESSION_COUNT_RE = /(?<![\d.,])(\d{1,3})\s*(?:个)?\s*(?:交易日|session
 /** "3 weeks" / "2 个月": a count in weeks or months, converted to sessions and then snapped. */
 const UNIT_COUNT_RE = /(?<![\d.,])(\d{1,3})\s*(?:个)?\s*(weeks?|周|星期|months?|月)(?![\d.])/i;
 
+/*
+ * The same count written as a WORD: "three weeks", "two months", "a year", "三个星期", "两个月".
+ *
+ * UNIT_COUNT_RE only reads digits, and HORIZON_PHRASES only lists the wordings somebody thought of.
+ * Between them they left a hole that failed SILENTLY: "NVDA over the next three weeks" arrived with no
+ * horizon at all, so the desk answered its default one with nothing on the card to say the question had
+ * been narrowed - the exact failure this parser exists to refuse. Counting the word instead of
+ * enumerating it closes the class, using the same arithmetic (5 sessions a week, 20 a month, 60 a
+ * quarter, 250 a year) and the same "(from 15)" disclosure the digit path already gives.
+ *
+ * Days are deliberately absent from both unit groups. "five days" and "ten days" are already phrases,
+ * "5 days" is already a digit count, and an unanchored 天/日 would read "三天前" - an as-of DATE - as a
+ * horizon, which is the confusion the date pass above exists to prevent.
+ */
+const NUMBER_WORDS = {
+  a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9,
+  ten: 10, eleven: 11, twelve: 12,
+  "一": 1, "二": 2, "两": 2, "兩": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10
+};
+const UNIT_WORD_EN_RE = /(?<![A-Za-z0-9])(half\s+)?(a|an|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(weeks?|months?|quarters?|years?)(?![A-Za-z0-9])/i;
+const UNIT_WORD_ZH_RE = /(半年)|([一二两兩三四五六七八九十])\s*个?\s*(周|星期|月|季度|年)/;
+const unitSessions = (u) => (/year|年/.test(u) ? 250 : /quarter|季度/.test(u) ? 60 : /month|月/.test(u) ? 20 : 5);
+
+/** The session count a word-form unit asks for, or null when the sentence names no count at all. */
+function wordUnitCount(text) {
+  const en = UNIT_WORD_EN_RE.exec(text);
+  if (en) return Math.round((en[1] ? 0.5 : 1) * NUMBER_WORDS[en[2].toLowerCase()] * unitSessions(en[3]));
+  const zh = UNIT_WORD_ZH_RE.exec(text.replace(/\s+/g, ""));
+  if (!zh) return null;
+  if (zh[1]) return 125; // 半年 is half of 250, not a phrase anybody should have to enumerate
+  return Math.round(NUMBER_WORDS[zh[2]] * unitSessions(zh[3]));
+}
+
 const HORIZON_PHRASES = [
   [1, ["overnight", "tomorrow", "next session", "next close", "one day", "1 day", "T+1",
        "隔夜", "明天", "明日", "次日", "一天", "1天", "一个交易日"]],
@@ -112,12 +145,14 @@ const HORIZON_PHRASES = [
        "一周", "1周", "一星期", "1星期", "本周", "下周", "这周", "五天", "5天", "五个交易日", "5个交易日"]],
   [10, ["two weeks", "2 weeks", "fortnight", "ten days",
         "两周", "2周", "二周", "两星期", "2星期", "十天", "10天", "十个交易日", "10个交易日"]],
-  [20, ["a month", "one month", "1 month", "this month", "twenty days",
+  [20, ["a month", "one month", "1 month", "this month", "next month", "the next month", "twenty days",
         "一个月", "1个月", "本月", "下个月", "二十天", "20天", "二十个交易日", "20个交易日"]],
   [40, ["two months", "2 months", "forty days",
         "两个月", "2个月", "四十天", "40天", "四十个交易日", "40个交易日"]],
-  [60, ["three months", "3 months", "a quarter", "one quarter", "quarterly", "half a year", "sixty days",
-        "三个月", "3个月", "一季度", "一个季度", "季度", "半年", "六十天", "60天", "六十个交易日", "60个交易日"]]
+  [60, ["three months", "3 months", "a quarter", "one quarter", "next quarter", "the next quarter",
+        "quarterly", "half a year", "sixty days",
+        "三个月", "3个月", "一季度", "一个季度", "下季度", "下个季度", "季度", "半年", "六十天", "60天",
+        "六十个交易日", "60个交易日"]]
 ];
 
 /** Longest phrase first, so "three months" is never read as "a month". */
@@ -126,7 +161,7 @@ const PHRASE_MATCHERS = (() => {
   for (const [h, list] of HORIZON_PHRASES) {
     for (const p of list) {
       if (CJK.test(p)) zh.push({ h, len: p.length, re: new RegExp(escapeRe(p)) });
-      else en.push({ h, len: p.length, re: new RegExp(p.split(/\s+/).map(escapeRe).join("\\s+"), "i") });
+      else en.push({ h, len: p.length, re: new RegExp(p.split(/\s+/).map(escapeRe).join("\\s+") + "(?![A-Za-z])", "i") });
     }
   }
   en.sort((a, b) => b.len - a.len);
@@ -415,6 +450,24 @@ export function parseIdea(text, lib = {}, opts = {}) {
     }
   }
 
+  /*
+   * Last, a count written as a word - the gap the enumerated phrase list cannot cover.
+   *
+   * Tried AFTER the phrases rather than before them so every wording already understood keeps its exact
+   * previous reading: "半年" stays a plain 60 instead of becoming 125 snapped to 60 with a correction
+   * printed beside it. horizonRaw is carried only when it differs from the number on the card, because
+   * it exists to disclose a snap, and repeating an unchanged number reads as a correction that never
+   * happened.
+   */
+  if (out.horizon == null) {
+    const wanted = wordUnitCount(work);
+    if (wanted != null) {
+      out.horizon = nearestHorizon(wanted, horizons);
+      out.horizonHow = "units";
+      if (wanted !== out.horizon) out.horizonRaw = wanted;
+    }
+  }
+
   // --- neighbour count, raw: the desk clamps it and says so
   //
   // The Chinese patterns were added after a reviewer-facing test exposed the gap: "KWEB with 100
@@ -512,7 +565,14 @@ export function parseIdea(text, lib = {}, opts = {}) {
       const m = re.exec(upper);
       if (!m || insideUnheld(m.index, a.length)) continue;
       const via = ALIASES.get(a);
-      if (via && known.has(via)) { out.symbol = via; out.matched = a; out.matchedHow = "alias"; break; }
+      /*
+       * The span as typed, not the dictionary key. Every other match path already reports the trader's
+       * own casing (see rawOf above), and this one is the path a sector word arrives by, so "crude oil
+       * next 10 sessions" was echoed back as "CRUDE OIL" on the card and in the trace - the desk
+       * shouting a phrase the trader had written in lower case. The lookups below upper-case the value
+       * themselves, so nothing else depends on the key's casing.
+       */
+      if (via && known.has(via)) { out.symbol = via; out.matched = q.slice(m.index, m.index + m[0].length); out.matchedHow = "alias"; break; }
     }
   }
   // A whole-token alias, for keys the word-boundary scan skips: ALIAS_LIST_LATIN starts at three
@@ -761,6 +821,15 @@ export function followUpSuggestions(parsed = {}, opts = {}) {
   return context.concat(out).slice(0, opts.limit || 4);
 }
 
+/** dateHow is an internal slug; the trace is a sentence, so it is spelled out before it is shown. */
+const DATE_HOW_LABEL = {
+  "latest": { zh: "最近一个交易日", en: "latest session" },
+  "last-week": { zh: "上周", en: "last week" },
+  "last-month": { zh: "上个月", en: "last month" },
+  "n-weeks-ago": { zh: "若干周前", en: "weeks ago" },
+  "n-sessions-ago": { zh: "若干个交易日前", en: "sessions ago" }
+};
+
 /**
  * One-line trace of what the parser understood, for the API response and the MCP tool output.
  *
@@ -779,7 +848,8 @@ export function explain(parsed = {}, opts = {}) {
         : "";
     bits.push((zh ? "标的 " : "symbol ") + parsed.symbol + how);
   } else bits.push(zh ? "未识别标的" : "no symbol recognised");
-  if (parsed.horizon) bits.push((zh ? "期限 " : "horizon ") + parsed.horizon + (zh ? " 个交易日" : " sessions")
+  if (parsed.horizon) bits.push((zh ? "期限 " : "horizon ") + parsed.horizon
+    + (zh ? " 个交易日" : (parsed.horizon === 1 ? " session" : " sessions"))
     + (parsed.horizonRaw && parsed.horizonRaw !== parsed.horizon ? (zh ? "（由 " + parsed.horizonRaw + " 对齐）" : " (from " + parsed.horizonRaw + ")") : ""));
   if (parsed.sectorProxy) bits.push(zh
     ? "「" + parsed.sectorProxy.word + "」是板块/篮子词，本库无对应标的，已用 " + parsed.sectorProxy.symbol + " 代替"
@@ -788,9 +858,23 @@ export function explain(parsed = {}, opts = {}) {
     ? "「" + parsed.ambiguousAlias.word + "」有歧义，已取 " + parsed.ambiguousAlias.symbol
     : '"' + parsed.ambiguousAlias.word + '" is ambiguous; resolved to ' + parsed.ambiguousAlias.symbol);
   if (parsed.direction) bits.push((zh ? "方向 " : "direction ") + (parsed.direction === "short" ? (zh ? "做空" : "short") : (zh ? "做多" : "long")));
-  if (parsed.date) bits.push((zh ? "截至 " : "as of ") + parsed.date + (parsed.dateHow && parsed.dateHow !== "iso" ? " (" + parsed.dateHow + ")" : ""));
+  if (parsed.date) {
+    // "latest" is the dropdown's word for the last session in the library, not anything the trader
+    // said, and dateHow is an internal slug. Printing both verbatim produced "截至 latest (latest)" -
+    // a sentence with the same template variable in it twice, in the middle of Chinese prose.
+    const latest = parsed.date === "latest";
+    const how = parsed.dateHow && parsed.dateHow !== "iso" ? parsed.dateHow : null;
+    const label = latest
+      ? (zh ? "最近一个交易日" : "the latest session")
+      : parsed.date + (how ? " (" + ((DATE_HOW_LABEL[how] || {})[zh ? "zh" : "en"] || how) + ")" : "");
+    // No space before a Chinese word: "截至 最近一个交易日" reads as two fields, not one phrase.
+    bits.push((zh ? (latest ? "截至" : "截至 ") : "as of ") + label);
+  }
   if (parsed.k) bits.push("k=" + parsed.k);
   if (parsed.riskTolerancePct) bits.push((zh ? "可承受回撤 " : "drawdown tolerance ") + parsed.riskTolerancePct + "%");
+  if (parsed.unheld) bits.push(zh
+    ? "「" + parsed.unheld.word + "」" + (parsed.unheld.ticker ? "（" + parsed.unheld.ticker + "）" : "") + "不在本库中，未分析"
+    : '"' + parsed.unheld.word + '"' + (parsed.unheld.ticker ? " (" + parsed.unheld.ticker + ")" : "") + " is not in this library; not analysed");
   if ((parsed.droppedInstruments || []).length) bits.push(zh
     ? "未分析：" + parsed.droppedInstruments.map((d) => d.symbol).join("、")
     : "not analysed: " + parsed.droppedInstruments.map((d) => d.symbol).join(", "));
