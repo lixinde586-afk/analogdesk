@@ -153,6 +153,17 @@ function analyzeText(card, narrative, parsed, opts = {}) {
     out.push("REQUEST ADJUSTED BEFORE IT RAN (disclosed, not silent):");
     for (const s of r.notes) out.push("  - " + s);
   }
+  // Framing sits beside the adjustments rather than inside them: these change no number, they say what
+  // the sentence asked for that a card does not compute. An agent host that cannot see this will quote
+  // the median straight back as the price target the caller asked for.
+  if (r.requestGaps && r.requestGaps.length) {
+    out.push("");
+    out.push("WHAT YOU ASKED, AND WHAT THIS CARD ANSWERS (disclosed, not silent):");
+    for (const s of r.requestGaps) out.push("  - " + s);
+  }
+  if (r.namedScenario && r.namedScenario.label) {
+    out.push("SCENARIO NAMED  \"" + r.namedScenario.asked + "\" -> " + r.namedScenario.label + " (a row of the stress suite below, run with this card's own settings).");
+  }
   if (v && v.honestVerdict) {
     out.push("");
     out.push("VERDICT    " + v.honestVerdict);
@@ -188,6 +199,18 @@ function resolveRequest(args = {}) {
   const parsed = question ? parseIdea(question, luiLib) : null;
   const symbol = String(args.symbol || (parsed && parsed.symbol) || "").trim().toUpperCase();
   const uh = parsed && parsed.unheld;
+  /*
+   * A sentence that is not a trade question is refused here too, with the parser's own explanation, so
+   * an agent host gets an actionable error instead of a research card about an instrument nobody named.
+   * The tool contract is the same one the browser and the HTTP API honour.
+   */
+  const task = parsed && parsed.assistantTask;
+  if (!symbol && (task || (parsed && parsed.offtopic))) {
+    const info = task || parsed.offtopic;
+    const lang = args.language || detectLang(question);
+    throw new ToolError(((lang === "zh" && info.whyZh) ? info.whyZh : info.why)
+      + " analogdesk_library lists the " + luiLib.symbols.length + " instruments this desk does analyse.");
+  }
   if (!symbol) {
     // "This library does not carry that instrument" is a different fact from "I could not read your
     // sentence", and an agent host can act on the first one - it can pick another instrument or say
@@ -214,7 +237,12 @@ function resolveRequest(args = {}) {
     droppedInstruments: (parsed && parsed.droppedInstruments && parsed.droppedInstruments.length) ? parsed.droppedInstruments : null,
     sectorProxy: (parsed && parsed.sectorProxy) || null,
     ambiguousAlias: (parsed && parsed.ambiguousAlias) || null,
-    unheld: (parsed && parsed.unheld) || null
+    unheld: (parsed && parsed.unheld) || null,
+    // How the sentence was read rather than how the request was narrowed; the desk prints these beside
+    // the card, and an agent host receives them in the card it is handed.
+    answerGaps: (parsed && parsed.answerGaps && parsed.answerGaps.length) ? parsed.answerGaps : null,
+    namedScenario: (parsed && parsed.namedScenario) || null,
+    dateOutOfRange: (parsed && parsed.dateOutOfRange) || null
   };
 }
 
@@ -235,7 +263,9 @@ async function toolAnalyze(args) {
     a = desk.analyze({ symbol: req.symbol, date: req.date, horizon: req.horizon, k: req.k,
       includeStress: args.includeStress !== false, riskTolerancePct: req.riskTolerancePct,
       positionDirection: req.positionDirection, droppedInstruments: req.droppedInstruments,
-      sectorProxy: req.sectorProxy, ambiguousAlias: req.ambiguousAlias, unheld: req.unheld, language: req.language });
+      sectorProxy: req.sectorProxy, ambiguousAlias: req.ambiguousAlias, unheld: req.unheld,
+      answerGaps: req.answerGaps, namedScenario: req.namedScenario, dateOutOfRange: req.dateOutOfRange,
+      language: req.language });
   } catch (e) { throw new ToolError((e && e.message) || String(e)); }
   stampProvenance(a.card);
   const narrative = await narrate({ card: a.card, question: req.question, language: req.language, llm: cfg.llm, store });
@@ -276,7 +306,9 @@ async function toolStress(args) {
   let a;
   try { a = desk.analyze({ symbol: req.symbol, date: req.date, horizon: req.horizon, k: req.k, includeStress: true, riskTolerancePct: req.riskTolerancePct,
     positionDirection: req.positionDirection, droppedInstruments: req.droppedInstruments,
-    sectorProxy: req.sectorProxy, ambiguousAlias: req.ambiguousAlias, unheld: req.unheld, language: req.language }); }
+    sectorProxy: req.sectorProxy, ambiguousAlias: req.ambiguousAlias, unheld: req.unheld,
+    answerGaps: req.answerGaps, namedScenario: req.namedScenario, dateOutOfRange: req.dateOutOfRange,
+    language: req.language }); }
   catch (e) { throw new ToolError((e && e.message) || String(e)); }
   stampProvenance(a.card);
   const card = a.card, d = card.distribution, rows = card.stress || [];

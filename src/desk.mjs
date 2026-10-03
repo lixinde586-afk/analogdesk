@@ -147,6 +147,91 @@ function discloseIntent({ positionDirection = null, droppedInstruments = null, s
 }
 
 /**
+ * What the SENTENCE asked for that the card does not answer, printed beside it rather than inside it.
+ *
+ * Kept separate from discloseIntent() on purpose, and the separation is load-bearing. discloseIntent()
+ * covers narrowings that change what the numbers MEAN - a short-side question answered with long-side
+ * tails, a k the validation never measured - so those notes are part of the card's identity and part
+ * of its replay digest. Nothing below changes a single number: "you asked for a price target and this
+ * is a distribution", "the shock you named is this row of the stress suite", "the date you named is
+ * outside the library". Two sentences that resolve to the same research question therefore get the
+ * same card, the same numbers and the same cached prose, exactly as they already do when the digest
+ * ignores question text - the framing travels beside the card instead of inside its key. Adding these
+ * to notes instead would have silently cost the tariff-shock and vol-spike example chips their
+ * model-written narratives, because a changed digest is a cache miss.
+ *
+ * Bilingual for the reason discloseIntent() is: a disclosure the asker cannot read is not one.
+ *
+ * @returns {{gaps: string[], namedScenario: object|null}}
+ */
+function discloseRequest({ answerGaps = null, namedScenario = null, dateOutOfRange = null, dateSnapped = null, scenarios = null } = {}, language = "en") {
+  const zh = String(language) === "zh";
+  const gaps = [];
+  const list = Array.isArray(scenarios) ? scenarios : [];
+  const row = (id) => (id ? list.find((x) => x && x.id === id) || null : null);
+
+  if (dateOutOfRange && dateOutOfRange.asked) {
+    const d = dateOutOfRange;
+    gaps.push(zh
+      ? "你要求的截至日 " + d.asked + " 不在本库范围内（" + d.from + " .. " + d.to + "），这张卡片改在 " + d.used + " 运行。库里没有你说的那一天的状态，所以下面没有任何一行数字是在描述它：分布、路径风险和压力情景全部是 " + d.used + " 这个状态的。"
+      : "The as-of date you asked for, " + d.asked + ", is outside this library (" + d.from + " .. " + d.to + "), so this card ran at " + d.used + " instead. The library holds no state for the date you named, so no figure below describes it: the distribution, the path risk and the stress suite all describe the state at " + d.used + ".");
+  } else if (dateSnapped) {
+    // Not out of range, just not a session - a weekend, a holiday, or a date typed straight into the
+    // API. The engine has always resolved it to the nearest session on or before; until now it did so
+    // without saying, and the card header was the only place the substitution was visible.
+    gaps.push(zh
+      ? "你指定的 " + dateSnapped.asked + " 不是本库的交易日，卡片改在它之前最近的一个交易日 " + dateSnapped.used + " 运行。"
+      : "The as-of date you gave, " + dateSnapped.asked + ", is not a session in this library, so the card ran at the nearest session on or before it: " + dateSnapped.used + ".");
+  }
+
+  let scenarioText = null;
+  if (namedScenario && namedScenario.word) {
+    const hit = row(namedScenario.scenarioId);
+    const near = row(namedScenario.nearest);
+    const reason = namedScenario.why ? String(zh ? (namedScenario.whyZh || namedScenario.why) : namedScenario.why) : null;
+    const kindOf = (r) => (r.kind === "window"
+      ? (zh ? "把类比库钉在 " + r.from + " .. " + r.to + " 这个具名窗口" : "the analog library pinned to " + r.from + " .. " + r.to)
+      : r.kind === "venue"
+        ? (zh ? "按 7x24 交易场所的日历重算持有期" : "the holding period recomputed on the 7x24 venue's own calendar")
+        : (zh ? "对查询状态施加冲击叠加后重新检索" : "the query state shocked in z-space, then re-retrieved"));
+    if (hit) scenarioText = zh
+      ? "你点名的「" + namedScenario.word + "」由压力测试里的这一行回答：" + hit.label + "（" + kindOf(hit) + "），下面已高亮。它与基准用完全相同的设置运行，因此可以直接比较；它是被测量过的历史片段，不是对你这句话的模拟。"
+      : "The \"" + namedScenario.word + "\" you named is answered by this row of the stress suite: " + hit.label + " (" + kindOf(hit) + "). It is highlighted below, it runs with this card's own settings so it is directly comparable to the baseline, and it is a measured episode rather than a simulation of your sentence.";
+    else if (near) scenarioText = (zh
+      ? "本库没有「" + namedScenario.word + "」这个情景，所以没有任何一行直接回答它。最接近的是 " + near.label + "（" + kindOf(near) + "），下面已高亮。"
+      : "The suite has no \"" + namedScenario.word + "\" scenario, so no row answers it directly. The closest is " + near.label + " (" + kindOf(near) + "), highlighted below.")
+      + (reason ? " " + reason : "");
+    else scenarioText = (zh
+      ? "本库没有与「" + namedScenario.word + "」对应的压力情景，下面没有任何一行回答它。"
+      : "The suite has no scenario matching \"" + namedScenario.word + "\", so no row below answers it.")
+      + (reason ? " " + reason : "");
+  }
+
+  for (const g of (Array.isArray(answerGaps) ? answerGaps : [])) {
+    if (!g) continue;
+    let text = String(zh ? (g.whyZh || g.why || "") : (g.why || ""));
+    // A hypothetical question and the row that answers it are one thought, so they are printed as one.
+    if (g.kind === "conditional" && scenarioText) { text += " " + scenarioText; scenarioText = null; }
+    if (text) gaps.push(text);
+  }
+  if (scenarioText) gaps.push(scenarioText);
+
+  const hit = row(namedScenario && namedScenario.scenarioId);
+  const near = row(namedScenario && namedScenario.nearest);
+  return {
+    gaps,
+    // The id the UI highlights. Resolved against the suite the desk actually runs, so a stale mapping
+    // in the language layer degrades into no highlight instead of a wrong one.
+    namedScenario: namedScenario && namedScenario.word ? {
+      asked: namedScenario.word,
+      scenarioId: hit ? hit.id : null, label: hit ? hit.label : null,
+      nearestId: !hit && near ? near.id : null, nearestLabel: !hit && near ? near.label : null,
+      available: Boolean(hit)
+    } : null
+  };
+}
+
+/**
  * The 7x24 wrapper layer, as COMMITTED MEASUREMENT rather than a live call.
  *
  * research/LIMITATIONS.md §9 was explicit that the desk's headline claim - a market that never
@@ -599,12 +684,20 @@ export function createDesk({ dataset, validationResults = null, provenance = {},
       // sentence. Null means "no narrowing to report", which is what keeps a default card identical
       // to the one the replay cache and the committed demo record were built from.
       positionDirection = null, droppedInstruments = null, sectorProxy = null, ambiguousAlias = null,
-      unheld = null, language = "en" } = {}) {
+      unheld = null,
+      // How the SENTENCE was read rather than how the request was narrowed: the gap between what was
+      // asked and what a card can answer, a scenario the sentence named, and a date the library does
+      // not reach. All three are disclosed beside the card and none of them enters its digest.
+      answerGaps = null, namedScenario = null, dateOutOfRange = null, language = "en" } = {}) {
       const req = normalizeRequest({ horizon, k, horizons: engine.C.horizons });
       const intentNotes = discloseIntent({ positionDirection, droppedInstruments, sectorProxy, ambiguousAlias, unheld, symbol }, language);
       const { H, K } = req;
       const t0 = Date.now();
       const base = engine.query({ sym: symbol, date, horizon: H, k: K });
+      // The engine resolves an as-of date to the last session on or before it. When the caller named a
+      // day that is not a session at all, the card describes a different day than the one asked for.
+      const dateSnapped = (date && date !== "latest" && base.query.date && base.query.date !== date)
+        ? { asked: String(date), used: base.query.date } : null;
       const stress = includeStress ? stressReport(engine, { sym: symbol, date, horizon: H, k: K, scenarios: scenarios || SCENARIOS, venue: venueForStress(symbol) }) : null;
 
       const prov = {
@@ -675,6 +768,16 @@ export function createDesk({ dataset, validationResults = null, provenance = {},
         // Engine adjustments first, then what the sentence asked for that the engine could not act on.
         notes: req.notes.concat(intentNotes)
       });
+
+      /*
+       * Request-framing disclosure, attached only when there is something to frame. Both keys are
+       * listed in DIGEST_VOLATILE_KEYS (src/llm/replay.mjs) and both are omitted entirely on a plain
+       * request, so a canonical card stays byte-identical to the one its cached narrative was written
+       * for and scripts/check-replay.mjs still finds it.
+       */
+      const framing = discloseRequest({ answerGaps, namedScenario, dateOutOfRange, dateSnapped, scenarios: SCENARIOS }, language);
+      if (framing.gaps.length) card.retrieval.requestGaps = framing.gaps;
+      if (framing.namedScenario) card.retrieval.namedScenario = framing.namedScenario;
 
       // Personalisation, and the only kind this desk accepts: a drawdown tolerance the person asking
       // STATED in their own words. Nothing is inferred about them, nothing is remembered between

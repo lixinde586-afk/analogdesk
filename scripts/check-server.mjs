@@ -203,8 +203,23 @@ try {
 
   console.log("\n=== a request the desk cannot answer is an error, never an empty card ===");
   const ns = await get("/api/analyze?question=" + encodeURIComponent("hello there how are you"));
-  assert(ns.status === 400 && ns.json.ok === false && /no instrument recognised/.test(ns.json.error),
-    "a sentence with no instrument is a 400 that names the fix", "got: " + fmt(ns.body));
+  assert(ns.status === 400 && ns.json.ok === false && /nothing to retrieve/.test(ns.json.error)
+    && /71 library instruments/.test(ns.json.error) && /symbol=/.test(ns.json.error),
+    "a sentence with no instrument is a 400 that says why AND names the fix", "got: " + fmt(ns.body));
+  // All three doors refuse the same sentences for the same reason, so the HTTP door is pinned here and
+  // the MCP door in check:mcp. A poem is not a trade question; before the parser learned that, this
+  // returned a full model-narrated card about whatever the Symbol dropdown happened to hold.
+  const poem = await get("/api/analyze?question=" + encodeURIComponent("write me a short poem about trading"));
+  assert(poem.status === 400 && poem.json.ok === false && !poem.json.card,
+    "a creation request is a 400, never a card about an instrument nobody named", "got: " + fmt(poem.body));
+  const zhPoem = await get("/api/analyze?question=" + encodeURIComponent("帮我写一首关于交易的诗") + "&language=zh");
+  assert(zhPoem.status === 400 && /本桌面/.test(zhPoem.json.error) && /symbol=/.test(zhPoem.json.error),
+    "the same refusal arrives in the language the question did, with the same fix", "got: " + fmt(zhPoem.body));
+  // An explicit symbol= overrides it: a caller that names an instrument has said what it wants
+  // analysed, and the sentence beside it is then context rather than the request.
+  const ovr = await get("/api/analyze?symbol=NVDA&horizon=5&stress=0&narrative=0&question=" + encodeURIComponent("write me a short poem about trading"));
+  assert(ovr.status === 200 && ovr.json.card && ovr.json.card.idea.symbol === "NVDA",
+    "an explicit symbol= overrides the refusal and analyses what was named", "got " + ovr.status + " " + fmt(ovr.body.slice(0, 90)));
   const unk = await get("/api/analyze?symbol=ZZZZ");
   assert(unk.status === 400 && /not in analog library/.test(unk.json.error),
     "an unknown ticker is a 400 that says how large the library is", "got: " + fmt(unk.body));

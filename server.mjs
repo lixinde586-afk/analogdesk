@@ -249,6 +249,29 @@ async function handleAnalyze(params, res) {
   // UI, and an agent host calling this endpoint gets its question understood rather than rejected.
   const parsed = question ? parseIdea(question, luiLib) : null;
   const symbol = String(params.symbol || params.sym || (parsed && parsed.symbol) || "").trim().toUpperCase();
+  /*
+   * The same two refusals the browser makes, with the same strings, because a desk that refuses a poem
+   * in one door and answers it with a research card in another is not one desk. An explicit symbol=
+   * overrides both: a caller that names an instrument has said what it wants analysed, and the
+   * sentence beside it is then context rather than the request.
+   */
+  const task = (parsed && parsed.assistantTask) || null;
+  // The object, never the truth test. "a && !b" evaluates to a BOOLEAN, and a boolean has no .why, so
+  // this line used to hand the caller {"ok":false,"error":undefined} - a 400 with no reason in it at
+  // all, which is the one thing every disclosure in this project exists to prevent.
+  const offtopic = (parsed && parsed.offtopic && !(parsed && parsed.symbol)) ? parsed.offtopic : null;
+  if (!symbol && (task || offtopic)) {
+    const lang = params.language || params.lang || detectLang(question);
+    const info = task || offtopic;
+    const why = (lang === "zh" && info.whyZh) ? info.whyZh : info.why;
+    // The parser’s own explanation, plus the actionable tail every other refusal in this file carries.
+    // A 400 that only explains itself leaves an agent host with nothing to call next, and the MCP door
+    // already quotes the library size beside this same sentence: two doors, one contract.
+    const tail = lang === "zh"
+      ? ` 本库共 ${luiLib.symbols.length} 个标的：用 symbol= 显式指定一个（如 NVDA），或在 question= 里写出代码或名称。`
+      : ` Name one of the ${luiLib.symbols.length} library instruments (a ticker such as NVDA, or a name such as 英伟达), or pass symbol= explicitly.`;
+    return badRequest(res, why + tail);
+  }
   if (!symbol) {
     // "We do not carry that" and "you misspelled it" are different facts and need different answers.
     // A named instrument the library does not hold is reported as itself, with what it trades as, so
@@ -284,7 +307,13 @@ async function handleAnalyze(params, res) {
     droppedInstruments: (parsed.droppedInstruments || []).length ? parsed.droppedInstruments : null,
     sectorProxy: parsed.sectorProxy || null,
     ambiguousAlias: parsed.ambiguousAlias || null,
-    unheld: parsed.unheld || null
+    unheld: parsed.unheld || null,
+    // How the sentence was read: the gap between what was asked and what a card computes, a scenario
+    // the sentence named, and a date the library does not reach. The desk prints them beside the card
+    // and keeps them out of its replay digest.
+    answerGaps: (parsed.answerGaps || []).length ? parsed.answerGaps : null,
+    namedScenario: parsed.namedScenario || null,
+    dateOutOfRange: parsed.dateOutOfRange || null
   } : {};
   try { analysis = desk.analyze({ symbol, date, horizon, k, includeStress, riskTolerancePct, language, ...intent }); }
   catch (e) { return badRequest(res, e.message); }

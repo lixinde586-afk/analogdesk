@@ -340,7 +340,9 @@ function browserRuntime(mods) {
         // The language layer's disclosure, printed on the card rather than left in the parse trace.
         positionDirection: p.positionDirection || null, droppedInstruments: p.droppedInstruments || null,
         sectorProxy: p.sectorProxy || null, ambiguousAlias: p.ambiguousAlias || null,
-        unheld: p.unheld || null, language });
+        unheld: p.unheld || null,
+        answerGaps: p.answerGaps || null, namedScenario: p.namedScenario || null,
+        dateOutOfRange: p.dateOutOfRange || null, language });
       const prov = mods.provenance || {};
       a.card.provenance = { ...(a.card.provenance || {}), ...prov,
         bitget: prov.bitget || { reachable: false, summary: "not probed in the static build", endpoints: [], disclosure: prov.bitgetDisclosure || null },
@@ -443,7 +445,16 @@ const EXAMPLES = [
 function fillChips() {
   $("chips").innerHTML = EXAMPLES.map((e, i) => `<button class="chip" data-i="${i}" title="${esc(e.q)}">${esc(e.label)}</button>`).join("");
   $("chips").querySelectorAll(".chip").forEach((b) => b.addEventListener("click", () => {
-    $("q").value = EXAMPLES[Number(b.dataset.i)].q; run();
+    $("q").value = EXAMPLES[Number(b.dataset.i)].q;
+    // A chip is a self-contained question, not a fragment continuing the previous one, so nothing is
+    // inherited into it. Without this the six chips were order-dependent: clicking the SPY 2020-03-16
+    // chip and then the QQQ vol-spike chip answered QQQ AS OF 2020-03-16, because mergeContext()
+    // carried the date forward, and the "direction long from buy" read off the BABA chip landed on
+    // three chips that never used the word. Both were disclosed in the parse line, which is how they
+    // were found - but a disclosure is not a fix, and a reviewer clicking the chips left to right was
+    // reading a card about a session they did not ask about.
+    S.lastParsed = null;
+    run();
   }));
 }
 
@@ -541,8 +552,13 @@ function renderState(card) {
 function renderRequestNotes(card) {
   const box = $("request-notes");
   const notes = card?.retrieval?.notes || [];
-  if (!notes.length) { box.hidden = true; box.innerHTML = ""; return; }
-  box.innerHTML = `<b>This request was adjusted before it ran</b><ul>${notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>`;
+  // Framing, not adjustment: what the sentence asked for that a card does not compute. Same bar, own
+  // heading, because "the desk changed your k" and "the desk cannot answer this kind of question" are
+  // different facts, and reading them as one blurs both.
+  const gaps = card?.retrieval?.requestGaps || [];
+  if (!notes.length && !gaps.length) { box.hidden = true; box.innerHTML = ""; return; }
+  box.innerHTML = (notes.length ? `<b>This request was adjusted before it ran</b><ul>${notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>` : "")
+    + (gaps.length ? `<b>What you asked, and what this card answers</b><ul>${gaps.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>` : "");
   box.hidden = false;
 }
 /**
@@ -896,12 +912,20 @@ function renderStress(card) {
   const head = `<thead><tr><th>scenario</th><th>kind</th><th class="num">analogs</th><th class="num">median fwd</th>
     <th class="num">&Delta; vs baseline</th><th class="num">p10</th><th class="num">p90</th><th class="num">P(loss&gt;10%)</th>
     <th class="num">median MAE</th><th class="num">P(10% dd)</th><th class="num">held within 10% dd</th></tr></thead>`;
+  // The row the sentence itself pointed at, marked where the trader is already looking instead of left
+  // to be found among fourteen. The desk resolved the id against the suite it actually ran, so it can
+  // only name one of these rows - a stale mapping in the parser degrades into no mark at all.
+  const named = (card.retrieval || {}).namedScenario || null;
+  const namedId = named ? (named.scenarioId || named.nearestId) : null;
+  const namedTag = (id) => (id === namedId
+    ? `<span class="tag named" title="the scenario your sentence named">${named.scenarioId ? "named in your question" : "closest row to what you named"}</span>`
+    : "");
   const body = rows.map((r) => {
-    if (r.skipped) return `<tr data-id="${esc(r.id)}" style="opacity:.6"><td><b>${esc(r.label)}</b><div class="muted mono" style="font-size:10px">${esc(r.id)}</div></td>
+    if (r.skipped) return `<tr data-id="${esc(r.id)}" class="${r.id === namedId ? "named-row" : ""}" style="opacity:.6"><td><b>${esc(r.label)}</b>${namedTag(r.id)}<div class="muted mono" style="font-size:10px">${esc(r.id)}</div></td>
       <td><span class="tag kind-${esc(r.kind)}">${esc(r.kind)}</span></td>
       <td class="num" colspan="9"><span class="tag">skipped: ${esc(r.skipped)}</span></td></tr>`;
-    return `<tr data-id="${esc(r.id)}" style="cursor:pointer" title="click to jump to this scenario's detail and path fan">
-      <td><b>${esc(r.label)}</b><div class="muted mono" style="font-size:10px">${esc(r.id)}</div><div style="margin-top:3px">${(r.tags || []).map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div></td>
+    return `<tr data-id="${esc(r.id)}" class="${r.id === namedId ? "named-row" : ""}" style="cursor:pointer" title="click to jump to this scenario's detail and path fan">
+      <td><b>${esc(r.label)}</b>${namedTag(r.id)}<div class="muted mono" style="font-size:10px">${esc(r.id)}</div><div style="margin-top:3px">${(r.tags || []).map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div></td>
       <td><span class="tag kind-${esc(r.kind)}">${esc(r.kind)}</span></td>
       <td class="num">${num(r.analogsUsed, 0)}</td>
       <td class="num">${pcHtml(r.medianForwardPct)}</td>
@@ -1153,6 +1177,12 @@ function readParams(inherit = false) {
     droppedInstruments: (parsed.droppedInstruments || []).length ? parsed.droppedInstruments : null,
     sectorProxy: parsed.sectorProxy || null,
     ambiguousAlias: parsed.ambiguousAlias || null,
+    // How the sentence was read, rather than how the request was narrowed. The desk prints these
+    // beside the card and keeps them out of its replay digest, so a disclosure can never cost a
+    // cached narrative (discloseRequest in src/desk.mjs).
+    answerGaps: (parsed.answerGaps || []).length ? parsed.answerGaps : null,
+    namedScenario: parsed.namedScenario || null,
+    dateOutOfRange: parsed.dateOutOfRange || null,
     // Only reaches the card when a held instrument was analysed beside it; see run().
     unheld: parsed.unheld || null,
     parsed
@@ -1192,6 +1222,15 @@ function showParsed(p) {
   if (pd.earningsIntent) bits.push('<span class="muted">earnings mentioned &middot; as-of date left alone</span>');
   if (pd.unheld && !pd.symbol) bits.push('<span class="muted">' + esc(pd.unheld.word) + " = " + esc(pd.unheld.name) + " (" + esc(pd.unheld.ticker) + "), not in this library</span>");
   if ((pd.changed || []).length) bits.push('<span class="muted">changed: ' + esc(pd.changed.join(", ")) + "</span>");
+  if (pd.dateOutOfRange) bits.push('<span class="muted">as-of ' + esc(pd.dateOutOfRange.asked) + " is outside the library ("
+    + esc(pd.dateOutOfRange.from) + " .. " + esc(pd.dateOutOfRange.to) + ") &rarr; " + esc(String(pd.dateOutOfRange.used)) + "</span>");
+  for (const g of (pd.answerGaps || [])) bits.push('<span class="muted">asked for ' + esc(GAP_ASK[g.kind] || g.kind)
+    + " &rarr; answered with the analog distribution</span>");
+  if (pd.namedScenario) bits.push(pd.namedScenario.scenarioId
+    ? '<span class="muted">named &quot;' + esc(pd.namedScenario.word) + "&quot; &rarr; stress row " + esc(pd.namedScenario.scenarioId) + "</span>"
+    : '<span class="muted">named &quot;' + esc(pd.namedScenario.word) + "&quot; &rarr; no such scenario in this library</span>");
+  if (pd.assistantTask) bits.push('<span class="muted">' + esc(pd.assistantTask.kind) + " request &rarr; no card</span>");
+  if (pd.offtopic) bits.push('<span class="muted">no instrument or market subject &rarr; no card</span>');
   $("parsed").innerHTML = bits.join(" &middot; ");
 }
 
@@ -1236,6 +1275,49 @@ function restoreEmpty() {
   if (EMPTY_ORIGINAL.html != null) box.innerHTML = EMPTY_ORIGINAL.html;
 }
 
+/**
+ * The answer to a sentence that is not a request for a research card.
+ *
+ * Until this existed the desk had exactly one refusal - an instrument the library does not hold - and
+ * answered everything else, so "what is the weather in Shanghai tomorrow" produced a full,
+ * model-narrated, numerically perfect card about whatever the Symbol dropdown happened to hold. Every
+ * number on it was traceable. It was also an answer to a question nobody asked, which is the failure
+ * mode this project says it exists to prevent, arriving through the front door of the language UI.
+ *
+ * The refusal therefore does two things: it says why, and it replaces the mystery with the desk's
+ * actual contract, so the next sentence the trader types is one the desk can answer. It reuses the
+ * "nothing analysed yet" panel and its captured original markup, exactly like the unheld refusal.
+ */
+function sayNotATradeQuestion(why, language) {
+  const zh = String(language) === "zh";
+  const box = $("empty");
+  if (EMPTY_ORIGINAL.html == null) EMPTY_ORIGINAL.html = box.innerHTML;
+  const caps = zh
+    ? ["一个标的 + 一个截至交易日 + 一个期限（1/5/10/20/40/60 个交易日）",
+       "历史上最相似的 k 个片段随后实际的收益分布，以及路径上的最大不利偏移",
+       "样本外校准过的保形区间——它是历史条件样本的区间，不是预测区间",
+       "14 个具名压力情景：钉住的危机窗口、冲击叠加，以及 7x24 周末持有",
+       "你自己声明的回撤承受线，在这些片段里历史上被击穿的频率",
+       "每一个数字的来源与可达性（Provenance 标签）"]
+    : ["One instrument, one as-of session, one horizon (1/5/10/20/40/60 sessions)",
+       "The realised outcome distribution of the k closest historical episodes, and the path risk inside it",
+       "A conformal interval calibrated out of sample - a range for that historical sample, not a forecast",
+       "14 named stress scenarios: pinned crisis windows, shock overlays, and the 7x24 weekend hold",
+       "How often a drawdown level you state was actually breached inside those episodes",
+       "The provenance and measured reachability of every source behind it (Provenance tab)"];
+  box.innerHTML = "<h2>" + esc(zh ? "这句话里没有可以检索的交易问题" : "Nothing in that sentence to retrieve") + "</h2>"
+    + "<p>" + esc(why) + "</p>"
+    + '<p class="small" style="margin-bottom:4px">' + esc(zh ? "本桌面回答的是：" : "What this desk does answer:") + "</p>"
+    + '<ul class="caps">' + caps.map((c) => "<li>" + esc(c) + "</li>").join("") + "</ul>"
+    + '<p class="small">' + esc(zh
+      ? "它不下单、不预测价格、不做策略回测、也不给投资建议。点上面任意一个示例问题，或输入一个标的（NVDA / 英伟达）就能开始。"
+      : "It never places an order, never forecasts a price, never backtests a strategy and gives no investment advice. Click any example above, or type an instrument (NVDA), to start.") + "</p>";
+  box.hidden = false;
+}
+
+/** What each answer gap asked for, in the parse line's own words. */
+const GAP_ASK = { forecast: "a future price level", backtest: "a strategy backtest", conditional: "a hypothetical state", advice: "investment advice", assistant: "something other than a research card" };
+
 async function run() {
   if (!S.rt || S.busy) return;
   const p = readParams(true);
@@ -1243,6 +1325,31 @@ async function run() {
   S.lastParsed = p.parsed;
   // A named instrument this library does not hold is not a typo, and it must not quietly become the
   // dropdown. Saying so is a fact about the desk the trader is entitled to hear before the position.
+  /*
+   * Two kinds of sentence get no card, and both are decided by the shared parser so the browser, the
+   * HTTP API and the MCP tool server refuse the same sentences for the same reason.
+   *
+   * offtopic is tested against the MERGED parse's symbol, not against p.symbol: p.symbol always has a
+   * value because it falls back to the dropdown, and a follow-up fragment mid-conversation inherits
+   * its instrument legitimately. A fragment on a cold page has nothing to inherit, and refusing it is
+   * the honest answer - otherwise the desk analyses NVDA because NVDA happened to be selected.
+   */
+  const task = (p.parsed || {}).assistantTask;
+  if (task) {
+    const why = (p.language === "zh" && task.whyZh) ? task.whyZh : task.why;
+    sayNotATradeQuestion(why, p.language);
+    $("results").hidden = true;
+    toast(why, "bad", 16000);
+    return;
+  }
+  if ((p.parsed || {}).offtopic && !(p.parsed || {}).symbol) {
+    const ot = p.parsed.offtopic;
+    const why = (p.language === "zh" && ot.whyZh) ? ot.whyZh : ot.why;
+    sayNotATradeQuestion(why, p.language);
+    $("results").hidden = true;
+    toast(why, "bad", 16000);
+    return;
+  }
   const uh = (p.parsed || {}).unheld;
   if (uh && !(p.parsed || {}).symbol) {
     const why = (p.language === "zh" && uh.whyZh) ? uh.whyZh : uh.why;
