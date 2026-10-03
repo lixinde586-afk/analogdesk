@@ -138,7 +138,13 @@ export function buildCanonicalEntries() {
     throw new Error("data-cache/dataset.json is missing - run: npm run build:data");
   }
   const dataset = readJson(datasetPath);
-  const validationResults = readJson(join(ROOT, "research", "validation-results.json"));
+  // research/validation-results.json is 20 MB, regenerable and gitignored, so a fresh clone does not have
+  // it. Without a fallback this is null, the canonical cards lose their conformal and validation blocks,
+  // and every digest drifts to an id no runtime computes - check:replay then reports 0/11 cached against a
+  // cache and a bundle that are both perfectly good. The committed trimmed summary is the same payload the
+  // bundle inlines, so falling back to it reproduces the runtime digests exactly.
+  const validationResults = readJson(join(ROOT, "research", "validation-results.json"))
+    || readJson(join(ROOT, "dist", "validation-summary.json"));
   // The committed 7x24 wrapper measurement MUST be loaded here. card.wrapper is part of the card and
   // therefore part of the digest, so a canonical card built without it hashes to an id no runtime will
   // ever compute - the exact failure mode scripts/check-replay.mjs was written to catch, arriving from

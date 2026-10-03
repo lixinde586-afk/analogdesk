@@ -121,7 +121,10 @@ npm run publish:github # publish HEAD through api.github.com (see the note below
 ```
 
 `npm run check` is eleven gates (it recompiles `dist/` first), and all eleven have to pass before anything
-is published:
+is published. It runs green on a fresh `git clone` with no API key, no network access and no warm-up step:
+where a gate reads the 20 MB gitignored `research/validation-results.json`, it falls back to the committed
+`dist/validation-summary.json`. (`check:browser` is the one environment dependency - it needs a local Chrome
+or Edge; see `CHROME` below.)
 
 - **`check:gate`** - the numeric gate smoke test: 144 template renders, and every numeral in every one of
   them has to be traceable to the engine payload.
@@ -212,7 +215,10 @@ is the release path and always parents on the remote HEAD.
 
 `data-cache/` is committed so the demo and the validation are reproducible **without** network access.
 `data-cache/raw/` (the HTTP cache, 225 files) and `research/validation-results.json` (20 MB) are regenerable
-and excluded from git.
+and excluded from git. Neither is needed to review or re-verify this repository: `npm run compile` and
+`npm run check` fall back to the committed `dist/validation-summary.json`, so a clean checkout passes all
+eleven gates offline. Run `npm run verify` (about three minutes, offline) when you want the full per-query
+audit dump itself.
 
 ---
 

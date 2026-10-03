@@ -255,7 +255,10 @@ function trimmedValidation(V) {
   const out = { generatedAt: V.generatedAt, primaryHorizon: V.primaryHorizon, horizons: V.horizons, runs: {} };
   for (const [h, r] of Object.entries(V.runs || {})) {
     const { rows, ...rest } = r;                       // `rows` is ~3.4MB per horizon of audit detail
-    out.runs[h] = { ...rest, rowsOmitted: Array.isArray(rows) ? rows.length : 0 };
+    // Keeping rowsOmitted when the input is an ALREADY-trimmed summary makes this idempotent: a fresh
+    // clone has no research/validation-results.json and trims the committed dist/validation-summary.json
+    // instead, which has to reproduce the same bytes rather than zeroing every count.
+    out.runs[h] = { ...rest, rowsOmitted: Array.isArray(rows) ? rows.length : (r.rowsOmitted ?? 0) };
   }
   out.rowsOmittedNote = "Per-query scored rows were omitted from the static package to keep it small; they remain in research/validation-results.json and are what VALIDATION.md reports from.";
   return out;
@@ -270,7 +273,11 @@ function build() {
   const dataset = readJsonOrNull(datasetPath);
   if (!dataset) fail("data-cache/dataset.json did not parse");
 
-  const validationFull = readJsonOrNull(join(ROOT, "research", "validation-results.json"));
+  // Falls back to the committed trimmed summary when the 20 MB gitignored dump has not been regenerated,
+  // so `npm run compile` - and therefore `npm run check`, which recompiles first - works on a fresh clone
+  // instead of inlining null and shipping a bundle with no validation panel.
+  const validationFull = readJsonOrNull(join(ROOT, "research", "validation-results.json"))
+    || readJsonOrNull(join(ROOT, "dist", "validation-summary.json"));
   const validation = trimmedValidation(validationFull);
   const netProbe = readJsonOrNull(join(ROOT, "data-cache", "network-probe.json"));
   // The committed 7x24 wrapper measurement. Baked in rather than fetched: the static package makes no

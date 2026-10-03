@@ -15,7 +15,11 @@ import { renderTemplate } from "../src/llm/template.mjs";
 import { buildAllowlist, verifyNumbers, defaultAllowance } from "../src/llm/verify-numbers.mjs";
 
 const dataset = JSON.parse(readFileSync("data-cache/dataset.json", "utf8"));
-const V = JSON.parse(readFileSync("research/validation-results.json", "utf8"));
+// research/validation-results.json is 20 MB, regenerable and gitignored, so a fresh clone does not have
+// it. Fall back to the committed trimmed summary the static build ships - the same fallback
+// check-wrapper.mjs and check-bitget7x24.mjs already use - so this gate tests something on a clean
+// checkout instead of dying with ENOENT. Run `npm run verify` to regenerate the full per-query dump.
+const V = (() => { try { return JSON.parse(readFileSync("research/validation-results.json", "utf8")); } catch { return JSON.parse(readFileSync("dist/validation-summary.json", "utf8")); } })();
 // The wrapper block is part of the card, so the gate grid has to run WITH it: that is the only way
 // to prove the template can quote the measured 7x24 figures without the numeric gate rejecting them.
 const W = (() => { try { return JSON.parse(readFileSync("data-cache/wrapper-probe.json", "utf8")); } catch { return null; } })();
