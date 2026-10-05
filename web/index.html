@@ -121,6 +121,19 @@
           <h3>7x24 wrapper measurement</h3>
           <div id="wrapperprov"></div>
           <h3>Narrative layer</h3>
+          <h4 class="llmform-title">Optional live-model key (this browser only)</h4>
+          <p class="small">The static build needs no key and stays fully offline. To get a live model-written narrative for ANY query in this tab, fill in an OpenAI-compatible endpoint and key. The key is kept only in this browser's localStorage, sent only to the endpoint you choose, and every number still passes the numeric gate.</p>
+          <div class="llmform">
+            <label>Endpoint <input id="llm-base" type="text" spellcheck="false" placeholder="https://hackathon.bitgetops.com/v1"></label>
+            <label>Model <input id="llm-model" type="text" spellcheck="false" placeholder="qwen-plus"></label>
+            <label class="chk"><input id="llm-thinking" type="checkbox"> enable thinking (leave off for the hackathon gateway)</label>
+            <label>API key <input id="llm-key" type="password" spellcheck="false" autocomplete="off" placeholder="sk-..."></label>
+            <div class="llmform-btns">
+              <button id="llm-save" type="button">Save key</button>
+              <button id="llm-clear" type="button">Clear</button>
+              <span id="llm-keystatus" class="small"></span>
+            </div>
+          </div>
           <div id="llmpanel"></div>
         </div>
       </div>

@@ -265,6 +265,62 @@ function apiRuntime() {
   };
 }
 
+const LLM_STORE_KEY = "analogdesk.llm";
+
+/** The optional, browser-only live-model config from localStorage, or null when no key is saved. */
+function browserLlmConfig() {
+  try {
+    const c = JSON.parse(localStorage.getItem(LLM_STORE_KEY) || "null");
+    if (!c || !c.apiKey) return null;
+    return {
+      baseUrl: String(c.baseUrl || "https://hackathon.bitgetops.com/v1").replace(/\/+$/, ""),
+      model: String(c.model || "qwen-plus"),
+      apiKey: String(c.apiKey),
+      timeoutMs: Number(c.timeoutMs || 45000),
+      maxTokens: Number(c.maxTokens || 1400),
+      temperature: 0.2,
+      enableThinking: c.enableThinking === true ? true : (c.enableThinking === false ? false : undefined),
+      enabled: true
+    };
+  } catch { return null; }
+}
+
+/** Populate the optional live-key form and wire save/clear; called once at boot. */
+function renderLlmSettings() {
+  const base = $("llm-base"), model = $("llm-model"), key = $("llm-key"),
+    thinking = $("llm-thinking"), status = $("llm-keystatus");
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(LLM_STORE_KEY) || "null"); } catch { saved = null; }
+  if (saved) {
+    base.value = saved.baseUrl || "https://hackathon.bitgetops.com/v1";
+    model.value = saved.model || "qwen-plus";
+    thinking.checked = saved.enableThinking === true;
+    status.textContent = "key saved in this browser (" + (saved.apiKey ? saved.apiKey.slice(0, 3) + "…" : "") + ")";
+    status.style.color = "var(--pos)";
+  } else {
+    base.value = "https://hackathon.bitgetops.com/v1";
+    model.value = "qwen-plus";
+    status.textContent = "no key saved; running offline";
+    status.style.color = "var(--muted)";
+  }
+  const flash = (msg, ok) => { status.textContent = msg; status.style.color = ok ? "var(--pos)" : "var(--neg)"; };
+  $("llm-save").addEventListener("click", () => {
+    const apiKey = key.value.trim();
+    if (!base.value.trim() || !model.value.trim() || !apiKey) { flash("endpoint, model and key are all required", false); return; }
+    const rec = { baseUrl: base.value.trim(), model: model.value.trim(), apiKey, enableThinking: thinking.checked };
+    try { localStorage.setItem(LLM_STORE_KEY, JSON.stringify(rec)); } catch (e) { flash("could not save: " + (e.message || e), false); return; }
+    key.value = "";
+    flash("saved - the next analysis can use a live model", true);
+    setBadges();
+  });
+  $("llm-clear").addEventListener("click", () => {
+    try { localStorage.removeItem(LLM_STORE_KEY); } catch { /* ignore */ }
+    key.value = ""; thinking.checked = false;
+    flash("cleared; running offline", true);
+    setBadges();
+  });
+}
+
 function browserRuntime(mods) {
   const { createDesk } = mods.desk;
   const { renderTemplate } = mods.template;
@@ -272,8 +328,13 @@ function browserRuntime(mods) {
   const { MemoryStore, cardDigest } = mods.replay;
   let desk = null, store = null;
 
-  /** REPLAY-then-TEMPLATE through the same numeric gate the server applies. Never invents a figure. */
-  function narrateBrowser(card, question, language) {
+  /**
+   * REPLAY -> LIVE -> TEMPLATE, all through the same numeric gate the server applies.
+   * Default is offline (REPLAY then TEMPLATE). A live model call happens only when the trader has
+   * saved an OpenAI-compatible key in this browser (Provenance tab). LIVE prose is cached in the
+   * in-memory store so an identical card replays without a second call. Never invents a figure.
+   */
+  async function narrateBrowser(card, question, language) {
     const lang = language && language !== "auto" ? language : detectLang(question);
     // Same helper the server uses, so the static build and server.mjs apply an identical gate.
     const allow = buildAllowlist(card, defaultAllowance(card));
@@ -289,14 +350,43 @@ function browserRuntime(mods) {
       const sections = Object.fromEntries(keys.map((k, i) => [k, (parts[i + 1] || "").trim()]));
       return { text, sections, order: keys, mode, model: model || null, cardId: id, checks: { primary: check }, warnings, ...extra };
     };
+    const remember = (text, model) => { try {
+      store.set(id, { text, model, storedAt: new Date().toISOString(), cardId: id, mode: "LIVE", language: lang, promptVersion: mods.PROMPT_VERSION || "1" });
+    } catch { /* runtime-only cache; a failure here is harmless */ } };
+
+    // 1. REPLAY - free, instant, offline; a record warmed with any key is found here too.
     const rec = store?.map?.get(id);
     if (rec?.text) {
       const c = verifyNumbers(rec.text, allow);
       if (c.ok) return finish(rec.text, "REPLAY", rec.model, { storedAt: rec.storedAt });
-      warnings.push("cached generation failed the numeric gate; using TEMPLATE");
-    } else if (store) {
-      warnings.push("no cached generation for this exact research card; using TEMPLATE (no API key is needed or used in the static build)");
+      warnings.push("cached generation failed the numeric gate; regenerating");
     }
+
+    // 2. LIVE - only when a runtime key is saved in this browser.
+    const liveCfg = browserLlmConfig();
+    const buildMessages = mods.buildMessages || mods.prompt?.buildMessages;
+    if (liveCfg && mods.client && buildMessages) {
+      const messages = buildMessages({ card, question, language: lang });
+      const accept = async (r) => {
+        if (!r?.ok) return null;
+        const c = verifyNumbers(r.text, allow);
+        if (c.ok) return { text: r.text, model: r.model, latencyMs: r.latencyMs, usage: r.usage, attempts: r.attempts };
+        const r2 = await mods.client.chat(liveCfg,
+          [...messages, { role: "assistant", content: r.text }, { role: "user", content: mods.verify.retryInstruction(c) }]);
+        if (r2?.ok && verifyNumbers(r2.text, allow).ok)
+          return { text: r2.text, model: r2.model, latencyMs: (r.latencyMs || 0) + (r2.latencyMs || 0), usage: r2.usage, attempts: (r.attempts || 1) + (r2.attempts || 1) };
+        warnings.push("model draft failed the numeric gate even after one retry; refusing to display it");
+        return null;
+      };
+      const r1 = await mods.client.chat(liveCfg, messages);
+      const good = await accept(r1);
+      if (good) { remember(good.text, good.model); return finish(good.text, "LIVE", good.model, { latencyMs: good.latencyMs, usage: good.usage, attempts: good.attempts }); }
+      if (!r1?.ok) warnings.push(`live model call failed: ${r1.error}`);
+    } else if (!rec?.text) {
+      warnings.push("no cached generation for this exact research card; using TEMPLATE (add a key in the Provenance tab to get a live narrative)");
+    }
+
+    // 3. TEMPLATE
     return finish(renderTemplate(card, { language: lang }).text, "TEMPLATE", null, { warnings });
   }
 
@@ -323,7 +413,8 @@ function browserRuntime(mods) {
         library: full,
         health: {
           ok: true, engineInitMs: Math.round(performance.now() - t0),
-          llm: { mode: "REPLAY/TEMPLATE", keyPresent: false, model: null },
+          llm: (() => { const c = browserLlmConfig();
+            return { mode: c ? "LIVE/REPLAY/TEMPLATE" : "REPLAY/TEMPLATE", keyPresent: Boolean(c), model: c?.model || null }; })(),
           library: { symbols: lib.symbols.length, sessions: lib.sessions, from: lib.from, to: lib.to },
           validationHorizons: Object.keys(desk.allValidation() || {}).map(Number)
         },
@@ -346,9 +437,11 @@ function browserRuntime(mods) {
       const prov = mods.provenance || {};
       a.card.provenance = { ...(a.card.provenance || {}), ...prov,
         bitget: prov.bitget || { reachable: false, summary: "not probed in the static build", endpoints: [], disclosure: prov.bitgetDisclosure || null },
-        llm: { mode: "REPLAY/TEMPLATE", model: null, keyPresent: false, baseUrl: prov.llmBaseUrl || "https://hackathon.bitgetops.com/v1" },
+        llm: (() => { const c = browserLlmConfig();
+          return { mode: c ? "LIVE/REPLAY/TEMPLATE" : "REPLAY/TEMPLATE", model: c?.model || null, keyPresent: Boolean(c),
+            baseUrl: c?.baseUrl || prov.llmBaseUrl || "https://hackathon.bitgetops.com/v1" }; })(),
         excludedFromDistance: prov.excludedFromDistance || ["dv20z", "fng", "hyChg20"] };
-      const narrative = narrateBrowser(a.card, p.question || "", language);
+      const narrative = await narrateBrowser(a.card, p.question || "", language);
       return { ok: true, question: p.question || "", language, card: a.card, detail: a.detail, narrative, wallMs: Math.round(performance.now() - t0) };
     },
     async bitget() { return (mods.provenance || {}).bitget || null; }
@@ -1143,7 +1236,7 @@ function renderProv(card) {
       <code>src/llm/verify-numbers.mjs</code>; a draft citing an unsupported figure is rejected after one corrective retry and the deterministic
       template is shown instead, with the rejection recorded above. Numbers therefore originate in the engine in all three modes.</p>
     <div class="note info" style="margin-bottom:0">This deployment is running in <b>${esc(S.rt.kind)}</b> mode. ${S.rt.kind === "BROWSER"
-      ? "The whole engine - retrieval, conformal calibration and the stress suite - executes in this browser tab from the bundled analog library. No server, no API key, no network call after the page loads."
+      ? "The whole engine - retrieval, conformal calibration and the stress suite - executes in this browser tab from the bundled analog library. No server and no network call are needed; the narrative is a stored REPLAY for the exact card if one is bundled, else the deterministic TEMPLATE. Saving an optional key in the form above additionally unlocks a LIVE model narrative for ANY query."
       : "server.mjs runs the engine in Node and this page calls /api/analyze. Set LLM_API_KEY in .env to move the narrative from TEMPLATE to LIVE."}</div>`;
 }
 
@@ -1350,6 +1443,16 @@ async function run() {
     toast(why, "bad", 16000);
     return;
   }
+  const sg0 = (p.parsed || {}).sectorGap;
+  if (sg0 && !(p.parsed || {}).symbol) {
+    const why = (p.language === "zh")
+      ? "「" + sg0.word + "」：" + sg0.whyZh
+      : '"' + sg0.word + '": ' + sg0.why;
+    sayNotATradeQuestion(why, p.language);
+    $("results").hidden = true;
+    toast(why, "bad", 16000);
+    return;
+  }
   const uh = (p.parsed || {}).unheld;
   if (uh && !(p.parsed || {}).symbol) {
     const why = (p.language === "zh" && uh.whyZh) ? uh.whyZh : uh.why;
@@ -1416,7 +1519,8 @@ const REQUIRED_IDS = [
   "narrative", "state", "conformal", "personal", "dist-sub", "hist", "diststats", "fan", "excursion",
   "stresstable", "stressdetail", "wrapper", "analog-note", "analogtable",
   "wrapperprov",
-  "validation", "sources", "network", "bitget", "llmpanel"
+  "validation", "sources", "network", "bitget",
+  "llm-base", "llm-model", "llm-thinking", "llm-key", "llm-save", "llm-clear", "llm-keystatus", "llmpanel"
 ];
 
 /** On-page fatal banner. The desk must never die quietly. */
@@ -1454,6 +1558,7 @@ async function boot() {
     const mods = window.AnalogDesk;
     assertDom();
     tabs(); fillChips();
+    renderLlmSettings();
     $("go").addEventListener("click", run);
     $("q").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
     for (const id of ["symbol", "horizon", "date", "k", "lang", "stress"]) {

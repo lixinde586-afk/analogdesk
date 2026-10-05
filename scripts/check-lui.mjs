@@ -119,6 +119,20 @@ const CASES = [
   ["crude oil over the next 10 sessions", { symbol: "XLE", horizon: 10, matchedHow: "sector-proxy" }],
   ["hang seng tech 5 days", { symbol: "KWEB", horizon: 5, matchedHow: "sector-proxy" }],
   ["china concept stocks 5 days", { symbol: "KWEB", horizon: 5, matchedHow: "sector-proxy" }],
+  // natural Chinese bank/broker/insurance phrasing that used to silently fall back to the dropdown
+  ["银行股现在能拿一周吗", { symbol: "XLF", horizon: 5, matchedHow: "sector-proxy" }],
+  ["银行板块未来 10 个交易日", { symbol: "XLF", horizon: 10, matchedHow: "sector-proxy" }],
+  ["银行业未来一周", { symbol: "XLF", horizon: 5, matchedHow: "sector-proxy" }],
+  ["券商股未来一周", { symbol: "XLF", horizon: 5, matchedHow: "sector-proxy" }],
+  ["券商板块未来一周", { symbol: "XLF", horizon: 5, matchedHow: "sector-proxy" }],
+  ["保险股未来一周", { symbol: "XLF", horizon: 5, matchedHow: "sector-proxy" }],
+  ["保险板块未来一周", { symbol: "XLF", horizon: 5, matchedHow: "sector-proxy" }],
+  // and the English bank/broker/insurance spellings
+  ["bank stocks over the next week", { symbol: "XLF", horizon: 5, matchedHow: "sector-proxy" }],
+  ["bank sector next week", { symbol: "XLF", horizon: 5, matchedHow: "sector-proxy" }],
+  ["brokerage stocks next week", { symbol: "XLF", horizon: 5, matchedHow: "sector-proxy" }],
+  ["insurance stocks next week", { symbol: "XLF", horizon: 5, matchedHow: "sector-proxy" }],
+  ["insurers over the next week", { symbol: "XLF", horizon: 5, matchedHow: "sector-proxy" }],
   ["超微未来 5 天", { symbol: "AMD", horizon: 5 }],
   // instruments this library does not hold resolve to NOTHING, not to a lookalike
   ["台积电未来一个月", { symbol: null, horizon: 20 }],
@@ -240,6 +254,32 @@ eq("three names keep the two that were dropped", (parseIdea("compare NVDA AMD an
 const proxy = parseIdea("半导体板块未来 10 个交易日", LIB).sectorProxy;
 if (!proxy || proxy.symbol !== "XLK" || !proxy.whyZh || !proxy.want || !proxy.have) bad("半导体板块 did not tag the XLK substitution completely");
 else ok("半导体板块 -> XLK with want/have/why/whyZh");
+
+// natural Chinese sector phrasing that used to silently fall back to the dropdown default
+const bankZh = parseIdea("银行股现在能拿一周吗", LIB);
+if (bankZh.symbol !== "XLF" || !bankZh.sectorProxy || bankZh.sectorProxy.word !== "银行股" || !bankZh.sectorProxy.whyZh)
+  bad("银行股现在能拿一周吗 did not resolve/disclose as XLF: " + JSON.stringify({ symbol: bankZh.symbol, sp: bankZh.sectorProxy }));
+else ok("银行股现在能拿一周吗 -> XLF, substitution disclosed (no silent dropdown fallback)");
+
+// sector/industry intent with NO proxy must be REPORTED, never silently defaulted - in both languages
+const SECTOR_GAP_CASES = [
+  ["地产股现在能拿一周吗", "地产股"], ["消费股能拿吗", "消费股"], ["军工股一周", "军工股"],
+  ["新能源板块怎么样", "新能源板块"], ["医药股未来一周", "医药股"],
+  ["real estate stocks next week", "real estate stocks"],
+  ["consumer staples sector over a week", "consumer staples sector"],
+  ["meme stocks this week", "meme stocks"]
+];
+for (const [q, w] of SECTOR_GAP_CASES) {
+  const p = parseIdea(q, LIB);
+  if (p.symbol) bad(q + " resolved to " + p.symbol + "; expected a reported sector gap");
+  else if (!p.sectorGap || p.sectorGap.word !== w) bad(q + " did not report the expected sector gap: " + JSON.stringify(p.sectorGap));
+  else {
+    const trace = explain(p, { language: p.language });
+    if (!trace.includes(w)) bad("explain() omits the sector-gap word for " + q);
+    else ok(q + " -> reported gap \"" + w + "\", no card");
+  }
+}
+
 const amb = parseIdea("超微未来 5 天", LIB).ambiguousAlias;
 if (!amb || amb.symbol !== "AMD" || !amb.whyZh) bad("超微 did not report its ambiguity in both languages");
 else ok("超微 -> AMD, ambiguity disclosed");

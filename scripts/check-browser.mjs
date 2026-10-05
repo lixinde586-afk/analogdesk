@@ -237,8 +237,60 @@ const PROBE = `
                             steps.push("empty-state-markup-restored=" + (eb.hidden || /Nothing analysed yet/.test(eb.innerHTML)));
                             steps.push("request-notes-hidden-again=" + document.getElementById("request-notes").hidden);
                             steps.push("no-fatal-banner=" + !document.getElementById("fatal"));
-                            var bad = steps.filter(function (s) { return /=false$|=0$/.test(s); });
-                            finish(bad.length ? "FAIL" : "PASS", bad.length ? bad.join(", ") : "");
+                            // Phase 9: a sector word with NO proxy must be reported and stop, not
+                            // silently fall through to the dropdown default.
+                            q.value = "地产股现在能拿一周吗";
+                            clickGo();
+                            waitFor(function () {
+                              var e9 = document.getElementById("empty");
+                              return !!e9 && !e9.hidden && /地产股/.test(e9.textContent)
+                                && document.getElementById("results").hidden && idle();
+                            }, "sector-gap-refused", function () {
+                              var e9t = document.getElementById("empty").textContent;
+                              steps.push("sectorgap-names-word=" + /地产股/.test(e9t));
+                              steps.push("sectorgap-hid-results=" + document.getElementById("results").hidden);
+                              // Phase 10: a runtime key in localStorage unlocks a LIVE model narrative
+                              // for a non-preset card. The model call is stubbed with GATED template
+                              // text built through the exposed desk, so the numeric gate still runs.
+                              try {
+                                var sym10 = document.getElementById("symbol");
+                                var hz10 = document.getElementById("horizon");
+                                q.value = "";
+                                sym10.value = "CAT";
+                                sym10.dispatchEvent(new Event("change", { bubbles: true }));
+                                hz10.value = "40";
+                                hz10.dispatchEvent(new Event("change", { bubbles: true }));
+                                var realClient = window.AnalogDesk.client;
+                                window.AnalogDesk.client = {
+                                  chat: async function () {
+                                    var d2 = window.AnalogDesk.desk.createDesk({
+                                      dataset: window.AnalogDesk.dataset,
+                                      validationResults: window.AnalogDesk.validationResults,
+                                      provenance: {}, config: {},
+                                      wrapper: window.AnalogDesk.wrapper,
+                                      bitget7x24: window.AnalogDesk.bitget7x24
+                                    });
+                                    var an = d2.analyze({ symbol: "CAT", date: "latest", horizon: 40, k: 50, includeStress: false, language: "en" });
+                                    var tx = window.AnalogDesk.template.renderTemplate(an.card, { language: "en" }).text;
+                                    return { ok: true, text: tx, model: "fake-live-model", latencyMs: 7, usage: null, attempts: 1 };
+                                  }
+                                };
+                                localStorage.setItem("analogdesk.llm", JSON.stringify({
+                                  baseUrl: "https://example.invalid/v1", model: "fake-live-model", apiKey: "sk-fake", enableThinking: false
+                                }));
+                                clickGo();
+                                waitFor(function () { return finished("CAT"); }, "live-key-reruns", function () {
+                                  var nb = document.getElementById("narrative").textContent;
+                                  steps.push("live-mode-badge=" + /mode: LIVE/.test(nb));
+                                  steps.push("live-model-named=" + /fake-live-model/.test(nb));
+                                  // restore the environment so nothing leaks past the probe
+                                  window.AnalogDesk.client = realClient;
+                                  localStorage.removeItem("analogdesk.llm");
+                                  var bad = steps.filter(function (s) { return /=false$|=0$/.test(s); });
+                                  finish(bad.length ? "FAIL" : "PASS", bad.length ? bad.join(", ") : "");
+                                });
+                              } catch (e10) { finish("FAIL", "live phase threw: " + ((e10 && e10.message) || e10)); }
+                            });
                           });
                         });
                       });

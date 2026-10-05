@@ -44,6 +44,8 @@ npx serve dist                 # or: python -m http.server -d dist 8080
 
 `dist/` deploys as-is to GitHub Pages, Netlify, Vercel or any object store; this repo publishes it from the `gh-pages` branch. Rebuild it with `npm run compile`.
 
+**Optional live model, right in the browser.** The static page stays fully offline by default, but on the **Provenance & validation** tab you can paste an OpenAI-compatible endpoint, a model name and an API key to unlock live LLM writing for **any** query, not just the preset cards. The key lives only in this browser's `localStorage`, is sent only to the endpoint you choose, and the model's text still passes the same numeric gate - any gate or network failure falls back to the offline cache and then the template. Use the clear button on that tab to remove it.
+
 ## The full desk (Node server, optional LLM)
 
 ```
@@ -648,13 +650,14 @@ AnalogDesk 是一台**决策压力测试台**：你用一句自然语言说出�
   的 `qwen3.8-max` 生成的，且必须配 `LLM_ENABLE_THINKING=false`（该模型先推理再写作，开着推理时网关 244 秒后
   返回 HTTP 504，关掉后 2.1 秒返回）。8 张规范研究卡已全部预热并随包发布，**没有密钥也看得到模型写的文案**，
   卡片徽章显示 `mode: REPLAY` / `model: qwen3.8-max`；未预热的查询才回落到模板，并在卡片上标明模式。
+  静态页面默认离线，也可在 **Provenance & validation** 标签里直接填端点 / 模型 / Key，让**任意查询**（不限于预置卡）走实时模型；Key 只存在本浏览器 `localStorage`、只发往你填的端点，数字门照常，失败即回落离线缓存或模板。
 - 诚实结论：区间**没有**比"同名无条件分布"更窄（同覆盖率下宽 7.6%），概率校准未通过 PIT 均匀性检验，
   方向命中率 50.1%。它是压力测试与溯源工具，**不是** alpha 来源，也不构成投资建议。
 - 非法或越界请求会被规范化并**如实披露**：期限对齐到已测量档位（1/5/10/20/40/60），邻居数限制在 10..200；
   只要不是 k = 50，卡片上方就会出现琥珀色提示条，说明冻结的共形尺度与全部样本外指标都是在 k = 50 下拟合和测量的。
   无法回答的请求直接报错并指出怎么改，绝不返回一张空壳卡片。
 - **语言层（LUI）是同一个解析器**（`src/llm/lui.mjs`），浏览器 UI、HTTP API、MCP 工具服务共用，所以同一句话在三个入口
-  含义一致；`npm run check:lui` 用 103 句中英文句子锁死这份契约。除标的、期限、截至日、k 值、回撤容忍度外，还识别
+  含义一致；`npm run check:lui` 用 115 句中英文句子锁死这份契约。除标的、期限、截至日、k 值、回撤容忍度外，还识别
   **做空/做多方向**、**多标的对比**、**财报意图**和**显式语言切换**（「用英文再说一遍」优先于中文字符占比，
   并在后续对话中保持）；追问是残缺句（「那 20 天呢」）时会**继承上一轮请求并逐项披露继承了什么**，
   改动与继承分开报告，因为“沿用上一轮”和“你刚改了这个”是两句不同的话。

@@ -526,6 +526,52 @@ const STOPWORDS = new Set(["WHAT", "WILL", "WEEK", "WEEKS", "DAYS", "DAY", "NEXT
 
 function blank(s, i, n) { return s.slice(0, i) + " ".repeat(n) + s.slice(i + n); }
 
+/*
+ * A sector/industry word this library has NO instrument for. The parser must say so rather than let
+ * the upper layer silently substitute the dropdown default - a confident card about the wrong sector
+ * is the exact failure the sector-proxy disclosure exists to prevent.
+ */
+const SECTOR_GAP = {
+  en: "That names a sector or industry, but this library has no instrument that represents it, so no sector card was produced. Name a specific stock, or use a sector word the library holds (semiconductors, energy, health care, or banks/brokerages/insurers via financials).",
+  zh: "这句话点的是一个板块或行业，但本库没有能代表它的标的，因此没有生成板块卡片。可以改问某只具体个股，或换一个本库支持的板块词（半导体、能源、医疗，或银行/券商/保险，走金融）。"
+};
+
+// English words that carry no sector meaning; used to reject generic phrases such as "these stocks".
+const EN_GAP_STOP = new Set(["the","these","those","this","that","my","some","any","all","what","which",
+  "are","is","do","does","i","you","it","for","of","in","on","to","and","or","buy","sell","good","bad",
+  "next","over","can","should","will","about","with","today","now","stock","stocks","sector","industry",
+  "share","shares","equities","market","a","an","as","be","been","me","we","they","them","his","her","its"]);
+
+// Chinese verb/modal chars a sector stem would not start with; rejects "看看股票/买股票" fragments.
+const ZH_GAP_VERB = new Set(["看","买","卖","炒","选","玩","持","找","挑","查","问","说","讲","谈",
+  "评","做","想","要","能","会","该","敢"]);
+
+function knownSectorWord(w) {
+  const key = String(w).toUpperCase();
+  return ALIASES.has(key) || SECTOR_PROXIES.has(key);
+}
+
+/**
+ * Return the recognizable sector/industry phrase the library has no proxy for, or null. Stems are at
+ * least two CJK characters so "看股票/买股票" (a single verb before 股票) is not mistaken for a sector.
+ */
+function detectSectorGap(q) {
+  for (const m of q.matchAll(/[一-龥]{2,8}(?:板块|行业|概念股|概念|股)/g)) {
+    const w = m[0];
+    if (ZH_GAP_VERB.has(w[0])) continue;
+    if (!knownSectorWord(w)) return w;
+  }
+  for (const raw of q.toLowerCase().matchAll(/\b([a-z][a-z\s]{0,24}?\s?(?:stocks?|sector|industry|shares|equities))\b/g)) {
+    let words = raw[0].trim().split(/\s+/);
+    while (words.length > 1 && EN_GAP_STOP.has(words[0])) words = words.slice(1);
+    const w = words.join(" ");
+    if (knownSectorWord(w)) continue;
+    if (!words.slice(0, -1).some((x) => !EN_GAP_STOP.has(x))) continue;
+    return w;
+  }
+  return null;
+}
+
 /**
  * Parse one free-text trade idea.
  *
@@ -956,7 +1002,12 @@ export function parseIdea(text, lib = {}, opts = {}) {
    * floor either: it becomes an answerGap and is printed on the card beside the result, exactly like
    * every other narrowing in this parser.
    */
-  const hasInstrument = Boolean(out.symbol || out.unheld || out.sectorProxy || out.ambiguousAlias);
+  // A sector/industry word with NO proxy is a market refusal, not a reason to run the dropdown default.
+  if (!out.symbol && !out.unheld && !out.sectorProxy && !out.ambiguousAlias) {
+    const gapWord = detectSectorGap(q);
+    if (gapWord) out.sectorGap = { word: gapWord, why: SECTOR_GAP.en, whyZh: SECTOR_GAP.zh };
+  }
+  const hasInstrument = Boolean(out.symbol || out.unheld || out.sectorProxy || out.ambiguousAlias || out.sectorGap);
   const hasGridValue = out.horizonRaw != null || out.k != null || out.date != null || out.riskTolerancePct != null;
   const hasIntentFlag = Boolean(out.direction || out.earningsIntent || out.comparison || out.languageRequest);
   /*
@@ -1021,13 +1072,14 @@ export function mergeContext(prev, next) {
   };
 
   /*
-   * A sentence that NAMES an instrument this library does not hold is not a fragment about the
+   * A sentence that NAMES a different topic this library cannot analyse - an instrument it does not
+   * hold (unheld), or a sector/industry it has no proxy for (sectorGap) - is not a fragment about the
    * previous one, so nothing is inherited from it. Carrying the old symbol across would answer a
    * question nobody asked: 台积电 typed after a QQQ card would produce another QQQ card, with a
    * full model-written narrative behind it, and the refusal the trader was owed would never appear.
-   * An unheld name ends the topic instead of being quietly overridden by it.
+   * Such a turn ends the topic instead of being quietly overridden by it.
    */
-  if (out.unheld && !next.symbol) { keepLanguage(); return out; }
+  if ((out.unheld || out.sectorGap) && !next.symbol) { keepLanguage(); return out; }
 
   /*
    * Fields that describe the request, and therefore carry forward when the next sentence is silent
@@ -1169,6 +1221,9 @@ export function explain(parsed = {}, opts = {}) {
   if (parsed.ambiguousAlias) bits.push(zh
     ? "「" + parsed.ambiguousAlias.word + "」有歧义，已取 " + parsed.ambiguousAlias.symbol
     : '"' + parsed.ambiguousAlias.word + '" is ambiguous; resolved to ' + parsed.ambiguousAlias.symbol);
+  if (parsed.sectorGap) bits.push(zh
+    ? "「" + parsed.sectorGap.word + "」是板块/行业词，但本库没有可代表它的标的，未生成该板块卡片（可改问具体个股）"
+    : '"' + parsed.sectorGap.word + '" names a sector/industry, but this library has no instrument that represents it; no sector card produced (name a specific stock)');
   if (parsed.direction) bits.push((zh ? "方向 " : "direction ") + (parsed.direction === "short" ? (zh ? "做空" : "short") : (zh ? "做多" : "long")));
   if (parsed.date) {
     // "latest" is the dropdown's word for the last session in the library, not anything the trader

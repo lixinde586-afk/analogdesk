@@ -248,7 +248,8 @@ function shimPayloadAssignments() {
 
 /** The shim's own import list, kept in one place because both the graph walk and emit() need it. */
 const shimSpecs = ["./src/desk.mjs", "./src/llm/template.mjs", "./src/llm/verify-numbers.mjs",
-  "./src/llm/replay.mjs", "./src/data/universe.mjs", "./web/app.js"];
+  "./src/llm/replay.mjs", "./src/data/universe.mjs",
+  "./src/llm/client.mjs", "./src/llm/prompt.mjs", "./web/app.js"];
 
 function trimmedValidation(V) {
   if (!V) return null;
@@ -435,13 +436,15 @@ function emit() {
   mkdirSync(DIST, { recursive: true });
 
   const shimDeps = ["./src/desk.mjs", "./src/llm/template.mjs", "./src/llm/verify-numbers.mjs",
-    "./src/llm/replay.mjs", "./src/data/universe.mjs", "./web/app.js"]
+    "./src/llm/replay.mjs", "./src/data/universe.mjs",
+    "./src/llm/client.mjs", "./src/llm/prompt.mjs", "./web/app.js"]
     .map((s) => rel(resolve(ROOT, s)));
+  const appIndex = shimDeps.length - 1;
   const shimArgs = ["__adRequire", "exports"];
   const A = shimPayloadAssignments();
   const shimBody = [
-    // Only the first five: web/app.js (shimDeps[5]) is required explicitly at the very end.
-    shimRequires(shimDeps.slice(0, 5)),
+    // Every module except web/app.js (the last) is required first; app.js is required explicitly at the end.
+    shimRequires(shimDeps.slice(0, appIndex)),
     `var createDesk = __m0.createDesk, DEFAULT_HORIZON = __m0.DEFAULT_HORIZON, DEFAULT_K = __m0.DEFAULT_K;`,
     `var template = __m1, verify = __m2, replay = __m3, ALIASES = __m4.ALIASES;`,
     `globalThis.AnalogDesk = { config: {} };`,
@@ -450,6 +453,10 @@ function emit() {
     `globalThis.AnalogDesk.verify = verify;`,
     `globalThis.AnalogDesk.replay = replay;`,
     `globalThis.AnalogDesk.ALIASES = ALIASES;`,
+    // client.mjs + prompt.mjs power the optional browser LIVE path; both are isomorphic (global fetch).
+    `globalThis.AnalogDesk.client = __m5;`,
+    `globalThis.AnalogDesk.prompt = __m6;`,
+    `globalThis.AnalogDesk.buildMessages = __m6.buildMessages;`,
     `globalThis.AnalogDesk.PROMPT_VERSION = ${JSON.stringify(b.promptVersion)};`,
     `${A[0]}${JSON.stringify(b.dataset)};`,
     `${A[1]}${JSON.stringify(b.validation)};`,
@@ -463,7 +470,7 @@ function emit() {
     `// makes the bundle boot in SERVER mode and silently fetch a server that does not exist. A`,
     `// deferred require would be worse still - any failure becomes an unhandled rejection, i.e. a`,
     `// blank page with no explanation, which is the worst possible outcome for a reviewer.`,
-    `__adRequire(${JSON.stringify(shimDeps[5])});`
+    `__adRequire(${JSON.stringify(shimDeps[appIndex])});`
   ].join("\n");
 
   const parts = [];

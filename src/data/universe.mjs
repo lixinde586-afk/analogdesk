@@ -104,6 +104,10 @@ export const ALIASES = (() => {
     "黄金":"GLD","美债":"TLT","中概":"KWEB","中概股":"KWEB","恒生科技":"KWEB","原油":"XLE",
     "半导体":"XLK","半导体板块":"XLK","芯片":"XLK","芯片股":"XLK","科技股":"XLK",
     "金融股":"XLF","医疗股":"XLV","能源股":"XLE",
+    // bank / brokerage / insurance all live inside XLF; each carries its own narrower rationale
+    "银行股":"XLF","银行板块":"XLF","银行业":"XLF",
+    "券商股":"XLF","券商板块":"XLF","券商":"XLF",
+    "保险股":"XLF","保险板块":"XLF","保险业":"XLF",
     "苹果股票":"AAPL","美股大盘":"SPY","罗素":"IWM",
     // Currency, market and index words a Chinese-speaking reviewer reaches for first. 美元指数 IS the
     // index UUP tracks, so it is a plain alias; 美元, 港股 and A股 name a spot rate or a whole market
@@ -121,6 +125,9 @@ export const ALIASES = (() => {
     "china concept stocks":"KWEB","china internet":"KWEB","chinese adrs":"KWEB","hang seng tech":"KWEB",
     "us treasuries":"TLT","treasuries":"TLT","treasury bonds":"TLT","long bonds":"TLT",
     "financials":"XLF","banks":"XLF","health care":"XLV","healthcare":"XLV","pharma":"XLV",
+    "bank stocks":"XLF","bank sector":"XLF",
+    "brokerage stocks":"XLF","brokerages":"XLF","broker stocks":"XLF",
+    "insurance stocks":"XLF","insurers":"XLF","insurance sector":"XLF",
     "gold":"GLD","gold price":"GLD","nasdaq":"QQQ","nasdaq 100":"QQQ",
     "us market":"SPY","us stock market":"SPY","the broad market":"SPY","s&p 500":"SPY","s&p":"SPY",
     "dollar index":"UUP","dxy":"UUP","us dollar":"UUP","the dollar":"UUP",
@@ -163,6 +170,9 @@ const SECTOR_BASE = {
   "原油": { symbol: "XLE", want: "crude oil", have: "XLE (Energy Select Sector SPDR)", why: "XLE holds energy EQUITIES, not the commodity. It is an operating-leverage proxy whose correlation to WTI decays exactly when equities sell off for a non-oil reason, so it is not a crude-oil return and does not reproduce one. This card describes XLE." , whyZh: "XLE 持有的是能源股票，不是商品本身。它是一个经营杠杆代理，与 WTI 的相关性恰恰在股市因为非油价原因下跌时失效，所以它不是原油收益，也无法复现原油收益。这张卡片描述的是 XLE。" },
   "美债": { symbol: "TLT", want: "US Treasuries", have: "TLT (iShares 20+ Year Treasury Bond)", why: "TLT is the long end of the curve only. It carries roughly twice the duration of an intermediate Treasury fund, so it over-states the effect of a rate move of a given size. This card describes TLT." , whyZh: "TLT 只覆盖收益率曲线的长端，久期大约是中期国债基金的两倍，因此会放大同等幅度利率变动的影响。这张卡片描述的是 TLT。" },
   "金融股": { symbol: "XLF", want: "the financial sector", have: "XLF (Financial Select Sector SPDR)", why: "XLF is US large-cap financials, weighted to banks and insurers. It holds no non-US financials and little fintech. This card describes XLF." , whyZh: "XLF 是美国大盘金融股，权重集中在银行和保险。它不含非美金融机构，金融科技占比也很低。这张卡片描述的是 XLF。" },
+  "银行股": { symbol: "XLF", want: "the bank group", have: "XLF (Financial Select Sector SPDR)", why: "XLF is US large-cap financials; banks are only part of it, alongside insurers, capital-markets firms and diversified financials. The library holds no pure bank ETF (KBE/KRE), so this card describes XLF, not the pure bank group." , whyZh: "XLF 是美国大盘金融行业 ETF，银行只是其中一部分，还包含保险、资本市场（券商）和综合金融公司。本库没有纯银行 ETF（如 KBE/KRE），所以这张卡片描述的是 XLF，不是纯银行板块。" },
+  "券商股": { symbol: "XLF", want: "brokerage and capital-markets firms", have: "XLF (Financial Select Sector SPDR)", why: "XLF contains investment banks and capital-markets firms, but also banks and insurers; the library holds no pure brokerage ETF. This card describes XLF." , whyZh: "XLF 包含投行和资本市场（券商）公司，但也含银行和保险；本库没有纯券商 ETF，所以这张卡片描述的是 XLF。" },
+  "保险股": { symbol: "XLF", want: "insurers", have: "XLF (Financial Select Sector SPDR)", why: "XLF contains insurers, but banks and capital-markets firms dominate its weight; the library holds no pure insurance ETF (KIE). This card describes XLF." , whyZh: "XLF 包含保险公司，但权重以银行和资本市场为主；本库没有纯保险 ETF（如 KIE），所以这张卡片描述的是 XLF。" },
   "医疗股": { symbol: "XLV", want: "the health-care sector", have: "XLV (Health Care Select Sector SPDR)", why: "XLV is US large-cap health care, weighted to pharma and managed care. It holds no medtech small caps and no non-US names. This card describes XLV." , whyZh: "XLV 是美国大盘医疗保健，权重集中在制药和医疗保险。它不含医疗器械小盘股，也不含非美公司。这张卡片描述的是 XLV。" },
   "能源股": { symbol: "XLE", want: "the energy sector", have: "XLE (Energy Select Sector SPDR)", why: "XLE is US large-cap integrated energy and E&P. It holds no midstream MLPs and no non-US majors. This card describes XLE." , whyZh: "XLE 是美国大盘一体化能源与勘探生产企业。它不含中游 MLP，也不含非美石油巨头。这张卡片描述的是 XLE。" },
   "美股大盘": { symbol: "SPY", want: "the broad US market", have: "SPY (SPDR S&P 500 ETF Trust)", why: "SPY is cap-weighted into the largest US names, so it is the large-cap market rather than the whole one, and it under-weights exactly the small caps a breadth question is usually about. IWM is in this library. This card describes SPY." , whyZh: "SPY 按市值加权，偏向美国最大的公司，所以它是大盘而不是整个市场，并且恰恰低配了问“市场广度”时通常最关心的小盘股。本库也持有 IWM。这张卡片描述的是 SPY。" },
@@ -189,7 +199,10 @@ const SECTOR_EN = {
   "中概股": ["china concept stocks", "china internet", "chinese adrs"],
   "恒生科技": ["hang seng tech"],
   "美债": ["us treasuries", "treasuries", "treasury bonds", "long bonds"],
-  "金融股": ["financials", "banks"],
+  "金融股": ["financials"],
+  "银行股": ["banks", "bank stocks", "bank sector"],
+  "券商股": ["brokerage stocks", "brokerages", "broker stocks"],
+  "保险股": ["insurance stocks", "insurers", "insurance sector"],
   "医疗股": ["health care", "healthcare", "pharma"],
   "美股大盘": ["us market", "us stock market", "the broad market"],
   "美元": ["us dollar", "the dollar"],
@@ -197,9 +210,20 @@ const SECTOR_EN = {
   "A股": ["a shares", "china a shares", "shanghai composite"]
 };
 
+/**
+ * Chinese variant phrasings of the same sector words (板块 / 行业 forms), attached to the rationale
+ * of the canonical Chinese key exactly like SECTOR_EN attaches English twins.
+ */
+const SECTOR_ZH = {
+  "银行股": ["银行板块", "银行业"],
+  "券商股": ["券商板块", "券商"],
+  "保险股": ["保险板块", "保险业"]
+};
+
 export const SECTOR_PROXIES = new Map(
   Object.entries(SECTOR_BASE)
-    .flatMap(([word, v]) => [[word, v], ...(SECTOR_EN[word] || []).map((w) => [w, v])])
+    .flatMap(([word, v]) => [[word, v],
+      ...[...(SECTOR_ZH[word] || []), ...(SECTOR_EN[word] || [])].map((w) => [w, v])])
     .map(([k, v]) => [k.toUpperCase(), v])
 );
 
