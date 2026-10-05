@@ -606,6 +606,41 @@ that is not a redeemable spot token, a conservative closed-hours convention that
 12 hours apart, and a return layer bounded by six distinct weekends — are itemised in
 `research/LIMITATIONS.md` §9.
 
+### Market signals — news / sentiment / macro (bitget-signal)
+
+The analog card answers "what happened next in episodes that looked like this"; it did not answer the other
+half a trader reads before sizing — **why the market is like this right now**. The Market signals panel closes
+that layer, matching Track 3's three information layers:
+
+- **News** — the current cycle of crypto and market headlines;
+- **Sentiment** — where market mood and derivatives positioning stand;
+- **Macro** — the rates / dollar / inflation regime, expressed as a risk-on or risk-off backdrop.
+
+The primary source is the keyless public MCP shipped with the official **bitget-signal** package
+(`news_feed` / `tradfi_news`, `sentiment_index` / `derivatives_sentiment`, `rates_yields` /
+`macro_indicators`). It is tried first on every build.
+
+**The honest finding on this build:** that MCP returned no usable data — some calls came back as
+`{ "error": "" }`, and on later calls the same "no data" arrived as zero-value placeholders (every macro
+level and the Fear & Greed reading came back as exactly `0`). Building the feature on an empty source would
+be the same silent-failure bug the rest of the project refuses, so each layer has a primary-source fallback:
+
+- News → the same public RSS feeds the MCP aggregates (CoinTelegraph, Decrypt, The Defiant, Bitcoinist,
+  U.Today, CNBC Markets), latest first and de-duplicated;
+- Sentiment → the alternative.me Fear & Greed index;
+- Macro → the FRED-derived macro features the engine already measured on every card (VIX, 10y-2y slope,
+  90-day fed-funds change, and 20-day changes in breakeven, the dollar, oil and the HY spread).
+
+Which source answered each layer — and every coverage gap (for example, derivatives long/short and taker
+ratio, for which no keyless fallback exists) — is printed in the panel and in `data-cache/signals.json`;
+nothing is estimated to fill a hole. Like the wrapper block, this layer is committed measurement read at
+startup, feeds **no** retrieval, conformal or validation figure, and is excluded from the replay digest so a
+cached narrative stays a valid claim about the analog result. Refresh it with:
+
+```
+node scripts/collect-signals.mjs   # rewrites data-cache/signals.json, then recompile
+```
+
 ---
 
 ## Repo layout
@@ -748,7 +783,8 @@ AnalogDesk 是一台**决策压力测试台**：你用一句自然语言说出�
   （含已提交的回放缓存）的实际来源。顶部徽章因此显示 `bitget: data reachable via 127.0.0.1:7890 · gateway reachable`，
   并在悬浮提示里同时给出 `0/3 direct, 3/3 proxied`——一个不说明自己怎么变绿的绿灯，比红灯更糟。
 
-## Disclaimer
+## Honest verdict & disclaimer
 
-Research and engineering artefact for a hackathon. Historical, not predictive. Not investment advice.
-No part of this repository executes orders or touches funds.
+**If you read only one paragraph, read this one.** AnalogDesk is not an alpha source and it does not predict price. At matched coverage its interval is about **7.6% wider** than a simple band that only knows the symbol's own history, its probability calibration fails a uniformity test (the PIT chi-square rejects), and the directional hit rate of its median is indistinguishable from a coin toss. What it honestly does is the other job: it shows what happened next in the historical episodes whose market state most resembled the present, stress-tests that picture against named crisis windows and shock overlays (including the 7x24 weekend hold), and traces every number to a stated source. It is a decision stress-testing and provenance instrument — *"a stress-testing and provenance instrument, not an alpha source,"* in the engine's own words printed on every card. The figures behind this paragraph are in [Honest results](#honest-results) above and in `research/VALIDATION.md`.
+
+Research and engineering artefact for a hackathon. Historical, not predictive. Not investment advice. No part of this repository executes orders or touches funds.

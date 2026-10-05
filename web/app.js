@@ -405,7 +405,10 @@ function browserRuntime(mods) {
         // The primary venue for the 7x24 layer, baked into the bundle for the same reason as the
         // Gate.io measurement: the static package makes no network call after load, and the browser
         // card has to hash identically to the server card or every warmed replay record would miss.
-        bitget7x24: mods.bitget7x24 || null
+        bitget7x24: mods.bitget7x24 || null,
+        // The market signals snapshot (news / sentiment / macro), baked the same way; desk projects it
+        // onto each card as the "why now" backdrop and the digest excludes it (see replay.mjs).
+        signals: mods.signals || null
       });
       const lib = desk.library();
       const full = { ...lib, horizons: desk.horizons, scenarios: desk.scenarios };
@@ -632,6 +635,57 @@ function renderState(card) {
     <div class="scroll" style="max-height:300px"><table><thead><tr><th>feature</th><th class="num">value</th><th class="num">z</th><th>direction</th></tr></thead><tbody>${rows || `<tr><td colspan="4" class="small">No notable features.</td></tr>`}</tbody></table></div>
     <div style="margin-top:9px">${groups}</div>
     <p class="small" style="margin-top:8px">Carried for display but <b>excluded from the distance metric</b>: <code>${esc(excluded.join(", "))}</code>. Each group keeps its full weight, redistributed over that group's usable features, and features missing on either side are dropped with the distance renormalised - a candidate is never rewarded for having holes.</p>`;
+}
+
+/**
+ * The market signals panel - news / sentiment / macro, the "why is the market like this now" layer.
+ * Every source and gap is read off the card (built in src/data/signals.mjs); nothing is estimated here.
+ */
+function renderSignals(card) {
+  const box = $("signalsview");
+  const sg = card && card.signals;
+  if (!sg) {
+    box.innerHTML = `<p class="small">Market context (news / sentiment / macro) is not available on this build: no signals snapshot was supplied, and nothing is estimated to fill it. Run <code>node scripts/collect-signals.mjs</code> and recompile.</p>`;
+    return;
+  }
+
+  const macroRows = (sg.macro?.items || []).map((m) => {
+    const v = Number(m.value);
+    return `<tr><td>${esc(m.label || m.key)}<div class="muted mono" style="font-size:10px">${esc(m.key)}</div></td>
+      <td class="num">${isNum(v) ? esc(num(v, Math.abs(v) < 10 ? 2 : 1)) : "\u2013"}</td></tr>`;
+  }).join("");
+  const sent = sg.sentiment;
+  const fgCls = sent ? (sent.fearGreedValue <= 25 ? "bad" : sent.fearGreedValue >= 75 ? "warn" : "info") : "";
+  const newsRows = (sg.news?.items || []).map((it) => {
+    const t = it.publishedAt ? it.publishedAt.replace("T", " ").slice(0, 16) : "";
+    const title = it.link
+      ? `<a href="${esc(it.link)}" target="_blank" rel="noopener">${esc(it.title)}</a>`
+      : esc(it.title);
+    return `<li>${title}<div class="muted small">${esc(it.source)}${t ? ` &middot; ${esc(t)}` : ""}</div></li>`;
+  }).join("");
+
+  box.innerHTML = `
+    <p class="small" style="margin-bottom:10px">${esc(sg.sourceNote)}</p>
+    <div class="grid2">
+      <div>
+        <h3>Macro regime</h3>
+        <div class="scroll" style="max-height:260px"><table><tbody>${macroRows || `<tr><td class="small">No macro levels on this build.</td></tr>`}</tbody></table></div>
+        <p class="small muted" style="margin-top:4px">${esc(sg.macro?.source || "")}</p>
+        <h3>Sentiment</h3>
+        ${sent ? `<div class="note ${fgCls}" style="margin:0">${kv([
+          ["Fear & Greed", `${num(sent.fearGreedValue, 0)} / 100`],
+          ["regime", sent.band],
+          ["source", sent.source]
+        ])}${sent.longShort || sent.takerRatio ? "" : `<p class="small" style="margin:6px 0 0">Derivatives positioning (long/short, taker ratio) was not returned; see the coverage gaps below.</p>`}</div>`
+          : `<p class="small">Sentiment is not available on this build.</p>`}
+      </div>
+      <div>
+        <h3>News cycle <span class="muted small">&middot; latest first</span></h3>
+        <ul style="max-height:520px;overflow:auto;margin:0;padding-left:18px">${newsRows || `<li class="small">No headlines on this build.</li>`}</ul>
+        <p class="small muted" style="margin-top:4px">${esc(sg.news?.source || "")}</p>
+      </div>
+    </div>
+    ${(sg.gaps || []).length ? `<h3>Coverage gaps, stated</h3><ul class="small">${sg.gaps.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>` : ""}`;
 }
 
 /**
@@ -1479,6 +1533,7 @@ async function run() {
     renderRequestNotes(r.card);
     renderPersonal(r.card);
     renderNarrative(r.narrative);
+    renderSignals(r.card);
     renderState(r.card);
     renderConformal(r.card);
     renderDist(r.card, r.detail);
@@ -1515,8 +1570,8 @@ const REQUIRED_IDS = [
   "q", "go", "symbol", "date", "horizon", "k", "lang", "stress", "chips", "parsed",
   "status", "badge-mode", "badge-runtime", "badge-lib", "badge-bitget",
   "main", "empty", "results", "request-notes", "cardbar", "tabs", "followups",
-  "panel-brief", "panel-dist", "panel-stress", "panel-wrap", "panel-analogs", "panel-prov",
-  "narrative", "state", "conformal", "personal", "dist-sub", "hist", "diststats", "fan", "excursion",
+  "panel-brief", "panel-signals", "panel-dist", "panel-stress", "panel-wrap", "panel-analogs", "panel-prov",
+  "narrative", "signalsview", "state", "conformal", "personal", "dist-sub", "hist", "diststats", "fan", "excursion",
   "stresstable", "stressdetail", "wrapper", "analog-note", "analogtable",
   "wrapperprov",
   "validation", "sources", "network", "bitget",

@@ -131,6 +131,13 @@ export function buildAllowlist(payload, extra = {}) {
     for (let y = Number(from.slice(0, 4)); y <= Number(to.slice(0, 4)); y++) structural.add(String(y));
   }
   for (const n of extra.templateNumbers || []) add(n);
+  // News headlines are carried verbatim under card.signals.news.items with a named source, so a
+  // numeral a sentence quotes from one ("...may hit $600K this cycle") is an attributed quotation of
+  // a headline the card itself carries, not an invented figure. Only the titles are harvested, so a
+  // model cannot use this to quote a number from a story the card did not include.
+  for (const it of payload?.signals?.news?.items || []) {
+    for (const m of String(it.title ?? "").matchAll(/\d+(?:,\d{3})*(?:\.\d+)?/g)) add(m[0]);
+  }
   return { forms, structural, payloadNumbers: [...nums] };
 }
 

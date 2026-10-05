@@ -80,6 +80,10 @@ const wrapperProbe = readJson(join(CACHE, "wrapper-probe.json"));
 // Same rule as every other measurement here: read from disk, never fetched per request, and an
 // absent or degraded file means "not measured" rather than an invented figure.
 const bitget7x24Probe = readJson(join(CACHE, "bitget-7x24.json"));
+// data-cache/signals.json is the committed market signals snapshot (news / sentiment / macro), the
+// "why now" layer written by scripts/collect-signals.mjs. Read from disk like the other probes; an
+// absent file means the panel reports the layer as unavailable rather than inventing context.
+const signalsSnapshot = readJson(join(CACHE, "signals.json"));
 const buildReport = fs.existsSync(join(CACHE, "build-report.md")) ? fs.readFileSync(join(CACHE, "build-report.md"), "utf8") : null;
 
 const provenanceBase = {
@@ -108,7 +112,7 @@ const wrapperAudit = wrapperProbe ? {
   verifiedWrappers: Object.keys(wrapperProbe.bySymbol || {}).length, rejectedCandidates: (wrapperProbe.rejected || []).length
 } : null;
 
-const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe, bitget7x24: bitget7x24Probe });
+const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe, bitget7x24: bitget7x24Probe, signals: signalsSnapshot });
 
 // The library view handed to the shared parser: symbols, the session calendar (so "10 个交易日前"
 // resolves to a real session rather than an approximate calendar day) and the measured horizon grid.

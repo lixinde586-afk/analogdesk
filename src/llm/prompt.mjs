@@ -11,7 +11,7 @@
 
 export const SECTIONS = [
   { key: "verdict", heading: "Verdict", ask: "Two or three sentences: what the historical analog set says about this idea over the stated horizon, and the single number a trader should anchor on. Do not hedge into meaninglessness and do not give a buy/sell instruction." },
-  { key: "state", heading: "Why these analogs", ask: "Which features make the current state distinctive, and why that pulls these particular historical episodes into the neighborhood. Name the features using the labels in the card." },
+  { key: "state", heading: "Why these analogs", ask: "Which features make the current state distinctive, and why that pulls these particular historical episodes into the neighborhood. Name the features using the labels in the card. Then read the card's `signals` block for the 'why now' backdrop: in one or two sentences give the macro regime (the macro items), where market sentiment stands (the fearGreed band and value), and at most two news headlines that frame the market right now, each with its named source. Treat the news as context for the present, never as a forecast or a cause you have proven, and quote only figures that appear in the signals block. If signals is null or a layer is missing, say that backdrop is not available on this card rather than supplying it from your own knowledge." },
   { key: "history", heading: "What happened next", ask: "Describe the forward-return distribution of the retrieved analogs: median, spread, the shape of the tails, and which specific episodes dominate the bad tail. Cite analog sessions and symbols from the card." },
   { key: "tails", heading: "Path risk, not just endpoint", ask: "Use the excursion block. A trade can end near flat and still have been un-holdable. Report the median max adverse excursion and the probability of breaching the drawdown levels given in the card." },
   { key: "stress", heading: "Stress scenarios", ask: "Walk the scenario block. Lead with the scenarios that materially worsen the picture versus the baseline, say by how much, and always carry the scenario's own caveat field into the prose. Skip scenarios whose skipped field is non-null but mention that they were skipped and why." },
@@ -32,6 +32,7 @@ export const SYSTEM_PROMPT = [
   "6. Do not invent analogs, dates, symbols, sectors or events that are not in the card. Do not add real-world market commentary from your own knowledge.",
   "7. Match the language of the trader's question. If the question is in Chinese, write the whole answer in Chinese; if in English, write in English. Keep symbols, feature names and dates in their original Latin form.",
   "8. Be concrete and short. Roughly 700-1000 words total. No preamble, no sign-off, no markdown headings of your own.",
+  "9. The card's `signals` block is the ONLY permitted source of news, sentiment or macro context. When you quote a headline give its named source, never add market news from your own knowledge, and never present a headline or a sentiment reading as a prediction or as advice. If that block records a gap or an unavailable layer, carry that limitation through.",
   "",
   "OUTPUT FORMAT - exactly these section markers, each on its own line, in this order:",
   SECTIONS.map((s) => `[${s.key}]`).join("\n"),

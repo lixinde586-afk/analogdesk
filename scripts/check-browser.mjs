@@ -237,6 +237,15 @@ const PROBE = `
                             steps.push("empty-state-markup-restored=" + (eb.hidden || /Nothing analysed yet/.test(eb.innerHTML)));
                             steps.push("request-notes-hidden-again=" + document.getElementById("request-notes").hidden);
                             steps.push("no-fatal-banner=" + !document.getElementById("fatal"));
+                            // The news / sentiment / macro layer must render on a normal card, with the
+                            // sources stated - not silently empty.
+                            steps.push("signals-tab-present=" + !!document.querySelector('.tab[data-tab="signals"]'));
+                            steps.push("signals-panel-present=" + !!document.getElementById("panel-signals"));
+                            var sv = document.getElementById("signalsview");
+                            steps.push("signals-news-links=" + (sv ? sv.querySelectorAll("a").length : 0));
+                            steps.push("signals-macro-rows=" + (sv ? sv.querySelectorAll("table tbody tr").length : 0));
+                            steps.push("signals-fg-stated=" + (sv ? /Fear|Greed/.test(sv.textContent) : false));
+                            steps.push("signals-source-stated=" + (sv ? /News:/.test(sv.textContent) : false));
                             // Phase 9: a sector word with NO proxy must be reported and stop, not
                             // silently fall through to the dropdown default.
                             q.value = "地产股现在能拿一周吗";
@@ -268,7 +277,8 @@ const PROBE = `
                                       validationResults: window.AnalogDesk.validationResults,
                                       provenance: {}, config: {},
                                       wrapper: window.AnalogDesk.wrapper,
-                                      bitget7x24: window.AnalogDesk.bitget7x24
+                                      bitget7x24: window.AnalogDesk.bitget7x24,
+                                      signals: window.AnalogDesk.signals
                                     });
                                     var an = d2.analyze({ symbol: "CAT", date: "latest", horizon: 40, k: 50, includeStress: false, language: "en" });
                                     var tx = window.AnalogDesk.template.renderTemplate(an.card, { language: "en" }).text;

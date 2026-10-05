@@ -16,6 +16,7 @@ import { FEATURES, GROUPS, NF } from "./engine/features.mjs";
 import { stressReport, SCENARIOS } from "./engine/stress.mjs";
 import { summarize, histogram, pct } from "./engine/distribution.mjs";
 import { buildCard, validationSummary, horizonLabel } from "./llm/card.mjs";
+import { buildSignalsView } from "./data/signals.mjs";
 
 export const DEFAULT_HORIZON = 5;
 export const DEFAULT_K = 50;
@@ -550,7 +551,7 @@ function annotateWrapperScenarios(card) {
   const kind = src === bg ? "Bitget RWA perpetual" : "tokenised-equity wrapper";
   s.caveat = `${s.caveat} Measured on the instrument itself (${src.instrument}, a ${kind} on ${src.venueName}): ${Number.isFinite(refClosed) ? "the reference market is closed for " + refClosed + "% of the week and " : ""}${closed}% of its realised hourly movement happened in those closed hours, so the gap risk this scenario describes is not hypothetical for the instrument a trader would hold.`;
 }
-export function createDesk({ dataset, validationResults = null, provenance = {}, config = {}, wrapper = null, bitget7x24 = null }) {
+export function createDesk({ dataset, validationResults = null, provenance = {}, config = {}, wrapper = null, bitget7x24 = null, signals = null }) {
   const wrapperView = createWrapperView(wrapper);
   const bitgetView = createBitget7x24View(bitget7x24);
 
@@ -746,6 +747,13 @@ export function createDesk({ dataset, validationResults = null, provenance = {},
     crossVenue: bitgetView.crossVenueFor(base.query.sym)
   };
       annotateWrapperScenarios(card);
+
+      // The market signals layer (news / sentiment / macro) is attached AFTER buildCard, like the
+      // wrapper block: it is the "why is the market like this now" backdrop, and no retrieval,
+      // conformal or validation figure is computed from it. It is market-wide (the same snapshot for
+      // every card) with macro falling back to this card's own measured features. Null when no
+      // snapshot was supplied, so a card built without it is unchanged and the cache still reaches it.
+      card.signals = buildSignalsView(signals, card);
 
       // A card with no distribution is not a result: the UI would render a row of en-dashes and the
       // narrative would have nothing to say about outcomes. Fail with the reason and the way out.

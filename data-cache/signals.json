@@ -1,0 +1,211 @@
+{
+  "schema": "analogdesk.market-signals/1",
+  "fetchedAt": "2026-10-05T03:37:54.788Z",
+  "mcp": {
+    "url": "https://datahub.noxiaohao.com/mcp",
+    "reachable": true,
+    "returnedNews": false,
+    "returnedSentiment": false,
+    "returnedMacro": false
+  },
+  "news": {
+    "source": "public RSS feeds (signal MCP returned no news)",
+    "items": [
+      {
+        "title": "Safe investor asks Swiss watchdog to intervene in governance dispute",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/news/safe-investor-asks-swiss-watchdog-to-intervene-in-governance-dispute?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-05T03:12:21.000Z"
+      },
+      {
+        "title": "Stock futures are flat as investors grapple with higher yields, await Fed minutes: Live updates",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/04/stock-market-today-live-updates.html",
+        "publishedAt": "2026-10-05T02:33:38.000Z"
+      },
+      {
+        "title": "Surging Treasury yields don’t signal a U.S. 'fiscal apocalypse' — yet",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/05/treasury-yields-fiscal-concerns-not-crisis-yet.html",
+        "publishedAt": "2026-10-05T02:24:07.000Z"
+      },
+      {
+        "title": "‘Unwelcome and unsafe’: Why Japanese companies are retreating from China at a historic rate",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/05/japanese-companies-leaving-china-takaichi-comment-taiwan.html",
+        "publishedAt": "2026-10-05T02:15:12.000Z"
+      },
+      {
+        "title": "They survived World War II and lost decades, but not 2026. Japan's century-old businesses are disappearing at a record pace",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/05/japan-old-business-kadoya-subeshoten-.html",
+        "publishedAt": "2026-10-05T01:08:10.000Z"
+      },
+      {
+        "title": "Trump tells South Korea to sign on to Alaska LNG deal or 'I'll just charge them more'",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/05/trump-alaska-lng-south-korea-pay.html",
+        "publishedAt": "2026-10-05T00:47:47.000Z"
+      },
+      {
+        "title": "Zcash gets a Washington lobbyist to push crypto policy",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/news/zcash-gets-a-washington-lobbyist-to-push-crypto-policy?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-05T00:35:34.000Z"
+      },
+      {
+        "title": "Zcash (ZEC), Bitcoin (BTC), Shiba Inu (SHIB) and Binance Coin (BNB) Price Analysis For October 5: Bears Could Take Control",
+        "source": "U.Today",
+        "link": "https://u.today/price-analysis/zcash-zec-bitcoin-btc-shiba-inu-shib-and-binance-coin-bnb-price-analysis-for-october-5-bears-could",
+        "publishedAt": "2026-10-05T00:01:00.000Z"
+      },
+      {
+        "title": "Yemeni government launches offensive to seize all areas from Iran-backed Houthis",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/04/yemen-launches-offensive-to-seize-all-areas-from-iran-backed-houthis.html",
+        "publishedAt": "2026-10-04T22:47:20.000Z"
+      },
+      {
+        "title": "Former SEC boss made AI Czar, Bitcoin may hit $600K this cycle: Hodler’s Digest",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/magazine/former-sec-boss-made-ai-czar-bitcoin-may-hit-600k-this-cycle-hodlers-digest?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-04T22:31:12.000Z"
+      },
+      {
+        "title": "Supreme Court Justice Alito said he's 'thought about' retirement as Senate control hangs in balance",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/04/supreme-court-justice-alito-thought-about-retiring.html",
+        "publishedAt": "2026-10-04T22:08:34.000Z"
+      },
+      {
+        "title": "All U.S. bombers leave UK air base on concerns of suspected terror plots; more tankers struck near Iran in the Middle East",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/04/more-tankers-struck-in-gulf-waters-as-iran-reiterates-conditions.html",
+        "publishedAt": "2026-10-04T21:46:15.000Z"
+      },
+      {
+        "title": "It's time for us to put cash to work in this ugly market. Here's where we will do our buying",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/investingclub/2026/10/04/its-time-for-us-to-put-cash-to-work-in-this-ugly-market-heres-where-we-will-do-our-buying.html",
+        "publishedAt": "2026-10-04T20:32:16.000Z"
+      },
+      {
+        "title": "Trump reiterates pledge to send $5,000 checks, and hands out smaller payments, as midterm elections loom",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/04/trump-5000-checks-cash-payments-midterms.html",
+        "publishedAt": "2026-10-04T20:28:47.000Z"
+      },
+      {
+        "title": "Here’s what happened in crypto today",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/news/what-happened-in-crypto-today?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-04T18:51:50.000Z"
+      },
+      {
+        "title": "Shiba Inu (SHIB) Goes Live on Solana Network",
+        "source": "U.Today",
+        "link": "https://u.today/shiba-inu-shib-goes-live-on-solana-network",
+        "publishedAt": "2026-10-04T18:28:07.000Z"
+      },
+      {
+        "title": "Trump Taps Jay Clayton, the SEC Chair Who Sued Ripple, to Lead AI Push",
+        "source": "Decrypt",
+        "link": "https://decrypt.co/380019/trump-jay-clayton-sec-ripple-ai-push-super-intelligence",
+        "publishedAt": "2026-10-04T17:01:03.000Z"
+      },
+      {
+        "title": "XRP Nears $1.53 Breakout Trigger as Largest Holders Completely Freeze",
+        "source": "U.Today",
+        "link": "https://u.today/xrp-nears-153-breakout-trigger-as-largest-holders-completely-freeze",
+        "publishedAt": "2026-10-04T16:38:15.000Z"
+      },
+      {
+        "title": "Banking Group Sues to Block Crypto's 'Side Door' Into the Banking System",
+        "source": "Decrypt",
+        "link": "https://decrypt.co/380017/banking-group-sues-block-crypto-side-door-banking",
+        "publishedAt": "2026-10-04T16:01:03.000Z"
+      },
+      {
+        "title": "Dogecoin (DOGE) Ten-Cent Dream Needs Just One Breakout Level",
+        "source": "U.Today",
+        "link": "https://u.today/dogecoin-doge-ten-cent-dream-needs-just-one-breakout-level",
+        "publishedAt": "2026-10-04T15:20:13.000Z"
+      },
+      {
+        "title": "'Uptober' Starts Green as Bitcoin ETFs Draw $134 Million",
+        "source": "Decrypt",
+        "link": "https://decrypt.co/380007/uptober-starts-green-bitcoin-etfs-draw-134-million",
+        "publishedAt": "2026-10-04T15:01:03.000Z"
+      },
+      {
+        "title": "Ethereum Creator Vitalik Buterin Reveals Privacy-Focused AI Experiment",
+        "source": "U.Today",
+        "link": "https://u.today/ethereum-creator-vitalik-buterin-reveals-privacy-focused-ai-experiment",
+        "publishedAt": "2026-10-04T14:20:00.000Z"
+      },
+      {
+        "title": "'More Orange Than Ever': Michael Saylor Hints at Massive New Bitcoin Buy",
+        "source": "U.Today",
+        "link": "https://u.today/more-orange-than-ever-michael-saylor-hints-at-massive-new-bitcoin-buy",
+        "publishedAt": "2026-10-04T14:07:05.000Z"
+      },
+      {
+        "title": "This NYC startup requires 4 days in office but just let everyone work remote for a whole month",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/04/work-from-anywhere-month.html",
+        "publishedAt": "2026-10-04T14:00:01.000Z"
+      },
+      {
+        "title": "OPEC+ agrees to keep November oil output targets steady",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/04/opec-agrees-to-keep-november-oil-output-targets-steady.html",
+        "publishedAt": "2026-10-04T13:49:31.000Z"
+      },
+      {
+        "title": "Trump taps intel chief Jay Clayton to lead new Super Intelligence Force",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/news/trump-taps-jay-clayton-to-lead-new-super-intelligence-force?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-04T13:48:48.000Z"
+      },
+      {
+        "title": "Starting a watch collection? What beginners should know before buying",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/04/watch-collecting-beginners.html",
+        "publishedAt": "2026-10-04T13:44:31.000Z"
+      },
+      {
+        "title": "Top Wall Street analysts are upbeat about the prospects for these 3 stocks",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/04/top-analysts-are-upbeat-about-the-prospects-for-these-3-stocks.html",
+        "publishedAt": "2026-10-04T13:24:16.000Z"
+      },
+      {
+        "title": "A 'weird' IPO pull, a tainted reputation and the stalled breakout moment for AI wearables",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/04/ai-wearables-oura-ipo-privacy.html",
+        "publishedAt": "2026-10-04T13:22:39.000Z"
+      },
+      {
+        "title": "JPMorgan’s best stock ideas heading into October",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/04/jpmorgans-best-stock-ideas-heading-into-october.html",
+        "publishedAt": "2026-10-04T13:17:14.000Z"
+      }
+    ]
+  },
+  "sentiment": {
+    "source": "alternative.me (signal MCP returned no sentiment)",
+    "fearGreed": 70,
+    "band": "Greed",
+    "longShort": null,
+    "takerRatio": null
+  },
+  "macro": {
+    "source": null,
+    "items": []
+  },
+  "gaps": [
+    "derivatives positioning (long/short, taker ratio): the signal MCP returned no data and no keyless fallback exists",
+    "macro levels: the signal MCP returned none; this card shows FRED-derived macro features instead"
+  ]
+}

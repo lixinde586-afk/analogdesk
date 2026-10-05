@@ -163,7 +163,13 @@ export function buildCanonicalEntries() {
     return { ...rest, catalog: catalog ? { rows: catalog.rows, rwaFlagged: catalog.rwaFlagged, exchangesReported: catalog.exchangesReported, note: catalog.note } : null };
   })() : null;
   if (!bitget7x24) console.warn("  warn  data-cache/bitget-7x24.json is missing - canonical cards head the Gate.io second venue and will not match a bundle built where the primary venue exists. Run: node scripts/measure-bitget-7x24.mjs");
-  const desk = createDesk({ dataset, validationResults, provenance: {}, wrapper, bitget7x24 });
+  // The market signals snapshot (news / sentiment / macro), the "why now" layer. Loaded here the same
+  // way the bundle and server.mjs load it so a canonical card carries the same backdrop; the digest
+  // excludes it (see replay.mjs), so it does not move a cached id but it does widen the number gate to
+  // include figures quoted from the headlines the card carries.
+  const signals = readJson(join(ROOT, "data-cache", "signals.json"));
+  if (!signals) console.warn("  warn  data-cache/signals.json is missing - canonical cards carry no news/sentiment/macro layer. Run: node scripts/collect-signals.mjs");
+  const desk = createDesk({ dataset, validationResults, provenance: {}, wrapper, bitget7x24, signals });
 
   const entries = [];
   for (const spec of CANONICAL_REQUESTS) {

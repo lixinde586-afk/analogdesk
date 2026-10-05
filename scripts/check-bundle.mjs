@@ -99,7 +99,7 @@ const fail = (m) => { failures++; console.error("  FAIL " + m); };
 const ok = (m) => console.log("  ok   " + m);
 const assert = (cond, goodMsg, badMsg) => (cond ? ok(goodMsg) : fail(badMsg));
 
-const PANELS_TO_RENDER = ["cardbar", "narrative", "state", "conformal", "hist", "diststats", "fan",
+const PANELS_TO_RENDER = ["cardbar", "narrative", "signalsview", "state", "conformal", "hist", "diststats", "fan",
   "excursion", "stresstable", "stressdetail", "wrapper", "analogtable", "validation", "sources", "network",
   "bitget", "wrapperprov", "llmpanel"];
 
@@ -171,7 +171,7 @@ if (AD) {
   const t1 = Date.now();
   assert(!!AD.wrapper, "wrapper measurement baked into the bundle", "window.AnalogDesk.wrapper is missing - the static build would render cards with no 7x24 block while the server renders one, and the two would hash differently");
   assert(!!AD.bitget7x24, "Bitget 7x24 measurement baked into the bundle", "window.AnalogDesk.bitget7x24 is missing - the static build would render cards whose primary 7x24 venue is absent while the server renders one, and the two would hash differently");
-  const desk = AD.desk.createDesk({ dataset: AD.dataset, validationResults: AD.validationResults, provenance: AD.provenance, config: {}, wrapper: AD.wrapper || null, bitget7x24: AD.bitget7x24 || null });
+  const desk = AD.desk.createDesk({ dataset: AD.dataset, validationResults: AD.validationResults, provenance: AD.provenance, config: {}, wrapper: AD.wrapper || null, bitget7x24: AD.bitget7x24 || null, signals: AD.signals || null });
   ok(`engine init in ${Date.now() - t1} ms; ${desk.engine.mx.nSym} instruments x ${desk.engine.mx.nDates} sessions`);
   for (const [sym, H] of [["NVDA", 5], ["BABA", 20], ["SPY", 1], ["KWEB", 10]]) {
     const t2 = Date.now();
@@ -198,6 +198,10 @@ if (AD) {
     assert(!!w && typeof w.status === "string" && w.referenceMarket?.closedSharePct != null,
       `  ${sym.padEnd(5)} wrapper block present (status ${w?.status}, reference market closed ${w?.referenceMarket?.closedSharePct}%)`,
       `  ${sym} has no usable wrapper block - the card would silently drop the measured 7x24 figure`);
+    const sig = card.signals;
+    assert(!!sig && (sig.news?.items?.length > 0) && !!sig.sentiment && (sig.macro?.items?.length > 0) && /News:/.test(sig.sourceNote),
+      `  ${sym.padEnd(5)} signals layer attached (${sig?.news?.items?.length || 0} news, F&G ${sig?.sentiment?.fearGreedValue} ${sig?.sentiment?.band}, ${sig?.macro?.items?.length || 0} macro; sources/gaps stated)`,
+      `  ${sym} card has no usable news/sentiment/macro layer: ${JSON.stringify(sig && Object.keys(sig))}`);
   }
 }
 

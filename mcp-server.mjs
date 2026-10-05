@@ -73,6 +73,8 @@ const wrapperProbe = readJson(join(CACHE, "wrapper-probe.json"));
 // The same 7x24 layer measured on Bitget's own venue (RWA perpetuals via the official MCP). It is the
 // primary venue for that layer; wrapper-probe.json is the independent second one.
 const bitget7x24Probe = readJson(join(CACHE, "bitget-7x24.json"));
+// The committed market signals snapshot (news / sentiment / macro), the "why now" layer.
+const signalsSnapshot = readJson(join(CACHE, "signals.json"));
 
 const provenanceBase = {
   datasetBuiltAt: (dataset.meta && dataset.meta.builtAt) || null,
@@ -86,7 +88,7 @@ const provenanceBase = {
   servedOver: "mcp-stdio"
 };
 
-const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe, bitget7x24: bitget7x24Probe });
+const desk = createDesk({ dataset, validationResults, provenance: provenanceBase, config: cfg, wrapper: wrapperProbe, bitget7x24: bitget7x24Probe, signals: signalsSnapshot });
 const luiLib = (() => {
   const l = desk.library();
   return { symbols: l.symbols, dates: l.dates, from: l.from, to: l.to, horizons: l.horizons };

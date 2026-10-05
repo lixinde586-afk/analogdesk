@@ -240,7 +240,8 @@ function shimPayloadAssignments() {
     `globalThis.AnalogDesk.replaySeed = `,
     `globalThis.AnalogDesk.provenance = `,
     `globalThis.AnalogDesk.wrapper = `,
-    `globalThis.AnalogDesk.bitget7x24 = `
+    `globalThis.AnalogDesk.bitget7x24 = `,
+    `globalThis.AnalogDesk.signals = `
   ];
 }
 
@@ -303,6 +304,13 @@ function build() {
   if (!bitget7x24) log("WARNING no data-cache/bitget-7x24.json - the static build ships no Bitget primary-venue block and the card falls back to Gate.io.");
   else if (bitget7x24.degradation) log(`bitget 7x24: DEGRADED (${bitget7x24.degradation.kind}) - the static build ships the disclosure and no Bitget figure.`);
   else log(`bitget 7x24: ${bitget7x24.summary?.instrumentsVerified} verified RWA perpetual(s) covering ${bitget7x24.summary?.coveragePct}% of the library on the ${bitget7x24.venue?.route} route; ${bitget7x24.summary?.weekendBlocksObserved} weekend block(s) over ${bitget7x24.summary?.distinctWeekendStarts} distinct weekend(s); cross-venue on ${bitget7x24.summary?.crossVenueCompared} symbol(s)`);
+
+  // The committed market signals snapshot (news / sentiment / macro), written by
+  // scripts/collect-signals.mjs. Baked in like the other probes: the static package makes no network
+  // call after load, and the Market signals panel renders this with every source and gap stated.
+  const signals = readJsonOrNull(join(ROOT, "data-cache", "signals.json"));
+  if (!signals) log("WARNING no data-cache/signals.json - the static build ships no news/sentiment/macro layer. Run: node scripts/collect-signals.mjs");
+  else log(`signals: ${signals.news?.items?.length ?? 0} headline(s), F&G ${signals.sentiment?.fearGreed ?? "n/a"} (${signals.sentiment?.band || "?"}), ${signals.macro?.items?.length ?? 0} macro level(s) from MCP; ${signals.gaps?.length ?? 0} gap(s) stated`);
 
   // The committed Bitget measurement, written by scripts/measure-bitget.mjs. Baked in for the same
   // reason as the wrapper probe: the static package makes no network call, and a keyless reviewer must
@@ -426,7 +434,7 @@ function build() {
     return transformModule(key, mod.src);
   });
 
-  return { dataset, validation, replaySeed, provenance, promptVersion, transformed, ms: Date.now() - t0, validationFull, netProbe, wrapper, wrapperFull, bitgetFull, bitgetMeasurement, bitget7x24, bitget7x24Full };
+  return { dataset, validation, replaySeed, provenance, promptVersion, transformed, ms: Date.now() - t0, validationFull, netProbe, wrapper, wrapperFull, bitgetFull, bitgetMeasurement, bitget7x24, bitget7x24Full, signals };
 }
 
 /* -------------------------------- assemble -------------------------------- */
@@ -464,6 +472,7 @@ function emit() {
     `${A[3]}${JSON.stringify(b.provenance)};`,
     `${A[4]}${JSON.stringify(b.wrapper)};`,
     `${A[5]}${JSON.stringify(b.bitget7x24)};`,
+    `${A[6]}${JSON.stringify(b.signals)};`,
     ``,
     `// app.js is required LAST and synchronously: it calls boot() at module scope and reads`,
     `// window.AnalogDesk there, so every field above must already be assigned. Requiring it earlier`,
@@ -523,12 +532,14 @@ function emit() {
   // refusal and every closed-session block, so a reviewer can recompute a weekend return from its own
   // entry and exit prices without cloning the repository.
   if (b.bitget7x24Full) writeFileSync(join(DIST, "bitget-7x24.json"), JSON.stringify(b.bitget7x24Full, null, 2), "utf8");
+  // The market signals snapshot beside the bundle, so the news/sentiment/macro layer is auditable too.
+  if (b.signals) writeFileSync(join(DIST, "signals.json"), JSON.stringify(b.signals, null, 2), "utf8");
 
   const size = (f) => statSync(join(DIST, f)).size;
   const mb = (n) => `${(n / 1048576).toFixed(2)} MB`;
   const gz = gzipSync(Buffer.from(bundle, "utf8")).length;
   log(`bundle: ${b.transformed.length} modules, ${mb(size("app.bundle.js"))} raw, ${mb(gz)} gzipped (build ${b.ms} ms)`);
-  for (const f of ["index.html", "styles.css", "app.bundle.js", "validation-summary.json", "network-probe.json", "wrapper-probe.json", "bitget-probe.json", "bitget-7x24.json"]) {
+  for (const f of ["index.html", "styles.css", "app.bundle.js", "validation-summary.json", "network-probe.json", "wrapper-probe.json", "bitget-probe.json", "bitget-7x24.json", "signals.json"]) {
     if (existsSync(join(DIST, f))) log(`  dist/${f.padEnd(26)} ${mb(size(f))}`);
   }
   log(`payload: library ${b.provenance.sessions} sessions x ${b.provenance.symbols} instruments (${b.provenance.from} .. ${b.provenance.to});`
