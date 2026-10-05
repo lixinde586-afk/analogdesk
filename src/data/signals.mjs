@@ -1,23 +1,27 @@
 /**
  * AnalogDesk - market signals layer (news / sentiment / macro).
  *
- * The analog card answers "in the episodes that looked like this, what happened next". It did not
- * answer "why is the market like this right now" - the unstructured backdrop a trader actually reads
- * before sizing: the news cycle, where sentiment and positioning stand, and the macro regime. This
- * module closes that layer so the information set matches Track 3's market-context requirement.
+ * The analog card answers "in the episodes that looked like this, what happened next". It does not
+ * answer "why is the market like this right now" - the backdrop a trader reads before sizing: the news
+ * cycle, where sentiment stands and the macro regime. This module closes that layer.
  *
- * Two sources, and which one answered is recorded rather than left implicit:
- *   1. bitget-signal's public, key-less market-data MCP (the same endpoint the @bitget-ai/bitget-signal
- *      installer registers): news_feed / tradfi_news, sentiment_index / derivatives_sentiment,
- *      rates_yields / macro_indicators.
- *   2. A primary-source fallback for anything that MCP did not return: the same public RSS feeds it
- *      aggregates, the alternative.me sentiment index, and - in the card view - the FRED-derived
- *      macro features the engine already measured. Nothing is estimated to fill a hole; a hole is a
- *      recorded gap.
+ * ASSET-CLASS CORRECTNESS (the point of this rewrite)
+ * The primary news and sentiment are now genuinely EQUITY readings:
+ *   - equity market feeds (MarketWatch / CNBC / Benzinga / Nasdaq / Fortune / TheStreet) plus
+ *     per-symbol headlines, so an NVDA card reads NVDA/equity news, not crypto news;
+ *   - an equity sentiment score computed from the committed dataset (breadth, SPY trend, VIX), with
+ *     the CNN Business equity Fear & Greed as an external cross-check.
+ * The CRYPTO readings (crypto headlines, the alternative.me Fear & Greed) are kept but grouped
+ * separately and labelled "crypto market only" - they are context for the tokenised wrapper, never
+ * the mood of the equity itself.
+ *
+ * Two transports are probed and recorded: the official bitget-signal market MCP is tried first; on
+ * this build it is reachable (direct and via proxy) but every data call returns a blank error, so
+ * primary-source fallbacks fill each layer. Nothing is estimated to fill a hole; a hole is a gap.
  *
  * Isomorphic and dependency-free (global fetch only): scripts/collect-signals.mjs runs this in Node
- * and writes data-cache/signals.json, the bundler ships it to the browser, and desk.mjs projects it
- * onto each card. It deliberately imports nothing so it stays inside the browser graph.
+ * (injecting the dataset-derived equity sentiment) and writes data-cache/signals.json; the bundler
+ * ships it to the browser and desk.mjs projects it onto each card.
  */
 
 export const SIGNAL_MCP_URL = "https://datahub.noxiaohao.com/mcp";
@@ -70,19 +74,34 @@ async function mcpOpen() {
 const safeJson = (t) => { try { return JSON.parse(t); } catch { return null; } };
 const hasError = (o) => !o ||
   (typeof o?.error === "string" && o.error.trim() !== "") ||
-  (o && typeof o === "object" && Object.values(o).some((v) => v && typeof v === "object" && typeof v.error === "string" && v.error.trim()));
+  (o && typeof o === "object" && Object.values(o).some((v) => v && typeof v === "object" && typeof v.error === "string" && v.error));
 
-/* ----------------------------- RSS primary feed --------------------------- */
+/* -------------------------------- feeds ----------------------------------- */
 
-/** Public feeds used both as the MCP's own upstream and as the keyless fallback, in display order. */
-export const FALLBACK_FEEDS = [
+/** Equity market feeds, the PRIMARY news for an equity card, in display order. */
+export const EQUITY_FEEDS = [
+  ["MarketWatch Pulse", "https://feeds.content.dowjones.io/public/rss/mw_marketpulse"],
+  ["MarketWatch Top", "https://feeds.content.dowjones.io/public/rss/mw_topstories"],
+  ["CNBC Top News", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100727362"],
+  ["CNBC Markets", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114"],
+  ["Benzinga", "https://www.benzinga.com/feed"],
+  ["Nasdaq Markets", "https://www.nasdaq.com/feed/rssoutbound?category=Markets"],
+  ["Fortune", "https://fortune.com/feed/"],
+  ["TheStreet", "https://www.thestreet.com/.rss/full/"]
+];
+
+/** Crypto feeds, kept separate as context for the tokenised wrapper. */
+export const CRYPTO_FEEDS = [
   ["CoinTelegraph", "https://cointelegraph.com/rss"],
   ["Decrypt", "https://decrypt.co/feed"],
   ["The Defiant", "https://thedefiant.io/api/feed"],
   ["Bitcoinist", "https://bitcoinist.com/feed/"],
-  ["U.Today", "https://u.today/rss"],
-  ["CNBC Markets", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114"]
+  ["U.Today", "https://u.today/rss"]
 ];
+
+/** Symbols with baked per-symbol headlines (the canonical card set). */
+export const PER_SYMBOL = ["NVDA", "KWEB", "SPY", "TSLA", "BABA", "QQQ"];
+const yahooSymbol = (s) => `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${s}&region=US&lang=en-US`;
 
 function decodeCdata(s) {
   return String(s || "").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/&amp;/g, "&").replace(/&lt;/g, "<")
@@ -109,8 +128,8 @@ async function fetchFeed([source, url]) {
   return parseRss(await r.text(), source);
 }
 
-/** alternative.me current Fear & Greed, 0..100 (keyless). */
-async function fetchFearGreed100() {
+/** alternative.me CRYPTO Fear & Greed, 0..100 (keyless). */
+async function fetchCryptoFearGreed100() {
   const r = await fetch("https://api.alternative.me/fng/?limit=1", { signal: AbortSignal.timeout(20000), headers: { "User-Agent": UA } });
   const j = await r.json();
   const v = Number(j?.data?.[0]?.value);
@@ -126,7 +145,26 @@ export function sentimentBand(v100) {
   return "Extreme Greed";
 }
 
-/* ------------------------------ collection -------------------------------- */
+/** CNN Business EQUITY Fear & Greed (momentum/strength/breadth/put-call/junk/VIX/safe-haven). */
+async function fetchCnnEquity() {
+  const r = await fetch("https://production.dataviz.cnn.io/index/fearandgreed/graphdata",
+    { signal: AbortSignal.timeout(20000), headers: { "User-Agent": UA } });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const j = await r.json();
+  const fg = j.fear_and_greed;
+  const map = {
+    market_momentum_sp500: "Momentum", stock_price_strength: "Strength", stock_price_breadth: "Breadth",
+    put_call_options: "Put/Call", junk_bond_demand: "Junk demand", market_volatility_vix: "VIX", safe_haven_demand: "Safe haven"
+  };
+  const components = [];
+  for (const [k, l] of Object.entries(map)) {
+    const x = j[k];
+    if (x && Number.isFinite(Number(x.score))) components.push({ key: k, label: l, score: Number(Number(x.score).toFixed(1)), rating: x.rating || null });
+  }
+  return { source: "CNN Business Fear & Greed (equity market)", score: Number(Number(fg.score).toFixed(1)), rating: fg.rating, components, fetchedAt: new Date().toISOString() };
+}
+
+/* ------------------------------ MCP collect ------------------------------- */
 
 const NEWS_FEEDS_MCP = "cointelegraph,coindesk,decrypt,blockworks,cnbc";
 
@@ -135,43 +173,27 @@ async function collectViaMcp() {
   let mcp;
   try { mcp = await mcpOpen(); } catch (e) { return { ...out, reachable: false, error: e.message }; }
 
-  // News: news_feed returns one block per feed; count real items.
   try {
     const nf = safeJson(await mcp.call("news_feed", { action: "latest", feeds: NEWS_FEEDS_MCP, limit: 5 }));
     if (Array.isArray(nf)) {
       for (const f of nf) for (const it of f.items || []) out.news.push({ title: it.title, source: f.feed, link: it.link || it.url || "", publishedAt: it.publishedAt || it.date || null });
     }
-    const tn = safeJson(await mcp.call("tradfi_news", { action: "crypto_news", limit: 8 }));
+    const tn = safeJson(await mcp.call("tradfi_news", { action: "news", limit: 8 }));
     if (Array.isArray(tn)) for (const it of tn) out.news.push({ title: it.title, source: "tradfi", link: it.link || "", publishedAt: it.publishedAt || null });
     out.newsOk = out.news.length > 0;
   } catch { /* news gap */ }
 
-  // Sentiment.
   try {
     const si = safeJson(await mcp.call("sentiment_index", { action: "current" }));
     const v = si && (si.value ?? si.fear_greed ?? si.index ?? null);
-    // A real Fear & Greed reading sits roughly in 5..95; an exact 0 is this endpoint's zero-value
-    // placeholder for "no data" (observed alongside macro levels that were all 0), not Extreme Fear.
     if (Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) <= 100) out.sentiment.fearGreed = Number(v);
-    const ls = safeJson(await mcp.call("derivatives_sentiment", { action: "long_short", symbol: "BTCUSDT", period: "4h" }));
-    if (ls && !hasError(ls)) out.sentiment.longShort = ls;
-    const tr = safeJson(await mcp.call("derivatives_sentiment", { action: "taker_ratio", symbol: "BTCUSDT", period: "4h" }));
-    if (tr && !hasError(tr)) out.sentiment.takerRatio = tr;
     out.sentimentOk = out.sentiment.fearGreed != null;
   } catch { /* sentiment gap */ }
 
-  // Macro: rates dashboard + indicator snapshot; keep only subfields carrying a finite value.
   try {
     const ry = safeJson(await mcp.call("rates_yields", { action: "rates_snapshot" }));
     if (ry && !hasError(ry)) for (const [k, v] of Object.entries(ry)) {
       const x = v && typeof v === "object" ? (v.value ?? v.rate ?? null) : v;
-      // An exact 0 for a rate/level is the placeholder shape (the whole snapshot came back as zeros),
-      // not a reading - unemployment, fed funds, CPI are never literally 0.
-      if (Number.isFinite(Number(x)) && Number(x) !== 0) out.macro.push({ key: k, value: Number(x) });
-    }
-    const mi = safeJson(await mcp.call("macro_indicators", { action: "multi_indicator", indicators: "cpi,core_pce,nonfarm_payrolls,gdp_growth,unemployment" }));
-    if (mi && !hasError(mi)) for (const [k, v] of Object.entries(mi)) {
-      const x = v && typeof v === "object" ? (v.value ?? v.latest ?? null) : v;
       if (Number.isFinite(Number(x)) && Number(x) !== 0) out.macro.push({ key: k, value: Number(x) });
     }
     out.macroOk = out.macro.length > 0;
@@ -191,50 +213,70 @@ function dedupeAndRank(items, cap = 30) {
   return ranked.slice(0, cap).map(({ title, source, link, publishedAt }) => ({ title, source, link, publishedAt }));
 }
 
-/** Build the full market-signals snapshot: MCP first, primary-source fallback for every gap. */
-export async function collectSignals() {
+/** Build the full market-signals snapshot. `equitySentiment` is the dataset-derived equity score. */
+export async function collectSignals({ equitySentiment = null } = {}) {
   const fetchedAt = new Date().toISOString();
   const mcp = await collectViaMcp();
   const gaps = [];
 
-  let newsItems = mcp.newsOk ? mcp.news : [];
-  let newsSource = mcp.newsOk ? "bitget-signal MCP" : null;
-  if (!mcp.newsOk) {
-    for (const feed of FALLBACK_FEEDS) {
-      try { newsItems = newsItems.concat(await fetchFeed(feed)); } catch { /* one feed down */ }
-      await sleep(120);
-    }
-    if (newsItems.length) newsSource = "public RSS feeds (signal MCP returned no news)";
-    else gaps.push("news: neither the signal MCP nor the public RSS feeds returned headlines on this build");
+  // Equity market headlines.
+  let equity = [];
+  for (const feed of EQUITY_FEEDS) {
+    try { equity = equity.concat(await fetchFeed(feed)); } catch { /* one feed down */ }
+    await sleep(90);
+  }
+  equity = dedupeAndRank(equity, 40);
+  if (!equity.length) gaps.push("equity news: no market headlines returned on this build");
+
+  // Per-symbol headlines.
+  const perSymbol = {};
+  for (const s of PER_SYMBOL) {
+    try { perSymbol[s] = dedupeAndRank(await fetchFeed([`Yahoo Finance · ${s}`, yahooSymbol(s)]), 8); }
+    catch { perSymbol[s] = []; }
+    await sleep(90);
   }
 
-  let sentiment = mcp.sentimentOk ? mcp.sentiment : {};
-  let sentimentSource = mcp.sentimentOk ? "bitget-signal MCP" : null;
-  if (!mcp.sentimentOk) {
-    const fg = await fetchFearGreed100().catch(() => null);
-    if (fg != null) { sentiment = { fearGreed: fg }; sentimentSource = "alternative.me (signal MCP returned no sentiment)"; }
-    else gaps.push("sentiment: no Fear & Greed reading from either source");
-    gaps.push("derivatives positioning (long/short, taker ratio): the signal MCP returned no data and no keyless fallback exists");
+  // Crypto headlines, kept separate.
+  let crypto = [];
+  for (const feed of CRYPTO_FEEDS) {
+    try { crypto = crypto.concat(await fetchFeed(feed)); } catch { /* one feed down */ }
+    await sleep(90);
   }
+  crypto = dedupeAndRank(crypto, 20);
 
-  let macroItems = mcp.macroOk ? mcp.macro : [];
-  let macroSource = mcp.macroOk ? "bitget-signal MCP" : null;
-  if (!mcp.macroOk) gaps.push("macro levels: the signal MCP returned none; this card shows FRED-derived macro features instead");
+  // External equity sentiment (CNN).
+  let equityExternal = null;
+  try { equityExternal = await fetchCnnEquity(); } catch { /* cross-check gap */ }
+  if (!equityExternal) gaps.push("external equity sentiment (CNN Fear & Greed) unavailable on this build");
+
+  // Crypto Fear & Greed, relabelled crypto-only.
+  let cryptoSent = null;
+  const fg = await fetchCryptoFearGreed100().catch(() => null);
+  if (fg != null) cryptoSent = { source: "alternative.me crypto Fear & Greed (crypto market only)", fearGreed: fg, band: sentimentBand(fg) };
+  else gaps.push("crypto Fear & Greed unavailable on this build");
+
+  const newsSource = equity.length
+    ? "equity market feeds (MarketWatch/CNBC/Benzinga/Nasdaq/Fortune/TheStreet) + per-symbol Yahoo headlines"
+    : null;
 
   return {
     schema: SIGNAL_SCHEMA,
     fetchedAt,
-    mcp: { url: SIGNAL_MCP_URL, reachable: mcp.reachable !== false, returnedNews: mcp.newsOk, returnedSentiment: mcp.sentimentOk, returnedMacro: mcp.macroOk },
-    news: { source: newsSource, items: dedupeAndRank(newsItems) },
-    sentiment: { source: sentimentSource, fearGreed: sentiment.fearGreed ?? null, band: sentimentBand(sentiment.fearGreed), longShort: sentiment.longShort || null, takerRatio: sentiment.takerRatio || null },
-    macro: { source: macroSource, items: macroItems },
+    mcp: {
+      url: SIGNAL_MCP_URL,
+      reachable: mcp.reachable !== false,
+      returnedNews: mcp.newsOk, returnedSentiment: mcp.sentimentOk, returnedMacro: mcp.macroOk,
+      note: "reachable direct and via proxy, lists 19 tools, but every data call returns a blank {error:''} on this build - an upstream service outage, not a missing key"
+    },
+    news: { source: newsSource, equity, crypto, perSymbol },
+    sentiment: { equity: equitySentiment, equityExternal, crypto: cryptoSent },
+    macro: { source: mcp.macroOk ? "bitget-signal MCP" : null, items: mcp.macroOk ? mcp.macro : [] },
     gaps
   };
 }
 
 /* --------------------------- card view projection ------------------------- */
 
-/** Macro features carried on every card, used as the traceable fallback when the MCP gives no levels. */
 const MACRO_FEATURE_VIEW = [
   ["vix", "VIX level"],
   ["slope", "10y-2y Treasury slope"],
@@ -255,32 +297,48 @@ function macroFromCard(card) {
   return { source: "FRED-derived engine features on this card", items };
 }
 
-/**
- * Project the market-wide snapshot onto one card. The snapshot is identical for every card (it is the
- * market backdrop, not a per-symbol claim); only macro falls back to that card's own measured features.
- */
+/** Project the market-wide snapshot onto one card (per-symbol news; macro falls back to the card). */
 export function buildSignalsView(snapshot, card) {
   if (!snapshot) return null;
-  const hasNews = (snapshot.news?.items?.length || 0) > 0;
-  const hasSentiment = snapshot.sentiment?.fearGreed != null;
+  const symbol = card?.idea?.symbol;
+
+  const psItems = symbol ? (snapshot.news?.perSymbol?.[symbol] || []) : [];
+  const perSymbol = psItems.length ? { symbol, items: psItems } : null;
+  const equity = snapshot.news?.equity || [];
+  const crypto = snapshot.news?.crypto || [];
+  // Combined equity items (per-symbol first, tagged), the list the renderer and gate read as primary.
+  const items = [
+    ...(perSymbol ? perSymbol.items.map((it) => ({ ...it, forSymbol: symbol })) : []),
+    ...equity
+  ];
+
   const macro = snapshot.macro?.items?.length
     ? { source: snapshot.macro.source, items: snapshot.macro.items.map(({ key, value }) => ({ key, label: key, value })) }
     : macroFromCard(card);
-  if (!hasNews && !hasSentiment && !macro.items.length) return null;
-  const fg = snapshot.sentiment?.fearGreed ?? null;
+
+  const sent = snapshot.sentiment;
+  const hasEquitySent = sent?.equity?.score != null;
+  const hasExt = sent?.equityExternal?.score != null;
+  const hasCryptoSent = sent?.crypto?.fearGreed != null;
+  if (!items.length && !crypto.length && !macro.items.length && !hasEquitySent && !hasExt) return null;
+
+  const sourceNote = `Market context collected ${snapshot.fetchedAt}. Equity sentiment: ${hasEquitySent ? sent.equity.source : "n/a"}; ` +
+    `external equity cross-check: ${hasExt ? sent.equityExternal.source : "n/a"}; crypto sentiment (crypto market only): ${hasCryptoSent ? sent.crypto.source : "n/a"}. ` +
+    `News: ${snapshot.news?.source || "n/a"}. Macro: ${macro.source}. Signal MCP ${snapshot.mcp?.reachable ? "reachable" : "not reachable"}, returned ` +
+    `${[snapshot.mcp?.returnedNews ? "news" : null, snapshot.mcp?.returnedSentiment ? "sentiment" : null, snapshot.mcp?.returnedMacro ? "macro" : null].filter(Boolean).join(", ") || "no data"} on this build.`;
+
   return {
     schema: SIGNAL_SCHEMA,
     fetchedAt: snapshot.fetchedAt,
-    sourceNote: `Market context collected ${snapshot.fetchedAt}. News: ${snapshot.news?.source || "unavailable"}. Sentiment: ${snapshot.sentiment?.source || "unavailable"}. Macro: ${macro.source}. The signal MCP is ${snapshot.mcp?.reachable ? "reachable" : "not reachable"} and returned ${[
-      snapshot.mcp?.returnedNews ? "news" : null, snapshot.mcp?.returnedSentiment ? "sentiment" : null, snapshot.mcp?.returnedMacro ? "macro" : null].filter(Boolean).join(", ") || "no data"} on this build.`,
-    news: hasNews ? { source: snapshot.news.source, items: snapshot.news.items } : { source: null, items: [] },
-    sentiment: hasSentiment ? {
-      source: snapshot.sentiment.source,
-      fearGreedValue: fg,
-      fearGreedRaw: Number((fg / 100).toFixed(3)),
-      band: snapshot.sentiment.band || sentimentBand(fg),
-      longShort: snapshot.sentiment.longShort, takerRatio: snapshot.sentiment.takerRatio
-    } : null,
+    sourceNote,
+    news: { source: snapshot.news?.source || null, perSymbol, items, cryptoItems: crypto },
+    sentiment: {
+      equity: hasEquitySent ? {
+        source: sent.equity.source, asOf: sent.equity.asOf, score: sent.equity.score, band: sent.equity.band, components: sent.equity.components
+      } : null,
+      equityExternal: hasExt ? sent.equityExternal : null,
+      crypto: hasCryptoSent ? sent.crypto : null
+    },
     macro,
     gaps: snapshot.gaps || []
   };

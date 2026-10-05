@@ -654,35 +654,74 @@ function renderSignals(card) {
     return `<tr><td>${esc(m.label || m.key)}<div class="muted mono" style="font-size:10px">${esc(m.key)}</div></td>
       <td class="num">${isNum(v) ? esc(num(v, Math.abs(v) < 10 ? 2 : 1)) : "\u2013"}</td></tr>`;
   }).join("");
-  const sent = sg.sentiment;
-  const fgCls = sent ? (sent.fearGreedValue <= 25 ? "bad" : sent.fearGreedValue >= 75 ? "warn" : "info") : "";
-  const newsRows = (sg.news?.items || []).map((it) => {
+  const newsItem = (it) => {
     const t = it.publishedAt ? it.publishedAt.replace("T", " ").slice(0, 16) : "";
     const title = it.link
       ? `<a href="${esc(it.link)}" target="_blank" rel="noopener">${esc(it.title)}</a>`
       : esc(it.title);
-    return `<li>${title}<div class="muted small">${esc(it.source)}${t ? ` &middot; ${esc(t)}` : ""}</div></li>`;
+    const tag = it.forSymbol ? ` <span class="muted small">[${esc(it.forSymbol)} headlines]</span>` : "";
+    return `<li>${title}${tag}<div class="muted small">${esc(it.source)}${t ? ` &middot; ${esc(t)}` : ""}</div></li>`;
+  };
+  const newsRows = (sg.news?.items || []).map(newsItem).join("");
+  const cryptoNewsRows = (sg.news?.cryptoItems || []).map(newsItem).join("");
+
+  const sent = sg.sentiment;
+  const eq = sent?.equity || null;
+  const eqCls = eq ? (eq.score <= 25 ? "bad" : eq.score >= 75 ? "warn" : "info") : "";
+  const eqCompRows = (eq?.components || []).map((c) => {
+    const v = Number(c.value);
+    return `<tr><td>${esc(c.label)}${c.extra ? `<div class="muted small">${esc(c.extra)}</div>` : ""}</td>
+      <td class="num">${isNum(v) ? esc(num(v, Math.abs(v) < 10 ? 2 : 1)) : "–"}</td>
+      <td class="num muted">${esc(num(c.score, 0))}</td>
+      <td class="num muted">${c.weight}%</td></tr>`;
   }).join("");
+  const cnn = sent?.equityExternal || null;
+  const cnnRows = (cnn?.components || []).map((c) =>
+    `<tr><td>${esc(c.label)}</td><td class="num">${esc(num(c.score, 0))}</td><td class="muted small">${esc(c.rating || "")}</td></tr>`).join("");
+  const cr = sent?.crypto || null;
 
   box.innerHTML = `
     <p class="small" style="margin-bottom:10px">${esc(sg.sourceNote)}</p>
     <div class="grid2">
       <div>
         <h3>Macro regime</h3>
-        <div class="scroll" style="max-height:260px"><table><tbody>${macroRows || `<tr><td class="small">No macro levels on this build.</td></tr>`}</tbody></table></div>
+        <div class="scroll" style="max-height:240px"><table><tbody>${macroRows || `<tr><td class="small">No macro levels on this build.</td></tr>`}</tbody></table></div>
         <p class="small muted" style="margin-top:4px">${esc(sg.macro?.source || "")}</p>
-        <h3>Sentiment</h3>
-        ${sent ? `<div class="note ${fgCls}" style="margin:0">${kv([
-          ["Fear & Greed", `${num(sent.fearGreedValue, 0)} / 100`],
-          ["regime", sent.band],
-          ["source", sent.source]
-        ])}${sent.longShort || sent.takerRatio ? "" : `<p class="small" style="margin:6px 0 0">Derivatives positioning (long/short, taker ratio) was not returned; see the coverage gaps below.</p>`}</div>`
-          : `<p class="small">Sentiment is not available on this build.</p>`}
+
+        <h3>Equity sentiment <span class="muted small">&middot; primary mood of THIS market</span></h3>
+        ${eq ? `<div class="note ${eqCls}" style="margin:0 0 6px">${kv([
+          ["equity score", `${num(eq.score, 1)} / 100`],
+          ["regime", eq.band],
+          ["as of", eq.asOf],
+          ["source", eq.source]
+        ])}</div>
+        <table><thead><tr><th>component</th><th class="num">value</th><th class="num">score</th><th class="num">weight</th></tr></thead>
+        <tbody>${eqCompRows}</tbody></table>`
+          : `<p class="small">Equity sentiment is not available on this build.</p>`}
+
+        <h3>External equity cross-check</h3>
+        ${cnn ? `<div class="note info" style="margin:0 0 6px">${kv([
+          ["CNN Fear &amp; Greed", `${num(cnn.score, 1)} / 100`],
+          ["rating", cnn.rating]
+        ])}</div>
+        <table><tbody>${cnnRows}</tbody></table>`
+          : `<p class="small">External equity cross-check is not available on this build.</p>`}
+
+        <h3>Crypto sentiment <span class="muted small">&middot; crypto market only, not the equity mood</span></h3>
+        ${cr ? `<div class="note" style="margin:0">${kv([
+          ["crypto Fear &amp; Greed", `${num(cr.fearGreed, 0)} / 100`],
+          ["regime", cr.band],
+          ["scope", cr.source]
+        ])}</div>`
+          : `<p class="small">Crypto sentiment is not available on this build.</p>`}
       </div>
       <div>
-        <h3>News cycle <span class="muted small">&middot; latest first</span></h3>
-        <ul style="max-height:520px;overflow:auto;margin:0;padding-left:18px">${newsRows || `<li class="small">No headlines on this build.</li>`}</ul>
+        <h3>Equity news cycle <span class="muted small">&middot; latest first</span></h3>
+        <ul style="max-height:430px;overflow:auto;margin:0;padding-left:18px">${newsRows || `<li class="small">No equity headlines on this build.</li>`}</ul>
         <p class="small muted" style="margin-top:4px">${esc(sg.news?.source || "")}</p>
+
+        <h3>Crypto headlines <span class="muted small">&middot; wrapper context, separate asset class</span></h3>
+        <ul style="max-height:200px;overflow:auto;margin:0;padding-left:18px">${cryptoNewsRows || `<li class="small">No crypto headlines on this build.</li>`}</ul>
       </div>
     </div>
     ${(sg.gaps || []).length ? `<h3>Coverage gaps, stated</h3><ul class="small">${sg.gaps.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>` : ""}`;

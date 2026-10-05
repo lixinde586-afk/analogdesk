@@ -200,7 +200,7 @@ if (AD) {
       `  ${sym} has no usable wrapper block - the card would silently drop the measured 7x24 figure`);
     const sig = card.signals;
     assert(!!sig && (sig.news?.items?.length > 0) && !!sig.sentiment && (sig.macro?.items?.length > 0) && /News:/.test(sig.sourceNote),
-      `  ${sym.padEnd(5)} signals layer attached (${sig?.news?.items?.length || 0} news, F&G ${sig?.sentiment?.fearGreedValue} ${sig?.sentiment?.band}, ${sig?.macro?.items?.length || 0} macro; sources/gaps stated)`,
+      `  ${sym.padEnd(5)} signals layer attached (${sig?.news?.items?.length || 0} equity news, equity ${sig?.sentiment?.equity?.score} ${sig?.sentiment?.equity?.band}, CNN ${sig?.sentiment?.equityExternal?.score}, ${sig?.macro?.items?.length || 0} macro; sources/gaps stated)`,
       `  ${sym} card has no usable news/sentiment/macro layer: ${JSON.stringify(sig && Object.keys(sig))}`);
   }
 }

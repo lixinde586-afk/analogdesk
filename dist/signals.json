@@ -1,51 +1,360 @@
 {
   "schema": "analogdesk.market-signals/1",
-  "fetchedAt": "2026-10-05T03:37:54.788Z",
+  "fetchedAt": "2026-10-05T11:18:53.583Z",
   "mcp": {
     "url": "https://datahub.noxiaohao.com/mcp",
     "reachable": true,
     "returnedNews": false,
     "returnedSentiment": false,
-    "returnedMacro": false
+    "returnedMacro": false,
+    "note": "reachable direct and via proxy, lists 19 tools, but every data call returns a blank {error:''} on this build - an upstream service outage, not a missing key"
   },
   "news": {
-    "source": "public RSS feeds (signal MCP returned no news)",
-    "items": [
+    "source": "equity market feeds (MarketWatch/CNBC/Benzinga/Nasdaq/Fortune/TheStreet) + per-symbol Yahoo headlines",
+    "equity": [
+      {
+        "title": "Stock futures fall as investors grapple with higher yields: Live updates",
+        "source": "CNBC Top News",
+        "link": "https://www.cnbc.com/2026/10/04/stock-market-today-live-updates.html",
+        "publishedAt": "2026-10-05T11:20:13.000Z"
+      },
+      {
+        "title": "Treasury yields hold near multiyear highs as traders await data, Fed minutes this week",
+        "source": "CNBC Top News",
+        "link": "https://www.cnbc.com/2026/10/05/treasury-yields-bonds-fed-rates.html",
+        "publishedAt": "2026-10-05T11:20:13.000Z"
+      },
+      {
+        "title": "An AI &#x2018;reality check&#x2019; may take the S&P 500 to 5,000. Here&#x2019;s the trades to make, this strategist says.",
+        "source": "MarketWatch Top",
+        "link": "https://www.marketwatch.com/story/an-ai-reality-check-may-take-the-s-p-500-to-5-000-heres-the-trades-to-make-this-strategist-says-263cf0e9?mod=mw_rss_topstories",
+        "publishedAt": "2026-10-05T11:19:00.000Z"
+      },
+      {
+        "title": "My wife never went back to work after raising our kids. Do I have to share my retirement savings 50/50?",
+        "source": "MarketWatch Top",
+        "link": "https://www.marketwatch.com/story/my-wife-never-went-back-to-work-after-raising-our-kids-do-i-have-to-share-my-retirement-savings-50-50-f0727f82?mod=mw_rss_topstories",
+        "publishedAt": "2026-10-05T11:15:00.000Z"
+      },
+      {
+        "title": "Best Stocks Under $10",
+        "source": "Benzinga",
+        "link": "https://www.benzinga.com/money/stocks-under-10",
+        "publishedAt": "2026-10-05T11:12:47.000Z"
+      },
+      {
+        "title": "Best Solar Stocks",
+        "source": "Benzinga",
+        "link": "https://www.benzinga.com/money/best-solar-stocks",
+        "publishedAt": "2026-10-05T11:12:47.000Z"
+      },
+      {
+        "title": "Best Stocks Under $20",
+        "source": "Benzinga",
+        "link": "https://www.benzinga.com/money/stocks-under-20",
+        "publishedAt": "2026-10-05T11:12:47.000Z"
+      },
+      {
+        "title": "Best Tech Stocks Right Now",
+        "source": "Benzinga",
+        "link": "https://www.benzinga.com/money/best-tech-stocks",
+        "publishedAt": "2026-10-05T11:12:47.000Z"
+      },
+      {
+        "title": "Best Stocks Under $5",
+        "source": "Benzinga",
+        "link": "https://www.benzinga.com/money/top-stocks-under-5",
+        "publishedAt": "2026-10-05T11:12:47.000Z"
+      },
+      {
+        "title": "Top Financial Stocks for the Week",
+        "source": "Benzinga",
+        "link": "https://www.benzinga.com/money/top-financial-stocks-for-the-week",
+        "publishedAt": "2026-10-05T11:12:47.000Z"
+      },
+      {
+        "title": "Best Semiconductor Stocks",
+        "source": "Benzinga",
+        "link": "https://www.benzinga.com/money/best-semiconductor-stocks",
+        "publishedAt": "2026-10-05T11:12:47.000Z"
+      },
+      {
+        "title": "Best Energy Stocks",
+        "source": "Benzinga",
+        "link": "https://www.benzinga.com/money/best-energy-stocks",
+        "publishedAt": "2026-10-05T11:12:47.000Z"
+      },
+      {
+        "title": "Best Gold Stocks Right Now",
+        "source": "Benzinga",
+        "link": "https://www.benzinga.com/money/best-gold-stocks",
+        "publishedAt": "2026-10-05T11:12:47.000Z"
+      },
+      {
+        "title": "Best Biotech Stocks Right Now",
+        "source": "Benzinga",
+        "link": "https://www.benzinga.com/money/best-biotech-stocks",
+        "publishedAt": "2026-10-05T11:12:47.000Z"
+      },
+      {
+        "title": "Popular Amazon OTC medicine recalled nationwide, again",
+        "source": "TheStreet",
+        "link": "https://www.thestreet.com/retail/popular-amazon-otc-medicine-recalled-nationwide-again",
+        "publishedAt": "2026-10-05T11:11:00.000Z"
+      },
+      {
+        "title": "Kevin Warsh’s Fed has a rent problem: Higher rates could fuel a ‘doom loop’ in housing, top economist warns",
+        "source": "Fortune",
+        "link": "https://fortune.com/2026/10/05/fed-doom-loop-rent-rates-housing-affordability-inflation/",
+        "publishedAt": "2026-10-05T11:02:39.000Z"
+      },
+      {
+        "title": "Saudi Aramco chief says replenishing global oil stockpiles could take two years",
+        "source": "CNBC Top News",
+        "link": "https://www.cnbc.com/2026/10/05/aramco-saudi-arabia-iran-hormuz-oil-energy.html",
+        "publishedAt": "2026-10-05T11:00:27.000Z"
+      },
+      {
+        "title": "Why airfare could rise even more, but airline profits won't",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/05/airfare-prices-airline-profits.html",
+        "publishedAt": "2026-10-05T11:00:01.000Z"
+      },
+      {
+        "title": "Satya Nadella reinvented Microsoft once. Can he do it again in the AI era?",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/05/satya-nadella-reinvented-microsoft-once-can-he-do-it-in-the-ai-era.html",
+        "publishedAt": "2026-10-05T11:00:01.000Z"
+      },
+      {
+        "title": "Hyperscale Data Backs 2027 Adj. EBITDA, Revenue Outlook",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/hyperscale-data-backs-2027-adj-ebitda-revenue-outlook",
+        "publishedAt": "2026-10-05T10:59:07.000Z"
+      },
+      {
+        "title": "Stock Market Today (Oct. 5, 2026): (Futures)",
+        "source": "TheStreet",
+        "link": "https://www.thestreet.com/stock-market-today/stock-market-today-dow-jones-sp-500-nasdaq-updates-oct-05-2026",
+        "publishedAt": "2026-10-05T10:55:37.000Z"
+      },
+      {
+        "title": "Palantir's 93% Revenue Growth Is Colliding With Michael Burry's Bear Case -- Here's Who Has the Stronger Argument",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/palantirs-93-revenue-growth-colliding-michael-burrys-bear-case-heres-who-has-stronger",
+        "publishedAt": "2026-10-05T10:55:00.000Z"
+      },
+      {
+        "title": "CAC 40 Sheds 1% As Stocks Fall On Debt Concerns, Political Uncertainty",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/cac-40-sheds-1-stocks-fall-debt-concerns-political-uncertainty",
+        "publishedAt": "2026-10-05T10:54:38.000Z"
+      },
+      {
+        "title": "Doughnut Chain Krispy Kreme Launches Looney Tunes Halloween Line",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/doughnut-chain-krispy-kreme-launches-looney-tunes-halloween-line",
+        "publishedAt": "2026-10-05T10:53:23.000Z"
+      },
+      {
+        "title": "ACLS Crosses Above Average Analyst Target",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/acls-crosses-above-average-analyst-target",
+        "publishedAt": "2026-10-05T10:51:04.000Z"
+      },
+      {
+        "title": "MaxLinear Reaches Analyst Target Price",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/maxlinear-reaches-analyst-target-price",
+        "publishedAt": "2026-10-05T10:51:01.000Z"
+      },
+      {
+        "title": "Avnet Reaches Analyst Target Price",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/avnet-reaches-analyst-target-price",
+        "publishedAt": "2026-10-05T10:50:56.000Z"
+      },
+      {
+        "title": "Arrow Electronics Reaches Analyst Target Price",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/arrow-electronics-reaches-analyst-target-price",
+        "publishedAt": "2026-10-05T10:50:46.000Z"
+      },
+      {
+        "title": "VECO Crosses Above Average Analyst Target",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/veco-crosses-above-average-analyst-target",
+        "publishedAt": "2026-10-05T10:50:42.000Z"
+      },
+      {
+        "title": "Trump's nemesis in Europe: Why Spain's Sanchez is calling a snap election",
+        "source": "CNBC Top News",
+        "link": "https://www.cnbc.com/2026/10/05/spain-sanchez-snap-election-housing-protests.html",
+        "publishedAt": "2026-10-05T10:50:40.000Z"
+      },
+      {
+        "title": "Meet the Low-Cost Vanguard ETF With 32.4% Invested in Nvidia, Broadcom, Micron, AMD, Intel, and Lam Research, While VOO Has Just 14.8%.",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/meet-low-cost-vanguard-etf-324-invested-nvidia-broadcom-micron-amd-intel-and-lam-research",
+        "publishedAt": "2026-10-05T10:50:00.000Z"
+      },
+      {
+        "title": "Vaxcyte's VAX-31 Meets Key Phase 3 Goals Against Prevnar 20 And Capvaxive; Stock Up",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/vaxcytes-vax-31-meets-key-phase-3-goals-against-prevnar-20-and-capvaxive-stock",
+        "publishedAt": "2026-10-05T10:46:26.000Z"
+      },
+      {
+        "title": "Bitcoin&#x2019;s big bounce has graduated to a longer-term uptrend. Is it too late to buy?",
+        "source": "MarketWatch Top",
+        "link": "https://www.marketwatch.com/story/bitcoins-big-bounce-has-graduated-to-a-longer-term-uptrend-is-it-too-late-to-buy-a9bc585c?mod=mw_rss_topstories",
+        "publishedAt": "2026-10-05T10:46:00.000Z"
+      },
+      {
+        "title": "Anthropic, OpenAI, Google and Meta execs set to testify at NYC Council hearing on AI risks",
+        "source": "CNBC Markets",
+        "link": "https://www.cnbc.com/2026/10/05/anthropic-openai-google-meta-execs-testify-nyc-council-ai-hearing.html",
+        "publishedAt": "2026-10-05T10:42:51.000Z"
+      },
+      {
+        "title": "AMD Has Promised OpenAI and Meta Up to 320 Million Shares for a Penny Each. Here's What That Does to the Share Count.",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/amd-has-promised-openai-and-meta-320-million-shares-penny-each-heres-what-does-share-count",
+        "publishedAt": "2026-10-05T10:41:02.000Z"
+      },
+      {
+        "title": "How stocks will react when the catalysts are few",
+        "source": "TheStreet",
+        "link": "https://www.thestreet.com/economy/what-could-move-stocks-this-week",
+        "publishedAt": "2026-10-05T10:41:00.000Z"
+      },
+      {
+        "title": "What Bessent is now saying after bond yields didn&#x2019;t stop rising on &#x2018;I am the house&#x2019; remark",
+        "source": "MarketWatch Top",
+        "link": "https://www.marketwatch.com/story/what-bessent-is-now-saying-after-bond-yields-didnt-stop-rising-on-i-am-the-house-remark-0ab359f8?mod=mw_rss_topstories",
+        "publishedAt": "2026-10-05T10:39:00.000Z"
+      },
+      {
+        "title": "Indian Shares Climb On Fading Fed October Hike Bets",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/indian-shares-climb-fading-fed-october-hike-bets",
+        "publishedAt": "2026-10-05T10:35:58.000Z"
+      },
+      {
+        "title": "Here's How Much You'd Need to Invest in VIG to Generate $1,000 per Month in Dividends",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/heres-how-much-youd-need-invest-vig-generate-1000-month-dividends",
+        "publishedAt": "2026-10-05T10:35:00.000Z"
+      },
+      {
+        "title": "Cenovus Energy To Acquire Athabasca Oil",
+        "source": "Nasdaq Markets",
+        "link": "https://www.nasdaq.com/articles/cenovus-energy-acquire-athabasca-oil",
+        "publishedAt": "2026-10-05T10:34:04.000Z"
+      }
+    ],
+    "crypto": [
+      {
+        "title": "Greek Soldiers Among Alleged Leaders of $8M Crypto Pyramid Scheme",
+        "source": "Decrypt",
+        "link": "https://decrypt.co/380040/greek-soldiers-among-alleged-leaders-of-8m-crypto-pyramid-scheme",
+        "publishedAt": "2026-10-05T11:18:01.000Z"
+      },
+      {
+        "title": "Shiba Inu Trading Volume Soars 171% After Launch on Solana",
+        "source": "U.Today",
+        "link": "https://u.today/shiba-inu-trading-volume-soars-171-after-launch-on-solana",
+        "publishedAt": "2026-10-05T11:00:03.000Z"
+      },
+      {
+        "title": "Dogecoin (DOGE) Breaks 14-Month Pause With New Golden Cross: What Comes After?",
+        "source": "U.Today",
+        "link": "https://u.today/dogecoin-doge-breaks-14-month-pause-with-new-golden-cross-what-comes-after",
+        "publishedAt": "2026-10-05T10:50:00.000Z"
+      },
+      {
+        "title": "Major XRP Signal: Peter Brandt Reveals Cup and Handle",
+        "source": "U.Today",
+        "link": "https://u.today/major-xrp-signal-peter-brandt-reveals-cup-and-handle",
+        "publishedAt": "2026-10-05T10:30:00.000Z"
+      },
+      {
+        "title": "OKX and NYSE Owner ICE Plan 24/7 Tokenized Stock Trading Under SEC Exemption",
+        "source": "Decrypt",
+        "link": "https://decrypt.co/380032/okx-and-nyse-owner-ice-plan-24-7-tokenized-stock-trading-under-sec-exemption",
+        "publishedAt": "2026-10-05T10:22:27.000Z"
+      },
+      {
+        "title": "Vivek Ramaswamy’s gubernatorial run lacks the crypto rhetoric of his presidential bid",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/news/vivek-ramaswamy-crypto-gubernatorial-campaign?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-05T10:11:26.000Z"
+      },
+      {
+        "title": "BTC price fights to reclaim 2026 open: Three things to know in Bitcoin this week",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/markets/btc-price-fights-to-reclaim-2026-open-three-things-to-know-in-bitcoin-this-week?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-05T09:08:09.000Z"
+      },
+      {
+        "title": "Kraken parent adds 24/7 dollar settlement with Singapore Gulf Bank",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/news/payward-partners-singapore-gulf-bank-settlement?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-05T08:56:10.000Z"
+      },
+      {
+        "title": "Will Near Protocol (NEAR) Rally Continue? Key Reversal Spotted",
+        "source": "U.Today",
+        "link": "https://u.today/will-near-protocol-near-rally-continue-key-reversal-spotted",
+        "publishedAt": "2026-10-05T08:20:00.000Z"
+      },
+      {
+        "title": "Ripple Private Credit Partner Clearpool Finalizes Token Move to XRP Ledger",
+        "source": "U.Today",
+        "link": "https://u.today/ripple-private-credit-partner-clearpool-finalizes-token-move-to-xrp-ledger",
+        "publishedAt": "2026-10-05T08:04:45.000Z"
+      },
+      {
+        "title": "Bitcoin ETFs notch third inflow week as Ether ETFs shed $138M",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/markets/bitcoin-etf-third-inflow-week-ether-funds-red?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-05T08:00:49.000Z"
+      },
+      {
+        "title": "Binance to Block Some Brazil Crypto Transfers",
+        "source": "U.Today",
+        "link": "https://u.today/binance-to-block-some-brazil-crypto-transfers",
+        "publishedAt": "2026-10-05T06:40:59.000Z"
+      },
+      {
+        "title": "Bitcoin Faces Make-or-Break Resistance at $87,200",
+        "source": "U.Today",
+        "link": "https://u.today/bitcoin-faces-make-or-break-resistance-at-87200",
+        "publishedAt": "2026-10-05T05:40:53.000Z"
+      },
+      {
+        "title": "Here’s what happened in crypto today",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/news/what-happened-in-crypto-today?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-05T05:00:00.000Z"
+      },
+      {
+        "title": "Zcash activates NU7 on testnet ahead of November mainnet target",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/news/zcash-nu7-testnet-activation-november-mainnet?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-05T03:47:19.000Z"
+      },
+      {
+        "title": "OKX, NYSE parent file to launch tokenized US stock platform",
+        "source": "CoinTelegraph",
+        "link": "https://cointelegraph.com/news/okx-nyse-parent-file-to-launch-tokenized-us-stock-platform?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+        "publishedAt": "2026-10-05T03:44:09.000Z"
+      },
       {
         "title": "Safe investor asks Swiss watchdog to intervene in governance dispute",
         "source": "CoinTelegraph",
         "link": "https://cointelegraph.com/news/safe-investor-asks-swiss-watchdog-to-intervene-in-governance-dispute?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
         "publishedAt": "2026-10-05T03:12:21.000Z"
-      },
-      {
-        "title": "Stock futures are flat as investors grapple with higher yields, await Fed minutes: Live updates",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/04/stock-market-today-live-updates.html",
-        "publishedAt": "2026-10-05T02:33:38.000Z"
-      },
-      {
-        "title": "Surging Treasury yields don’t signal a U.S. 'fiscal apocalypse' — yet",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/05/treasury-yields-fiscal-concerns-not-crisis-yet.html",
-        "publishedAt": "2026-10-05T02:24:07.000Z"
-      },
-      {
-        "title": "‘Unwelcome and unsafe’: Why Japanese companies are retreating from China at a historic rate",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/05/japanese-companies-leaving-china-takaichi-comment-taiwan.html",
-        "publishedAt": "2026-10-05T02:15:12.000Z"
-      },
-      {
-        "title": "They survived World War II and lost decades, but not 2026. Japan's century-old businesses are disappearing at a record pace",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/05/japan-old-business-kadoya-subeshoten-.html",
-        "publishedAt": "2026-10-05T01:08:10.000Z"
-      },
-      {
-        "title": "Trump tells South Korea to sign on to Alaska LNG deal or 'I'll just charge them more'",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/05/trump-alaska-lng-south-korea-pay.html",
-        "publishedAt": "2026-10-05T00:47:47.000Z"
       },
       {
         "title": "Zcash gets a Washington lobbyist to push crypto policy",
@@ -60,152 +369,422 @@
         "publishedAt": "2026-10-05T00:01:00.000Z"
       },
       {
-        "title": "Yemeni government launches offensive to seize all areas from Iran-backed Houthis",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/04/yemen-launches-offensive-to-seize-all-areas-from-iran-backed-houthis.html",
-        "publishedAt": "2026-10-04T22:47:20.000Z"
-      },
-      {
         "title": "Former SEC boss made AI Czar, Bitcoin may hit $600K this cycle: Hodler’s Digest",
         "source": "CoinTelegraph",
         "link": "https://cointelegraph.com/magazine/former-sec-boss-made-ai-czar-bitcoin-may-hit-600k-this-cycle-hodlers-digest?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
         "publishedAt": "2026-10-04T22:31:12.000Z"
-      },
-      {
-        "title": "Supreme Court Justice Alito said he's 'thought about' retirement as Senate control hangs in balance",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/04/supreme-court-justice-alito-thought-about-retiring.html",
-        "publishedAt": "2026-10-04T22:08:34.000Z"
-      },
-      {
-        "title": "All U.S. bombers leave UK air base on concerns of suspected terror plots; more tankers struck near Iran in the Middle East",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/04/more-tankers-struck-in-gulf-waters-as-iran-reiterates-conditions.html",
-        "publishedAt": "2026-10-04T21:46:15.000Z"
-      },
-      {
-        "title": "It's time for us to put cash to work in this ugly market. Here's where we will do our buying",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/investingclub/2026/10/04/its-time-for-us-to-put-cash-to-work-in-this-ugly-market-heres-where-we-will-do-our-buying.html",
-        "publishedAt": "2026-10-04T20:32:16.000Z"
-      },
-      {
-        "title": "Trump reiterates pledge to send $5,000 checks, and hands out smaller payments, as midterm elections loom",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/04/trump-5000-checks-cash-payments-midterms.html",
-        "publishedAt": "2026-10-04T20:28:47.000Z"
-      },
-      {
-        "title": "Here’s what happened in crypto today",
-        "source": "CoinTelegraph",
-        "link": "https://cointelegraph.com/news/what-happened-in-crypto-today?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-        "publishedAt": "2026-10-04T18:51:50.000Z"
-      },
-      {
-        "title": "Shiba Inu (SHIB) Goes Live on Solana Network",
-        "source": "U.Today",
-        "link": "https://u.today/shiba-inu-shib-goes-live-on-solana-network",
-        "publishedAt": "2026-10-04T18:28:07.000Z"
-      },
-      {
-        "title": "Trump Taps Jay Clayton, the SEC Chair Who Sued Ripple, to Lead AI Push",
-        "source": "Decrypt",
-        "link": "https://decrypt.co/380019/trump-jay-clayton-sec-ripple-ai-push-super-intelligence",
-        "publishedAt": "2026-10-04T17:01:03.000Z"
-      },
-      {
-        "title": "XRP Nears $1.53 Breakout Trigger as Largest Holders Completely Freeze",
-        "source": "U.Today",
-        "link": "https://u.today/xrp-nears-153-breakout-trigger-as-largest-holders-completely-freeze",
-        "publishedAt": "2026-10-04T16:38:15.000Z"
-      },
-      {
-        "title": "Banking Group Sues to Block Crypto's 'Side Door' Into the Banking System",
-        "source": "Decrypt",
-        "link": "https://decrypt.co/380017/banking-group-sues-block-crypto-side-door-banking",
-        "publishedAt": "2026-10-04T16:01:03.000Z"
-      },
-      {
-        "title": "Dogecoin (DOGE) Ten-Cent Dream Needs Just One Breakout Level",
-        "source": "U.Today",
-        "link": "https://u.today/dogecoin-doge-ten-cent-dream-needs-just-one-breakout-level",
-        "publishedAt": "2026-10-04T15:20:13.000Z"
-      },
-      {
-        "title": "'Uptober' Starts Green as Bitcoin ETFs Draw $134 Million",
-        "source": "Decrypt",
-        "link": "https://decrypt.co/380007/uptober-starts-green-bitcoin-etfs-draw-134-million",
-        "publishedAt": "2026-10-04T15:01:03.000Z"
-      },
-      {
-        "title": "Ethereum Creator Vitalik Buterin Reveals Privacy-Focused AI Experiment",
-        "source": "U.Today",
-        "link": "https://u.today/ethereum-creator-vitalik-buterin-reveals-privacy-focused-ai-experiment",
-        "publishedAt": "2026-10-04T14:20:00.000Z"
-      },
-      {
-        "title": "'More Orange Than Ever': Michael Saylor Hints at Massive New Bitcoin Buy",
-        "source": "U.Today",
-        "link": "https://u.today/more-orange-than-ever-michael-saylor-hints-at-massive-new-bitcoin-buy",
-        "publishedAt": "2026-10-04T14:07:05.000Z"
-      },
-      {
-        "title": "This NYC startup requires 4 days in office but just let everyone work remote for a whole month",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/04/work-from-anywhere-month.html",
-        "publishedAt": "2026-10-04T14:00:01.000Z"
-      },
-      {
-        "title": "OPEC+ agrees to keep November oil output targets steady",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/04/opec-agrees-to-keep-november-oil-output-targets-steady.html",
-        "publishedAt": "2026-10-04T13:49:31.000Z"
-      },
-      {
-        "title": "Trump taps intel chief Jay Clayton to lead new Super Intelligence Force",
-        "source": "CoinTelegraph",
-        "link": "https://cointelegraph.com/news/trump-taps-jay-clayton-to-lead-new-super-intelligence-force?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-        "publishedAt": "2026-10-04T13:48:48.000Z"
-      },
-      {
-        "title": "Starting a watch collection? What beginners should know before buying",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/04/watch-collecting-beginners.html",
-        "publishedAt": "2026-10-04T13:44:31.000Z"
-      },
-      {
-        "title": "Top Wall Street analysts are upbeat about the prospects for these 3 stocks",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/04/top-analysts-are-upbeat-about-the-prospects-for-these-3-stocks.html",
-        "publishedAt": "2026-10-04T13:24:16.000Z"
-      },
-      {
-        "title": "A 'weird' IPO pull, a tainted reputation and the stalled breakout moment for AI wearables",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/04/ai-wearables-oura-ipo-privacy.html",
-        "publishedAt": "2026-10-04T13:22:39.000Z"
-      },
-      {
-        "title": "JPMorgan’s best stock ideas heading into October",
-        "source": "CNBC Markets",
-        "link": "https://www.cnbc.com/2026/10/04/jpmorgans-best-stock-ideas-heading-into-october.html",
-        "publishedAt": "2026-10-04T13:17:14.000Z"
       }
-    ]
+    ],
+    "perSymbol": {
+      "NVDA": [
+        {
+          "title": "Cerebras stock rises after Sam Altman calls it a 'close partner'",
+          "source": "Yahoo Finance · NVDA",
+          "link": "https://qz.com/cerebras-stock-sam-altman-openai-close-partner-100526?.tsrc=rss",
+          "publishedAt": "2026-10-05T11:15:43.000Z"
+        },
+        {
+          "title": "Meta Platforms Stock Soared 27% in September. Here's What History Says October Will Bring.",
+          "source": "Yahoo Finance · NVDA",
+          "link": "https://www.fool.com/investing/2026/10/05/meta-platforms-stock-history-says-october/?.tsrc=rss",
+          "publishedAt": "2026-10-05T11:05:00.000Z"
+        },
+        {
+          "title": "OpenAI Fired the People It Needed Most",
+          "source": "Yahoo Finance · NVDA",
+          "link": "https://finance.yahoo.com/video/openai-fired-people-needed-most-110000807.html?.tsrc=rss",
+          "publishedAt": "2026-10-05T11:00:00.000Z"
+        },
+        {
+          "title": "Meet the Low-Cost Vanguard ETF With 32.4% Invested in Nvidia, Broadcom, Micron, AMD, Intel, and Lam Research, While VOO Has Just 14.8%.",
+          "source": "Yahoo Finance · NVDA",
+          "link": "https://www.fool.com/investing/2026/10/05/meet-the-low-cost-vanguard-etf-with-324-invested-i/?.tsrc=rss",
+          "publishedAt": "2026-10-05T10:50:00.000Z"
+        },
+        {
+          "title": "AMD Has Promised OpenAI and Meta Up to 320 Million Shares for a Penny Each. Here's What That Does to the Share Count.",
+          "source": "Yahoo Finance · NVDA",
+          "link": "https://www.fool.com/investing/2026/10/05/amd-has-promised-openai-and-meta-up-to-320-million-shares-for-a-penny-each-here-s-what-that-does-to-the-share-count/?.tsrc=rss",
+          "publishedAt": "2026-10-05T10:41:02.000Z"
+        },
+        {
+          "title": "Social Buzz: Wallstreetbets Stocks Mixed Pre-Bell Monday; Vistra, Nike to Open Higher",
+          "source": "Yahoo Finance · NVDA",
+          "link": "https://finance.yahoo.com/markets/stocks/articles/social-buzz-wallstreetbets-stocks-mixed-103613557.html?.tsrc=rss",
+          "publishedAt": "2026-10-05T10:36:13.000Z"
+        },
+        {
+          "title": "Here's How Much You'd Need to Invest in VIG to Generate $1,000 per Month in Dividends",
+          "source": "Yahoo Finance · NVDA",
+          "link": "https://www.fool.com/investing/2026/10/05/how-much-need-invest-vig-generate-passive-income/?.tsrc=rss",
+          "publishedAt": "2026-10-05T10:35:00.000Z"
+        },
+        {
+          "title": "Why SoFi Stock Dropped 12% in September",
+          "source": "Yahoo Finance · NVDA",
+          "link": "https://www.fool.com/investing/2026/10/05/why-sofi-stock-dropped-12-in-september/?.tsrc=rss",
+          "publishedAt": "2026-10-05T10:24:01.000Z"
+        }
+      ],
+      "KWEB": [
+        {
+          "title": "2 China-Focused ETFs For After the Trump-Xi Summit",
+          "source": "Yahoo Finance · KWEB",
+          "link": "https://www.marketbeat.com/articles/2-china-focused-etfs-for-after-the-trump-xi-summit/?utm_source=yahoofinance&utm_medium=yahoofinance&.tsrc=rss",
+          "publishedAt": "2026-09-28T16:40:00.000Z"
+        },
+        {
+          "title": "Trump-Xi Summit Is Coming: 3 Areas Investors Should Watch",
+          "source": "Yahoo Finance · KWEB",
+          "link": "https://www.barchart.com/story/news/4761130/trump-xi-summit-is-coming-3-areas-investors-should-watch?.tsrc=rss",
+          "publishedAt": "2026-09-23T17:15:20.000Z"
+        },
+        {
+          "title": "Alibaba Falls 4% as Reported Beijing AI Probe Undercuts Chip Rally; Baidu Eases, JD.com Dips",
+          "source": "Yahoo Finance · KWEB",
+          "link": "https://247wallst.com/investing/2026/09/23/alibaba-falls-4-as-reported-beijing-ai-probe-undercuts-chip-rally-baidu-eases-jd-com-dips/?.tsrc=rss",
+          "publishedAt": "2026-09-23T13:24:44.000Z"
+        },
+        {
+          "title": "Alibaba Jumps 4% as Zhenwu V900 Chip Targets the Gap NVIDIA Left in China; Baidu Sits Tight",
+          "source": "Yahoo Finance · KWEB",
+          "link": "https://247wallst.com/investing/2026/09/22/alibaba-jumps-4-as-zhenwu-v900-chip-targets-the-gap-nvidia-left-in-china-baidu-sits-tight/?.tsrc=rss",
+          "publishedAt": "2026-09-22T13:43:39.000Z"
+        },
+        {
+          "title": "Alibaba Climbs 3%, PDD and JD.com Tick Up: Is China Technology Finding Buyers Again?",
+          "source": "Yahoo Finance · KWEB",
+          "link": "https://247wallst.com/investing/2026/09/18/alibaba-climbs-3-pdd-and-jd-com-tick-up-is-china-technology-finding-buyers-again/?.tsrc=rss",
+          "publishedAt": "2026-09-18T13:56:29.000Z"
+        },
+        {
+          "title": "Trump-Xi Meeting in the Cards: ETFs Currently in Focus",
+          "source": "Yahoo Finance · KWEB",
+          "link": "https://finance.yahoo.com/markets/stocks/articles/trump-xi-meeting-cards-etfs-134100194.html?.tsrc=rss",
+          "publishedAt": "2026-09-18T13:41:00.000Z"
+        },
+        {
+          "title": "ETFs in the Spotlight as China's Corporate Profits Jump 26% in Q2",
+          "source": "Yahoo Finance · KWEB",
+          "link": "https://finance.yahoo.com/markets/stocks/articles/etfs-spotlight-chinas-corporate-profits-130100081.html?.tsrc=rss",
+          "publishedAt": "2026-09-08T13:01:00.000Z"
+        },
+        {
+          "title": "Investors turn to Chinese stocks as alternative to crowded AI trades",
+          "source": "Yahoo Finance · KWEB",
+          "link": "https://finance.yahoo.com/markets/options/articles/investors-turn-chinese-stocks-alternative-052512393.html?.tsrc=rss",
+          "publishedAt": "2026-09-06T05:25:12.000Z"
+        }
+      ],
+      "SPY": [
+        {
+          "title": "Nasdaq, S&P 500, Dow Futures Steady Ahead Of Fed Minutes This Week: TSLA, SPCX, CBRS, QCOM, PTC, IBRX Stocks In Focus",
+          "source": "Yahoo Finance · SPY",
+          "link": "https://stocktwits.com/news-articles/markets/equity/nasdaq-sp500-dow-futures-steady-ahead-of-fed-minutes-this-week-tsla-spcx-cbrs-qcom-ptc-ibrx-stocks-in-focus/cZDpqtXRBSV?.tsrc=rss",
+          "publishedAt": "2026-10-05T08:52:40.000Z"
+        },
+        {
+          "title": "JPMorgan Adds New Stocks to Its October Favorites List",
+          "source": "Yahoo Finance · SPY",
+          "link": "https://beincrypto.com/jpmorgan-october-stock-picks-american-express/?.tsrc=rss",
+          "publishedAt": "2026-10-05T06:07:41.000Z"
+        },
+        {
+          "title": "Stock Market: Will S&P 500 Open Up or Down Today?",
+          "source": "Yahoo Finance · SPY",
+          "link": "https://www.benzinga.com/markets/prediction-markets/26/10/62153975/stock-market-will-sp-500-open-up-or-down-today-50?utm_source=yahooFinance&utm_campaign=partner_feed&utm_medium=referral&.tsrc=rss",
+          "publishedAt": "2026-10-05T06:03:47.000Z"
+        },
+        {
+          "title": "Stocktwits Retail Therapy: Consumer Stocks Face Heat But Carnival, Mattel And Stitch Fix Buck The Trend",
+          "source": "Yahoo Finance · SPY",
+          "link": "https://stocktwits.com/news-articles/markets/equity/stocktwits-retail-therapy-consumer-stocks-face-heat-but-carnival-mattel-and-stitch-fix-buck-the-trend/cZDpNWdRBSB?.tsrc=rss",
+          "publishedAt": "2026-10-05T05:29:24.000Z"
+        },
+        {
+          "title": "International Markets Are Pulling Ahead Of US Stocks In 2026: These 4 ETFs Have Left SPY, QQQ, DIA In The Dust",
+          "source": "Yahoo Finance · SPY",
+          "link": "https://stocktwits.com/news-articles/markets/equity/international-markets-are-pulling-ahead-of-us-stocks-in-2026-these-4-et-fs-have-left-spy-qqq-dia-in-the-dust/cZDpm1lRBS7?.tsrc=rss",
+          "publishedAt": "2026-10-05T04:56:34.000Z"
+        },
+        {
+          "title": "Stocktwits Pharma Pulse: Roche Faces FDA Decision, Gene-Therapy Stocks Step Into Focus — The Week’s Biotech Watchlist",
+          "source": "Yahoo Finance · SPY",
+          "link": "https://stocktwits.com/news-articles/markets/equity/stocktwits-pharma-pulse-roche-faces-fda-gene-therapy-stocks-week-biotech-watchlist/cZDpS8iRBSc?.tsrc=rss",
+          "publishedAt": "2026-10-05T03:09:33.000Z"
+        },
+        {
+          "title": "Forget the S&P 500: SCHD Is Beating It by Nearly 10 Points in 2026 and Its Dividend Just Grew",
+          "source": "Yahoo Finance · SPY",
+          "link": "https://247wallst.com/investing/etf/2026/10/04/forget-the-sp-500-schd-is-beating-it-by-nearly-10-points-in-2026-and-its-dividend-just-grew/?.tsrc=rss",
+          "publishedAt": "2026-10-04T21:03:17.000Z"
+        },
+        {
+          "title": "Michael Saylor Says Strategy's STRC Is Now Steadier Than The S&P 500's Biggest Tracker: ‘A Milestone For Digital Credit’",
+          "source": "Yahoo Finance · SPY",
+          "link": "https://stocktwits.com/news-articles/markets/equity/michael-saylor-mstr-strc-steady-sp-500-tracker-digital-credit/cZDZpACRB1h?.tsrc=rss",
+          "publishedAt": "2026-10-03T17:46:24.000Z"
+        }
+      ],
+      "TSLA": [
+        {
+          "title": "Meet the Low-Cost Vanguard ETF With 32.4% Invested in Nvidia, Broadcom, Micron, AMD, Intel, and Lam Research, While VOO Has Just 14.8%.",
+          "source": "Yahoo Finance · TSLA",
+          "link": "https://www.fool.com/investing/2026/10/05/meet-the-low-cost-vanguard-etf-with-324-invested-i/?.tsrc=rss",
+          "publishedAt": "2026-10-05T10:50:00.000Z"
+        },
+        {
+          "title": "This Week In Electric Vehicles - Green Rain Energy Expands Shareholder Communications Strategy",
+          "source": "Yahoo Finance · TSLA",
+          "link": "https://finance.yahoo.com/energy/articles/week-electric-vehicles-green-rain-103929567.html?.tsrc=rss",
+          "publishedAt": "2026-10-05T10:39:29.000Z"
+        },
+        {
+          "title": "Nvidia, Tesla Shares Head for 24/7 Onchain Trading Under OKX and NYSE Owner’s Venture",
+          "source": "Yahoo Finance · TSLA",
+          "link": "https://unchainedcrypto.com/nvidia-tesla-shares-head-for-24-7-onchain-trading-under-okx-and-nyse-owners-venture/?.tsrc=rss",
+          "publishedAt": "2026-10-05T09:45:37.000Z"
+        },
+        {
+          "title": "Tesla And 2 Other Founder Led Stocks To Own",
+          "source": "Yahoo Finance · TSLA",
+          "link": "https://finance.yahoo.com/markets/stocks/articles/tesla-2-other-founder-led-090814917.html?.tsrc=rss",
+          "publishedAt": "2026-10-05T09:08:14.000Z"
+        },
+        {
+          "title": "Nasdaq, S&P 500, Dow Futures Steady Ahead Of Fed Minutes This Week: TSLA, SPCX, CBRS, QCOM, PTC, IBRX Stocks In Focus",
+          "source": "Yahoo Finance · TSLA",
+          "link": "https://stocktwits.com/news-articles/markets/equity/nasdaq-sp500-dow-futures-steady-ahead-of-fed-minutes-this-week-tsla-spcx-cbrs-qcom-ptc-ibrx-stocks-in-focus/cZDpqtXRBSV?.tsrc=rss",
+          "publishedAt": "2026-10-05T08:52:40.000Z"
+        },
+        {
+          "title": "Michael Saylor Proves Bitcoin Is Tame With a Chart Where His Own Stock Hits 94%",
+          "source": "Yahoo Finance · TSLA",
+          "link": "https://beincrypto.com/bitcoin-volatility-nvidia-strategy-strc-mag7/?.tsrc=rss",
+          "publishedAt": "2026-10-05T06:44:12.000Z"
+        },
+        {
+          "title": "Why ordinary investors struggle to buy into the robotics boom",
+          "source": "Yahoo Finance · TSLA",
+          "link": "https://www.euronews.com/2026/10/05/why-ordinary-investors-struggle-to-buy-into-the-robotics-boom?.tsrc=rss",
+          "publishedAt": "2026-10-05T06:15:45.000Z"
+        },
+        {
+          "title": "Tesla Stock Rises Overnight After Musk Says ‘Something May Come Of’ TSMC Talks On Terafab",
+          "source": "Yahoo Finance · TSLA",
+          "link": "https://stocktwits.com/news-articles/markets/equity/tesla-stock-musk-something-may-come-of-tsmc-talks-on-terafab/cZDpjv8RBSE?.tsrc=rss",
+          "publishedAt": "2026-10-05T03:55:35.000Z"
+        }
+      ],
+      "BABA": [
+        {
+          "title": "Global Virtual Machine Market Report 2026: Trends and Forecast to 2030 | Capitalize on 15.5% CAGR as Microsoft, Amazon, Google, Alibaba, and Dell Accelerate AI and Hybrid Cloud",
+          "source": "Yahoo Finance · BABA",
+          "link": "https://finance.yahoo.com/technology/articles/global-virtual-machine-market-report-101600923.html?.tsrc=rss",
+          "publishedAt": "2026-10-05T10:16:00.000Z"
+        },
+        {
+          "title": "Chinese AI Chips Could Flood the Market. Alibaba’s New Chip Is 3X Better Than Its Predecessor.",
+          "source": "Yahoo Finance · BABA",
+          "link": "https://www.barchart.com/story/news/4953042/chinese-ai-chips-could-flood-the-market-alibabas-new-chip-is-3x-better-than-its-predecessor?.tsrc=rss",
+          "publishedAt": "2026-10-04T22:46:41.000Z"
+        },
+        {
+          "title": "AI deal boom drives Hong Kong fundraising to record summer - Bloomberg",
+          "source": "Yahoo Finance · BABA",
+          "link": "https://finance.yahoo.com/markets/stocks/articles/ai-deal-boom-drives-hong-024205771.html?.tsrc=rss",
+          "publishedAt": "2026-10-04T02:42:05.000Z"
+        },
+        {
+          "title": "Alibaba (BABA) Stock Drops Despite Market Gains: Important Facts to Note",
+          "source": "Yahoo Finance · BABA",
+          "link": "https://finance.yahoo.com/markets/stocks/articles/alibaba-baba-stock-drops-despite-204506900.html?.tsrc=rss",
+          "publishedAt": "2026-10-02T20:45:06.000Z"
+        },
+        {
+          "title": "Wall Street Just Launched an ETF for Large Language Models. Here’s What’s Inside",
+          "source": "Yahoo Finance · BABA",
+          "link": "https://247wallst.com/investing/2026/10/02/wall-street-just-launched-an-etf-for-large-language-models-heres-whats-inside/?.tsrc=rss",
+          "publishedAt": "2026-10-02T14:47:27.000Z"
+        },
+        {
+          "title": "Alibaba in early talks for Spanish solar-powered data center",
+          "source": "Yahoo Finance · BABA",
+          "link": "https://qz.com/alibaba-solaria-spain-data-center-solar-power-100226?.tsrc=rss",
+          "publishedAt": "2026-10-02T13:24:20.000Z"
+        },
+        {
+          "title": "Alibaba Stock Falls. Treasury Yields Aren’t Just a U.S. Problem",
+          "source": "Yahoo Finance · BABA",
+          "link": "https://finance.yahoo.com/m/0e96b122-cebd-3d2b-a169-cc452ca229f6/alibaba-stock-falls.-treasury.html?.tsrc=rss",
+          "publishedAt": "2026-10-02T11:42:00.000Z"
+        },
+        {
+          "title": "Man builds AI torture chamber after discovering artificial intelligence ‘feels pain’",
+          "source": "Yahoo Finance · BABA",
+          "link": "https://www.independent.co.uk/tech/ai-torture-chamber-pain-b3059571.html?.tsrc=rss",
+          "publishedAt": "2026-10-02T09:27:09.000Z"
+        }
+      ],
+      "QQQ": [
+        {
+          "title": "Nasdaq, S&P 500, Dow Futures Steady Ahead Of Fed Minutes This Week: TSLA, SPCX, CBRS, QCOM, PTC, IBRX Stocks In Focus",
+          "source": "Yahoo Finance · QQQ",
+          "link": "https://stocktwits.com/news-articles/markets/equity/nasdaq-sp500-dow-futures-steady-ahead-of-fed-minutes-this-week-tsla-spcx-cbrs-qcom-ptc-ibrx-stocks-in-focus/cZDpqtXRBSV?.tsrc=rss",
+          "publishedAt": "2026-10-05T08:52:40.000Z"
+        },
+        {
+          "title": "International Markets Are Pulling Ahead Of US Stocks In 2026: These 4 ETFs Have Left SPY, QQQ, DIA In The Dust",
+          "source": "Yahoo Finance · QQQ",
+          "link": "https://stocktwits.com/news-articles/markets/equity/international-markets-are-pulling-ahead-of-us-stocks-in-2026-these-4-et-fs-have-left-spy-qqq-dia-in-the-dust/cZDpm1lRBS7?.tsrc=rss",
+          "publishedAt": "2026-10-05T04:56:34.000Z"
+        },
+        {
+          "title": "Stocktwits Pharma Pulse: Roche Faces FDA Decision, Gene-Therapy Stocks Step Into Focus — The Week’s Biotech Watchlist",
+          "source": "Yahoo Finance · QQQ",
+          "link": "https://stocktwits.com/news-articles/markets/equity/stocktwits-pharma-pulse-roche-faces-fda-gene-therapy-stocks-week-biotech-watchlist/cZDpS8iRBSc?.tsrc=rss",
+          "publishedAt": "2026-10-05T03:09:33.000Z"
+        },
+        {
+          "title": "Nearly All of QQQI’s Yield Was Return of Capital, Not Income. Here Is What That Does to Your Cost Basis",
+          "source": "Yahoo Finance · QQQ",
+          "link": "https://247wallst.com/investing/etf/2026/10/03/nearly-all-of-qqqis-yield-was-return-of-capital-not-income-here-is-what-that-does-to-your-cost-basis/?.tsrc=rss",
+          "publishedAt": "2026-10-03T22:03:20.000Z"
+        },
+        {
+          "title": "Is the AI Bull Market About to Crash? This Risk Indicator Is Saying Yes",
+          "source": "Yahoo Finance · QQQ",
+          "link": "https://247wallst.com/investing/2026/10/03/is-the-ai-bull-market-about-to-crash-this-risk-indicator-is-saying-yes/?.tsrc=rss",
+          "publishedAt": "2026-10-03T14:44:43.000Z"
+        },
+        {
+          "title": "S&P 500, Nasdaq, Dow End Week Higher As Weak Jobs Report Cools Rate Hike Bets — NVDA, BA, SPCX, RIVN, APLD In Focus",
+          "source": "Yahoo Finance · QQQ",
+          "link": "https://stocktwits.com/news-articles/markets/equity/s-and-p-500-nasdaq-dow-end-week-higher-as-weak-jobs-report-cools-rate-hike-bets-nvda-ba-spcx-rivn-apld-in-focus/cZDjq3URBKF?.tsrc=rss",
+          "publishedAt": "2026-10-02T22:28:59.000Z"
+        },
+        {
+          "title": "How Much Do You Need Invested to Double the Average Social Security Check With Dividends?",
+          "source": "Yahoo Finance · QQQ",
+          "link": "https://247wallst.com/personal-finance/2026/10/02/how-much-do-you-need-invested-to-double-the-average-social-security-check-with-dividends/?.tsrc=rss",
+          "publishedAt": "2026-10-02T20:33:54.000Z"
+        },
+        {
+          "title": "I Sold NVIDIA, Google and Microsoft Over a $2 Trillion AI Gap. Was I Wrong?",
+          "source": "Yahoo Finance · QQQ",
+          "link": "https://247wallst.com/investing/2026/10/02/i-sold-nvidia-google-and-microsoft-over-a-2-trillion-ai-gap-was-i-wrong/?.tsrc=rss",
+          "publishedAt": "2026-10-02T19:05:31.000Z"
+        }
+      ]
+    }
   },
   "sentiment": {
-    "source": "alternative.me (signal MCP returned no sentiment)",
-    "fearGreed": 70,
-    "band": "Greed",
-    "longShort": null,
-    "takerRatio": null
+    "equity": {
+      "kind": "equity",
+      "source": "engine-computed from the committed dataset (keyless, reproducible)",
+      "asOf": "2026-09-18",
+      "score": 57.1,
+      "band": "Greed",
+      "components": [
+        {
+          "key": "breadth50",
+          "label": "Breadth: % above 50-DMA",
+          "value": 43.3,
+          "score": 43.3,
+          "weight": 25
+        },
+        {
+          "key": "breadth200",
+          "label": "Breadth: % above 200-DMA",
+          "value": 61.2,
+          "score": 61.2,
+          "weight": 20
+        },
+        {
+          "key": "vix",
+          "label": "VIX inverted 5y percentile",
+          "value": 15.44,
+          "score": 73.3,
+          "weight": 20,
+          "extra": "VIX 15.44, 27th pct; 50d mean 16.18"
+        },
+        {
+          "key": "spyRet20",
+          "label": "SPY 20-session return",
+          "value": -0.12,
+          "score": 49,
+          "weight": 15,
+          "suffix": "%"
+        },
+        {
+          "key": "spyTrend",
+          "label": "SPY vs 50/200-DMA trend",
+          "value": 6.34,
+          "score": 60.2,
+          "weight": 20,
+          "extra": "vs50 0.26%, vs200 6.34%; 6m 17.4%, 12m 14.8%"
+        }
+      ]
+    },
+    "equityExternal": {
+      "source": "CNN Business Fear & Greed (equity market)",
+      "score": 38.3,
+      "rating": "fear",
+      "components": [
+        {
+          "key": "market_momentum_sp500",
+          "label": "Momentum",
+          "score": 37,
+          "rating": "fear"
+        },
+        {
+          "key": "stock_price_strength",
+          "label": "Strength",
+          "score": 0.8,
+          "rating": "extreme fear"
+        },
+        {
+          "key": "stock_price_breadth",
+          "label": "Breadth",
+          "score": 0.8,
+          "rating": "extreme fear"
+        },
+        {
+          "key": "put_call_options",
+          "label": "Put/Call",
+          "score": 33,
+          "rating": "fear"
+        },
+        {
+          "key": "junk_bond_demand",
+          "label": "Junk demand",
+          "score": 44.2,
+          "rating": "fear"
+        },
+        {
+          "key": "market_volatility_vix",
+          "label": "VIX",
+          "score": 50,
+          "rating": "neutral"
+        },
+        {
+          "key": "safe_haven_demand",
+          "label": "Safe haven",
+          "score": 52.4,
+          "rating": "neutral"
+        }
+      ],
+      "fetchedAt": "2026-10-05T11:21:02.377Z"
+    },
+    "crypto": {
+      "source": "alternative.me crypto Fear & Greed (crypto market only)",
+      "fearGreed": 70,
+      "band": "Greed"
+    }
   },
   "macro": {
     "source": null,
     "items": []
   },
-  "gaps": [
-    "derivatives positioning (long/short, taker ratio): the signal MCP returned no data and no keyless fallback exists",
-    "macro levels: the signal MCP returned none; this card shows FRED-derived macro features instead"
-  ]
+  "gaps": []
 }

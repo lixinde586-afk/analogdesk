@@ -612,27 +612,45 @@ The analog card answers "what happened next in episodes that looked like this"; 
 half a trader reads before sizing — **why the market is like this right now**. The Market signals panel closes
 that layer, matching Track 3's three information layers:
 
-- **News** — the current cycle of crypto and market headlines;
-- **Sentiment** — where market mood and derivatives positioning stand;
+- **News** — the current headline cycle;
+- **Sentiment** — where market mood stands;
 - **Macro** — the rates / dollar / inflation regime, expressed as a risk-on or risk-off backdrop.
 
-The primary source is the keyless public MCP shipped with the official **bitget-signal** package
-(`news_feed` / `tradfi_news`, `sentiment_index` / `derivatives_sentiment`, `rates_yields` /
-`macro_indicators`). It is tried first on every build.
+**Asset-class correctness.** This is an equity desk, so the news and sentiment on an equity card are now
+genuinely EQUITY readings; the crypto readings are kept but grouped separately and labelled "crypto market
+only" (they are context for the tokenised wrapper, never the mood of the stock):
 
-**The honest finding on this build:** that MCP returned no usable data — some calls came back as
-`{ "error": "" }`, and on later calls the same "no data" arrived as zero-value placeholders (every macro
-level and the Fear & Greed reading came back as exactly `0`). Building the feature on an empty source would
-be the same silent-failure bug the rest of the project refuses, so each layer has a primary-source fallback:
+- **Equity news** — MarketWatch Pulse/Top, CNBC Top/Markets, Benzinga, Nasdaq Markets, Fortune and TheStreet,
+  plus **per-symbol headlines** (Yahoo Finance ticker feeds) for the canonical symbols (NVDA, KWEB, SPY, TSLA,
+  BABA, QQQ). On an NVDA card the NVDA headlines are listed first and tagged, so the card reads NVDA/equity
+  news rather than crypto news.
+- **Equity sentiment (primary)** — computed entirely from the committed dataset in
+  `src/data/equity-sentiment.mjs`, keyless and reproducible, from five components with fixed, stated weights:
+  breadth above the 50-DMA (25%) and 200-DMA (20%), the VIX's inverted five-year percentile (20%), SPY's
+  20-session return (15%) and SPY's distance to its 50/200-DMA trend (20%). Every component, score and weight
+  is shown in the panel — nothing is a black box.
+- **External equity cross-check** — the CNN Business equity Fear & Greed (momentum / strength / breadth /
+  put-call / junk demand / VIX / safe haven) is fetched and shown beside the internal score. On the current
+  snapshot the internal composite reads **57.1 (Greed)** while CNN reads **38.3 (Fear)**; that divergence is
+  presented rather than averaged away, so the trader sees two different lenses, not one smoothed number.
+- **Crypto, separate** — crypto headlines (CoinTelegraph, Decrypt, The Defiant, Bitcoinist, U.Today) and the
+  alternative.me crypto Fear & Greed are rendered in their own labelled blocks and never cited as the equity's
+  mood.
 
-- News → the same public RSS feeds the MCP aggregates (CoinTelegraph, Decrypt, The Defiant, Bitcoinist,
-  U.Today, CNBC Markets), latest first and de-duplicated;
-- Sentiment → the alternative.me Fear & Greed index;
-- Macro → the FRED-derived macro features the engine already measured on every card (VIX, 10y-2y slope,
-  90-day fed-funds change, and 20-day changes in breakeven, the dollar, oil and the HY spread).
+The official keyless MCP shipped with **bitget-signal** (`news_feed` / `tradfi_news`, `sentiment_index` /
+`derivatives_sentiment`, `rates_yields` / `macro_indicators`) is tried first on every build. **The honest
+finding on this build:** the endpoint is reachable and lists 19 tools, but every data call returns a blank
+`{"error":""}` or an empty list. We verified this both on a direct connection and through a VPN/proxy
+(CONNECT tunnel via the local Clash proxy on `127.0.0.1:7890`) with identical results, and there is no auth
+challenge (HTTP 200 throughout) — i.e. an upstream service outage, not a missing key or an egress-IP problem,
+and not something fixable from our side. Building the feature on that empty source would be the same
+silent-failure bug the rest of the project refuses, so the equity collectors above make the product fully
+independent of it. Macro falls back to the FRED-derived features the engine already measured on every card
+(VIX, 10y-2y slope, 90-day fed-funds change, and 20-day changes in breakeven, the dollar, oil and the HY
+spread).
 
-Which source answered each layer — and every coverage gap (for example, derivatives long/short and taker
-ratio, for which no keyless fallback exists) — is printed in the panel and in `data-cache/signals.json`;
+Which source answered each layer — and every coverage gap (for example, equity derivatives long/short and
+taker ratios, for which no keyless fallback exists) — is printed in the panel and in `data-cache/signals.json`;
 nothing is estimated to fill a hole. Like the wrapper block, this layer is committed measurement read at
 startup, feeds **no** retrieval, conformal or validation figure, and is excluded from the replay digest so a
 cached narrative stays a valid claim about the analog result. Refresh it with:
