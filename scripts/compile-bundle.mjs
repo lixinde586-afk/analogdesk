@@ -509,11 +509,16 @@ function emit() {
   const bundlePath = join(DIST, "app.bundle.js");
   writeFileSync(bundlePath, bundle, "utf8");
 
+  // Cache-busting version for the hashed asset URLs. GitHub Pages/CDN edges and browsers cache
+  // app.bundle.js by path, so a redeploy can leave a reviewer running the previous bundle for
+  // minutes (we observed the old render after a hard refresh while a ?z= fetch returned the new
+  // file). Tagging each asset with the build time makes every deploy a new URL nothing has cached.
+  const assetV = Date.now();
   const html = readFileSync(join(ROOT, "web", "index.html"), "utf8")
     .replace(`<script type="module" src="./app.js"></script>`,
-      `<script src="./app.bundle.js"></script>`)
+      `<script src="./app.bundle.js?v=${assetV}"></script>`)
     .replace(`<link rel="stylesheet" href="./styles.css">`,
-      `<link rel="stylesheet" href="./styles.css">`)
+      `<link rel="stylesheet" href="./styles.css?v=${assetV}">`)
     .replace(/<title>([^<]*)<\/title>/, `<title>$1 (static build)</title>`);
   writeFileSync(join(DIST, "index.html"), html, "utf8");
   writeFileSync(join(DIST, "styles.css"), readFileSync(join(ROOT, "web", "styles.css"), "utf8"), "utf8");
