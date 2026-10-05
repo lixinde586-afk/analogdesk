@@ -1486,7 +1486,9 @@ async function run() {
     const why = (p.language === "zh" && task.whyZh) ? task.whyZh : task.why;
     sayNotATradeQuestion(why, p.language);
     $("results").hidden = true;
-    toast(why, "bad", 16000);
+    // Short confirmation only: the full explanation already renders in the panel. Toasting the same
+    // long paragraph printed it twice at once (panel + bottom toast), which read as duplicated text.
+    toast(p.language === "zh" ? "这句话不是一个可检索的交易问题，详见上方" : "Nothing in that sentence to retrieve - see above", "bad", 8000);
     return;
   }
   if ((p.parsed || {}).offtopic && !(p.parsed || {}).symbol) {
@@ -1494,7 +1496,7 @@ async function run() {
     const why = (p.language === "zh" && ot.whyZh) ? ot.whyZh : ot.why;
     sayNotATradeQuestion(why, p.language);
     $("results").hidden = true;
-    toast(why, "bad", 16000);
+    toast(p.language === "zh" ? "这句话不是一个可检索的交易问题，详见上方" : "Nothing in that sentence to retrieve - see above", "bad", 8000);
     return;
   }
   const sg0 = (p.parsed || {}).sectorGap;
@@ -1504,7 +1506,7 @@ async function run() {
       : '"' + sg0.word + '": ' + sg0.why;
     sayNotATradeQuestion(why, p.language);
     $("results").hidden = true;
-    toast(why, "bad", 16000);
+    toast(p.language === "zh" ? "「" + sg0.word + "」无法解析为可检索标的，详见上方" : '"' + sg0.word + '" could not be resolved - see above', "bad", 8000);
     return;
   }
   const uh = (p.parsed || {}).unheld;
@@ -1514,7 +1516,7 @@ async function run() {
     // The previous card has to go: a refusal printed above a full, confident research card for a
     // DIFFERENT instrument reads as the desk disagreeing with itself.
     $("results").hidden = true;
-    toast(why, "bad", 16000);
+    toast(p.language === "zh" ? uh.name + " (" + uh.ticker + ") 不在本库，详见上方" : uh.name + " (" + uh.ticker + ") is not in this library - see above", "bad", 8000);
     return;
   }
   if (!p.symbol) { toast("No instrument recognised. Pick one from the Symbol dropdown, or type a ticker that is in the library.", "bad"); return; }

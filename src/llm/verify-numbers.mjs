@@ -138,7 +138,31 @@ export function buildAllowlist(payload, extra = {}) {
   for (const it of payload?.signals?.news?.items || []) {
     for (const m of String(it.title ?? "").matchAll(/\d+(?:,\d{3})*(?:\.\d+)?/g)) add(m[0]);
   }
-  return { forms, structural, payloadNumbers: [...nums] };
+
+  // Every YYYY-MM-DD the payload carries - analog sessions, the as-of date, stress windows, earnings,
+  // and ISO datetimes such as a headline's publishedAt. A cited date has to be one of these: the gate
+  // used to mask dates out entirely (maskNonClaims), so a model could attach a real-looking date that
+  // belonged to a different episode and nothing checked it.
+  const dateForms = collectPayloadDates(payload);
+  // The analog rows the model is allowed to cite, projected as (symbol, session, distance, ret/mae/mfe).
+  // Pair validation (verifyDatePairs) proves a cited date keeps the distance and return of THAT row.
+  const analogRows = (payload?.retrieval?.top || []).map((e) => ({
+    symbol: e.symbol, session: e.session, distance: e.distance,
+    ret: e.forwardReturnPct, mae: e.maxAdverseExcursionPct, mfe: e.maxFavourableExcursionPct
+  })).filter((e) => e.session);
+  return { forms, structural, payloadNumbers: [...nums], dateForms, analogRows };
+}
+
+/** Recursively gather every YYYY-MM-DD date literal (date part of ISO datetimes included). */
+export function collectPayloadDates(node, acc = new Set(), depth = 0) {
+  if (depth > 12 || node == null) return acc;
+  if (typeof node === "string") {
+    for (const m of node.matchAll(/(\d{4}-\d{2}-\d{2})/g)) acc.add(m[1]);
+    return acc;
+  }
+  if (Array.isArray(node)) { for (const v of node) collectPayloadDates(v, acc, depth + 1); return acc; }
+  if (typeof node === "object") { for (const v of Object.values(node)) collectPayloadDates(v, acc, depth + 1); return acc; }
+  return acc;
 }
 
 const DATEISH = /\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}:\d{2}(?::\d{2})?\b|\b\d{4}\/\d{1,2}\/\d{1,2}\b/g;
@@ -166,6 +190,111 @@ export function extractNumerals(text) {
     });
   }
   return found;
+}
+
+/* --------------------------- date / analog-pair gate --------------------------- */
+
+const DATE_TOKEN_RE = /\d{4}-\d{2}-\d{2}/g;
+// Sentence boundary. Includes an English sentence-ending period (". " + capital/quote) but NOT a bare
+// ".", which would break on the decimal point in "4.15%"; Chinese full stop and ! ? always break.
+const SENT_END_RE = /[。！？!?\n]|\.\s+(?=[A-Z"'(])/;
+const DIST_KW_RE = /距离|distance/i;
+const RET_KW_RE = /录得|forward\s*return|realised\s*return|realized\s*return|actual\s*return|returned|收益(?:为|是|达|\s*为|\s*是|\s*达)/i;
+const MAE_KW_RE = /最大不利|max(?:imum)?\s*adverse|\bMAE\b/i;
+const MFE_KW_RE = /最大有利|max(?:imum)?\s*favou?rable|\bMFE\b/i;
+const NUM_FIRST_RE = /-?\d{1,3}(?:,\d{3})*(?:\.\d+)?|-?\d+(?:\.\d+)?/;
+const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** First numeral that follows a keyword inside a segment, with whether it is percent-suffixed. */
+function firstNumberAfter(text, kwRe) {
+  const m = kwRe.exec(text);
+  if (!m) return null;
+  const after = text.slice(m.index + m[0].length);
+  // Non-global match so this always returns the FIRST number regardless of any earlier regex state
+  // (a shared global regex keeps lastIndex across calls and used to skip to a later, wrong numeral).
+  const n = after.match(NUM_FIRST_RE);
+  if (!n || n.index == null) return null;
+  const raw = n[0];
+  const tail = after.slice(n.index + raw.length, n.index + raw.length + 12);
+  const isPercent = /^\s*(%|percent|pp|个百分点)/i.test(tail);
+  return { value: Number(raw.replace(/,/g, "")), raw, isPercent };
+}
+
+function fieldClose(rowVal, proseVal, tol) {
+  if (rowVal == null || !Number.isFinite(rowVal) || proseVal == null || !Number.isFinite(proseVal)) return false;
+  return Math.abs(rowVal - proseVal) <= tol;
+}
+
+/**
+ * Date existence + analog-row co-occurrence.
+ *
+ * Every YYYY-MM-DD in prose must be a date the payload carries. Beyond that, when a date is cited as
+ * an analog row and the clause names that row's distance / forward return / excursion, the whole
+ * clause has to be explained by ONE retrieval.top entry with that session - the date cannot keep the
+ * distance or return of a different episode. This is the check that catches a symbol/date/distance
+ * splice that pure token-existence (each token individually real) would otherwise pass.
+ */
+export function verifyDatePairs(rawText, analogRows, dateForms) {
+  const text = String(rawText || "").replace(CODEISH, (m) => " ".repeat(m.length));
+  const violations = [];
+  const sessions = new Set(analogRows.map((r) => r.session));
+  const symbols = [...new Set(analogRows.map((r) => r.symbol))].filter(Boolean).sort((a, b) => b.length - a.length);
+  const symRe = symbols.length
+    ? new RegExp("(?<![A-Z0-9.])(" + symbols.map(escapeRe).join("|") + ")(?![A-Z])", "g")
+    : null;
+
+  const dates = [...text.matchAll(DATE_TOKEN_RE)];
+  for (let i = 0; i < dates.length; i++) {
+    const dm = dates[i];
+    const D = dm[0];
+    const pStart = dm.index, pEnd = dm.index + D.length;
+    // Forward segment: up to the next date or a sentence boundary, capped.
+    let fEnd = i + 1 < dates.length ? dates[i + 1].index : text.length;
+    const sentM = SENT_END_RE.exec(text.slice(pEnd, fEnd));
+    if (sentM) fEnd = pEnd + sentM.index;
+    fEnd = Math.min(fEnd, pEnd + 140);
+    const forward = text.slice(pEnd, fEnd);
+    // Backward segment to the sentence start, capped, used to find the cited symbol.
+    let bStart = Math.max(0, pStart - 80);
+    const backSlice = text.slice(bStart, pStart);
+    const bM = [...backSlice.matchAll(new RegExp(SENT_END_RE.source, "g"))];
+    if (bM.length) bStart = bStart + bM[bM.length - 1].index + 1;
+    const backward = text.slice(bStart, pStart);
+
+    // Rule A - the date itself must be present in the payload.
+    if (!dateForms.has(D)) {
+      violations.push({ value: `date ${D}`, context: text.slice(bStart, fEnd).replace(/\s+/g, " ").trim().slice(0, 160) });
+      continue;
+    }
+
+    const distA = firstNumberAfter(forward, DIST_KW_RE);
+    const retA = firstNumberAfter(forward, RET_KW_RE);
+    const maeA = firstNumberAfter(forward, MAE_KW_RE);
+    const mfeA = firstNumberAfter(forward, MFE_KW_RE);
+    // Only row citations with at least one anchored attribute are tuple-checked; a date cited with no
+    // distance/return keyword (e.g. "the 2020 episodes") is covered by Rule A alone.
+    if (!(distA || retA || maeA || mfeA) || !sessions.has(D)) continue;
+
+    let sym = null;
+    if (symRe) {
+      const sm = [...backward.matchAll(symRe)];
+      if (sm.length) sym = sm[sm.length - 1][1];
+    }
+    const candidates = analogRows.filter((r) => r.session === D && (!sym || r.symbol === sym));
+    const explained = candidates.some((r) =>
+      (!distA || fieldClose(r.distance, distA.value, 0.002)) &&
+      (!retA || fieldClose(r.ret, retA.value, 0.03)) &&
+      (!maeA || fieldClose(r.mae, maeA.value, 0.03)) &&
+      (!mfeA || fieldClose(r.mfe, mfeA.value, 0.03)));
+    if (!explained) {
+      const want = [distA && `distance ${distA.raw}`, retA && `return ${retA.raw}%`, maeA && `MAE ${maeA.raw}%`, mfeA && `MFE ${mfeA.raw}%`].filter(Boolean).join(", ");
+      violations.push({
+        value: `analog pair ${sym ? sym + " " : ""}${D} -> ${want}`,
+        context: text.slice(bStart, fEnd).replace(/\s+/g, " ").trim().slice(0, 200)
+      });
+    }
+  }
+  return violations;
 }
 
 function near(value, forms, relTol) {
@@ -199,13 +328,21 @@ export function verifyNumbers(text, allow, opts = {}) {
     if (!t.hasPercent && near(String(Number(t.normalised) * 100), allow.forms, relTol)) continue;
     unsupported.push(t);
   }
+  // Date existence + analog-row co-occurrence. The allowlist carries the payload dates and analog
+  // rows; when an older caller did not build them the gate skips this layer rather than failing.
+  let dateViolations = [];
+  if (allow.dateForms && allow.analogRows) {
+    dateViolations = verifyDatePairs(text, allow.analogRows, allow.dateForms);
+    for (const v of dateViolations) unsupported.push(v);
+  }
   return {
     ok: unsupported.length === 0,
     total: tokens.length,
     unsupportedCount: unsupported.length,
     unsupported: unsupported.slice(0, opts.maxReported ?? 12),
     structuralPasses: passedStructural.length,
-    passRate: tokens.length ? (tokens.length - unsupported.length) / tokens.length : 1,
+    dateViolations: dateViolations.length,
+    passRate: tokens.length ? (tokens.length - unsupported.length + dateViolations.length) / tokens.length : 1,
     relTol
   };
 }

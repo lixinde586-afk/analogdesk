@@ -553,7 +553,17 @@ async function main() {
   const datasetPath = join(ROOT, "data-cache", "dataset.json");
   if (!existsSync(datasetPath)) { console.error("[demo] data-cache/dataset.json is missing. Run: npm run build:data"); process.exit(1); }
   const dataset = readJson(datasetPath);
-  const validationResults = readJson(join(ROOT, "research", "validation-results.json"));
+  // research/validation-results.json (20 MB, regenerable, git-ignored) is the full audit dump; the
+  // committed dist/validation-summary.json is the same structure minus the per-query rows. On a fresh
+  // clone only the summary exists, so - exactly like server.mjs - fall back to it instead of silently
+  // producing cards with conformal null and "undefined%" intervals (which also changed the card and
+  // knocked the replay digest down to TEMPLATE).
+  const validationFull = readJson(join(ROOT, "research", "validation-results.json"));
+  const validationSummary = readJson(join(ROOT, "dist", "validation-summary.json"));
+  const validationResults = validationFull || validationSummary;
+  log(validationResults
+    ? `validation loaded from ${validationFull ? "research/validation-results.json (full)" : "dist/validation-summary.json (committed summary)"}`
+    : "WARNING no validation results found - run the build; cards would ship without conformal calibration");
   const networkProbe = readJson(join(ROOT, "data-cache", "network-probe.json"));
 const wrapperProbe = readJson(join(ROOT, "data-cache", "wrapper-probe.json"));
 const bitget7x24Probe = readJson(join(ROOT, "data-cache", "bitget-7x24.json"));
