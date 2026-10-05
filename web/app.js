@@ -701,7 +701,7 @@ function renderSignals(card) {
 
         <h3>External equity cross-check</h3>
         ${cnn ? `<div class="note info" style="margin:0 0 6px">${kv([
-          ["CNN Fear &amp; Greed", `${num(cnn.score, 1)} / 100`],
+          ["CNN Fear & Greed", `${num(cnn.score, 1)} / 100`],
           ["rating", cnn.rating]
         ])}</div>
         <table><tbody>${cnnRows}</tbody></table>`
@@ -709,7 +709,7 @@ function renderSignals(card) {
 
         <h3>Crypto sentiment <span class="muted small">&middot; crypto market only, not the equity mood</span></h3>
         ${cr ? `<div class="note" style="margin:0">${kv([
-          ["crypto Fear &amp; Greed", `${num(cr.fearGreed, 0)} / 100`],
+          ["crypto Fear & Greed", `${num(cr.fearGreed, 0)} / 100`],
           ["regime", cr.band],
           ["scope", cr.source]
         ])}</div>`
